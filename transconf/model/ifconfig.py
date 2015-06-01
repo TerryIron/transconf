@@ -3,11 +3,11 @@ __author__ = 'chijun'
 import commands
 
 try:
-    from nodeobj.v1.dev import ContentParser
-    from nodeobj.v1.dev.plugin.base import ExtensionNode
+    from transconf.dev import ContentParser
+    from transconf.dev.plugin.base import ExtensionNode
 except:
-    from dev import ContentParser
-    from dev.plugin.base import ExtensionNode
+    from ..dev import ContentParser
+    from ..dev.plugin.base import ExtensionNode
 
 
 __all__ = ['Ifconfig']

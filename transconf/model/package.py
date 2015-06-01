@@ -1,11 +1,7 @@
 __author__ = 'chijun'
 
-try:
-    from nodeobj.v1.dev import ContentParser
-    from nodeobj.v1.dev.plugin.base import ExtensionNode
-except:
-    from dev import ContentParser
-    from dev.plugin.base import ExtensionNode
+from . import ContentParser
+from . import ExtensionNode
 
 
 __all__ = ['Package']
