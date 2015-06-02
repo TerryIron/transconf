@@ -15,10 +15,38 @@ class NodeItemStructError(Exception):
 
 
 class NodeStruct(object):
+
     SUPPORT_TYPES = [list, dict, str]
+
     def __init__(self):
         self.dic = dict()
         self.support_types = self.SUPPORT_TYPES
+        self.branch = set()
+        self.name = None
+
+    def set_nodename(self, name):
+        self.name = name
+
+    def get_nodename(self, name):
+        return self.name
+
+    def set_branchname(self, name):
+        self.branch.add(name)
+
+    def get_branchname(self):
+        return self.branch
+
+    def is_branch(self, name):
+        if name not in self.branch:
+            return False
+        else:
+            return True
+        
+    def keys(self):
+        return self.dic.keys()
+
+    def items(self):
+        return self.dic.items()
 
     def set_default(self, var_name, var_type, len=10, default_value=None):
         if var_type not in self.support_types:
@@ -62,7 +90,7 @@ class NodeStruct(object):
 
     def get_type(self, var_name):
         item = self._get(var_name)
-        return self._get_default(item)
+        return self._get_type(item)
 
     def get_len(self, item):
         item = self._get(var_name)
@@ -77,3 +105,6 @@ class NodeStruct(object):
             return True
         else:
             raise NodeItemSetFailed('Variable:{0} set {1} failed'.format(var_name, value))
+
+    def check_input(self, key, value):
+        raise NotImplementedError()
