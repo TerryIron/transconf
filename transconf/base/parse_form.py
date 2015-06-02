@@ -19,7 +19,7 @@ class FormParser(object):
         self.ext_struct.add(struct)
 
     def _parse_item(self, father, name, value):
-        print 'name: {0}, value: {1}'.format(name, value)
+        print 'father: {0}, name: {1}, value: {2}'.format(father, name, value)
 
     def _walk_form_unit_item(self, struct, form_unit):
         for unit_name, unit_var in form_unit.items(): 
@@ -41,12 +41,12 @@ class FormParser(object):
 
     def _parse_form(self, form, father='ROOT'):
         for form_unit in self._walk_form_unit(form):
-            print form_unit
             struct = self._get_struct(form_unit)
             if not struct:
                 raise FormUnitTypeError('Form: {0}'.format(form_unit))
             for branch in [form_unit.pop(b) for b in struct.get_branchname() if b in form_unit]:
-                yield self._parse_form(branch, form_unit[struct.name])
+                for f, k, v in self._parse_form(branch, form_unit[struct.name]):
+                    yield (f, k, v)
             for k, v in self._walk_form_unit_item(struct, form_unit):
                 yield (father, k, v)
 
