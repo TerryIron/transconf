@@ -5,7 +5,6 @@ import commands
 from . import ContentParser
 from . import ExtensionNode
 
-
 __all__ = ['ConfigParser']
 
 
