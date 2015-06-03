@@ -27,7 +27,7 @@ class NodeStruct(object):
     def set_nodename(self, name):
         self.name = name
 
-    def get_nodename(self, name):
+    def get_nodename(self):
         return self.name
 
     def set_branchname(self, name):
