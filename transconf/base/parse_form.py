@@ -1,6 +1,6 @@
 __author__ = 'chijun'
 
-from common.parser import BaseParser
+from common.parser import BaseParser, Index
 
 class FormUnitTypeError(Exception):
     """Raised when unit type error"""
@@ -14,7 +14,7 @@ class FormParser(object):
     ...            'subs': [
     ...                    {'node': 'ip_addr',
     ...                     'regex': ['^.*inet addr:([0-9.]+)']
-    ...                   },
+    ...                    },
     ...                    {'node': 'hw_addr',
     ...                     'regex': ['^.*HWaddr ([0-9a-e:]+.*)']
     ...                    },
@@ -31,11 +31,17 @@ class FormParser(object):
     ...                    {'node': 'ip_addr',
     ...                     'regex': ['^.*inet addr:([0-9.]+)']
     ...                   },
+    ...                    {'node': 'hw_addr',
+    ...                     'regex': ['^.*HWaddr ([0-9a-e:]+.*)']
+    ...                    },
     ...           ]}
     ...    ]        
     >>> k = FormParser()
     >>> k.register_struct(StructV1)
     >>> p = k.gen_parser(FORMAT)
+    >>> print len(p.unit)
+    >>> for a, b, c in p.unit:
+    ...     print a.idx, b, c
     """
 
 
@@ -47,8 +53,7 @@ class FormParser(object):
 
     def _walk_form_unit_item(self, struct, form_unit):
         for unit_name, unit_var in form_unit.items(): 
-            if struct.check_input(unit_name, unit_var):
-                yield unit_name, unit_var
+            yield struct.check_input(unit_name, unit_var)
 
     def _walk_form_unit(self, form):
         for form_unit in form: 
@@ -80,38 +85,49 @@ class FormParser(object):
         p = parser
         def new_buf():
             return {
-                'fid': 0, 
+                'fid': None, 
                 'items': [],
                 'node_name': None,
                 'father': None,
             }
         buf = new_buf()
         for n, f, k, v in self._parse_form(form):
-            #Init buffer
-            if not buf['node_name']:
-                buf['node_name'] = n
-            if not buf['father']:
+            if n != v:
+                #Init buffer
+                if not buf['node_name']:
+                    buf['node_name'] = n
+                if not buf['father']:
+                    buf['father'] = f
+                if not buf['fid']:
+                    buf['fid'] = Index()
+                    buf['fid'].set(0)
+                buf['fid'].set(buf['fid'].idx + 1)
+                #Diff buffer with current data
+                if buf['node_name'] != n:
+                    old_items = buf['items']
+                    old_name= buf['node_name']
+                    buf['node_name'] = n
+                    buf['items'] = []
+                    yield (buf['fid'], old_name, old_items)
+                    if not buf['father'] != n:
+                        if buf['father'] == 'ROOT':
+                            old_fid = buf['fid']
+                            buf['fid'] = Index()
+                            buf['fid'].set(-1)
+                        else:
+                            old_fid = buf['fid']
+                            buf['fid'] = Index()
+                            buf['fid'].set(old_fid.idx)
+                    buf['node_name'] = n
                 buf['father'] = f
-            #Diff buffer with current data
-            if buf['node_name'] == n:
-                #print 1, n, f, k, v
-                if n != v:
-                    buf['items'].append((k, v))
-            else:
-                #print 2, n, f, k, v
-                old_name = buf['node_name']
-                buf['node_name'] = n
-                old_items = buf['items']
-                buf['items'] = []
-                yield (buf['fid'], old_name, old_items)
-            buf['father'] = f
-            print n, f, k, v
+                buf['items'].append((k, v))
+        yield (buf['fid'], buf['node_name'], buf['items'])
 
     def gen_parser(self, form):
         p = BaseParser()
         for fid, node_name, items in self._gen_parser(p, form):
-            print fid, node_name, items
-            p.update(fid, node_name, items)
+            if not p.update(fid, node_name, items):
+                return None
         return p
         
 

@@ -1,20 +1,26 @@
 __author__ = 'chijun'
 
-from common.struct import NodeStruct
+from common.struct import *
 
-__all__ = ['StructV1']
 
 class NodeStructV1(NodeStruct): 
     def check_input(self, key, value):
-        if (key not in self.keys()) or \
-            (type(value) != self.get_type(key)):
-            return False
-        return True
+        if key not in self.keys():
+            raise NodeItemNotFound('Can not found variable:{0}'.format(key))
+        try:
+            typ = self.get_type(key)
+            data = dict(key=key,
+                        value=value,
+                        obj=self)
+            k, v = typ().check(data)
+            return k, v
+        except:
+            raise NodeItemTypeNotSupport('Get value:{0} is not supported by {1} defines.'.format(value, key))
 
 
 StructV1 = NodeStructV1()
-StructV1.set_default('node', str, None, 1)
-StructV1.set_default('regex', list, None, 5)
-StructV1.set_default('subs', list, {}, 50)
+StructV1.set_default('node', IsString, 1, None)
+StructV1.set_default('regex', IsInterface, 1, None)
+StructV1.set_default('subs', IsList, 50, {})
 StructV1.set_nodename('node')
 StructV1.set_branchname('subs')
