@@ -4,6 +4,15 @@ from common.struct import *
 
 
 class NodeStructV1(NodeStruct): 
+    def __init__(self):
+        super(NodeStructV1, self).__init__()
+        self.set_default('node', IsString, 1, None)
+        self.set_default('method', IsInterface, 1, None)
+        self.set_default('property', IsProperty, 1, None)
+        self.set_default('subs', IsList, 50, {})
+        self.set_nodename('node')
+        self.set_branchname('subs')
+
     def check_input(self, key, value):
         if key not in self.keys():
             raise NodeItemNotFound('Can not found variable:{0}'.format(key))
@@ -17,10 +26,3 @@ class NodeStructV1(NodeStruct):
         except:
             raise NodeItemTypeNotSupport('Get value:{0} is not supported by {1} defines.'.format(value, key))
 
-
-StructV1 = NodeStructV1()
-StructV1.set_default('node', IsString, 1, None)
-StructV1.set_default('regex', IsInterface, 1, None)
-StructV1.set_default('subs', IsList, 50, {})
-StructV1.set_nodename('node')
-StructV1.set_branchname('subs')

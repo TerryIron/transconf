@@ -39,6 +39,12 @@ class IsInterface(BaseType):
             if callable(_method):
                 return data['key'], _method
 
+class IsProperty(BaseType): 
+    def check(self, data):
+        if hasattr(data['obj'], data['value']):
+            _property = getattr(data['obj'], data['value'])
+            if not callable(_property):
+                return data['key'], _property
 
 class NodeStruct(object):
 

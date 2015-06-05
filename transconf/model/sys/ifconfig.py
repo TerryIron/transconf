@@ -1,19 +1,12 @@
 __author__ = 'chijun'
 
-import commands
+from __init__ import NodeStructV1
 
-try:
-    from transconf.dev import ContentParser
-    from transconf.dev.plugin.base import ExtensionNode
-except:
-    from ..dev import ContentParser
-    from ..dev.plugin.base import ExtensionNode
+all__ = ['Ifconfig']
 
 
-__all__ = ['Ifconfig']
 
-
-class Ifconfig(ContentParser):
+class Ifconfig(object):
     """
     Usage:
     >>> def scan():
@@ -79,7 +72,7 @@ class Ifconfig(ContentParser):
 
     NODE_CLASS = ExtensionNode
     FORMAT = [{'node': 'if_name',
-               'regex': ['^([0-9a-z]+) .*'],
+               'method': ['^([0-9a-z]+) .*'],
                'subs': [
                     {'node': 'ip_addr',
                      'regex': ['^.*inet addr:([0-9.]+)']

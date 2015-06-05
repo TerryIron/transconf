@@ -1,6 +1,5 @@
-try:
-    from transconf.dev import ContentParser
-    from transconf.dev.plugin.base import ExtensionNode
-except:
-    from ..dev import ContentParser
-    from ..dev.plugin.base import ExtensionNode
+import sys
+
+sys.path.insert(0, '../..')
+
+from base.struct import NodeStructV1

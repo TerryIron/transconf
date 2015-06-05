@@ -37,7 +37,7 @@ class FormParser(object):
     ...           ]}
     ...    ]        
     >>> k = FormParser()
-    >>> k.register_struct(StructV1)
+    >>> k.register_struct(NodeStructV1())
     >>> p = k.gen_parser(FORMAT)
     >>> print len(p.unit)
     >>> for a, b, c in p.unit:
