@@ -1,49 +1,67 @@
 __author__ = 'chijun'
 
 from basetype import BaseType
+from reg import get_reg_target
 
 __all__ = [
  'NodeItemNotFound', 'NodeItemTypeNotSupport', 'NodeItemStructError',
- 'IsString', 'IsList', 'IsDict', 'IsInterface', 'NodeStruct',
+ 'IsString', 'IsList', 'IsDict', 'IsInterface', 'NodeStruct', 'IsProperty',
 ]
+
 
 class NodeItemNotFound(Exception):
     """ Raised when value name not found"""
 
+
 class NodeItemTypeNotSupport(Exception):
     """ Raised when value's type not support"""
 
+
 class NodeItemStructError(Exception):
     """ Raised when struct is bad"""
+
 
 class IsString(BaseType): 
     def check(self, data):
         if isinstance(data['value'], str):
             return data['key'], data['value']
 
+
 class IsList(BaseType): 
     def check(self, data):
         if isinstance(data['value'], list):
             return data['key'], data['value']
+
 
 class IsDict(BaseType): 
     def check(self, data):
         if isinstance(data['value'], dict):
             return data['key'], data['value']
 
+
 class IsInterface(BaseType): 
     def check(self, data):
-        if hasattr(data['obj'], data['value']):
-            _mehtod = getattr(data['obj'], data['value'])
+        typ, name, val = data['value'].split(':')
+        obj = get_reg_target(typ, name)
+        if not obj:
+            return
+        if hasattr(obj, val):
+            _method = getattr(obj, val)
             if callable(_method):
                 return data['key'], _method
 
+
 class IsProperty(BaseType): 
     def check(self, data):
-        if hasattr(data['obj'], data['value']):
-            _property = getattr(data['obj'], data['value'])
+        typ, name, val = data['value'].split(':')
+        obj = get_reg_target(typ, name)
+        if not obj:
+            return
+        if hasattr(obj, val):
+            _property = getattr(obj, val)
             if not callable(_property):
                 return data['key'], _property
+
 
 class NodeStruct(object):
 
@@ -100,11 +118,8 @@ class NodeStruct(object):
         return item[2]
 
     def _check_type(self, item, data):
-        try:
-            _type = self._get_type(item)
-            return _type.check(data)
-        except:
-            pass
+        _type = self._get_type(item)
+        return _type.check(data)
 
     def _get_default(self, item):
         return item[1]

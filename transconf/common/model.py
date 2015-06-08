@@ -2,19 +2,8 @@ __author__ = 'chijun'
 
 __all__ = ['BaseModel']
 
-from utils import NameSpace
 
-class DriverType(object):
-    def __ini__(self, typ):
-        self.name = typ
-
-    @property
-    def type(self):
-        return self.name
-
-class BaseModelDriver(TableDriver):
-    TYPE = None
-    NAMESPACE = None
+class BaseModelDriver(object):
     """
         This class is used to register model into DB.
         
@@ -27,14 +16,13 @@ class BaseModelDriver(TableDriver):
         |                 BaseModelDriver              |
         |                  ||                          |
         |                  \/       _                  |
-        |NameBusA         ModelTypeA| FORMAT           |
+        |NameBusA         ModelTypeA| FORM             |
         |   ||             ||       | STRUCT           |
-        |   ||             ||       | TYPE as db_name  | 
-        |   \/             \/       -            |     |
-        |NameBus   ---- > DataBase               |     |
-        |   ||             ||  /\                |     |
-        |   ||             ||  ||                |     |
-        |   ||             ||  -------------------     |
+        |   \/             \/       -                  |
+        |NameBus   ---- > DataBase                     |
+        |   ||             ||                          |
+        |   ||             ||                          |
+        |   ||             ||                          |
         |   ||             ||                          |
         |   \/             \/                          |
         |Memory(Handler)  Mysql(Data)                  |
@@ -46,12 +34,28 @@ class BaseModelDriver(TableDriver):
              | Table C -> nodeC API control            | NodeC
     """
 
-    def __init__(self, db_engine):
+    def __init__(self, db_engine=None):
         self.db_engine = db_engine
-        self.database_name = DriverType(self.TYPE).type
-        self.init()
 
-    def init(self):
+
+class BaseModel(BaseModelDriver):
+    STRUCT = None
+    FORM = None
+
+    def __init__(self, db_engine=None):
+        self._form = self.FORM
+        self._struct = self.STRUCT
+        super(BaseModel, self).__init__(db_engine)
+
+    @property
+    def form(self):
+        return self._form
+        
+    @property
+    def struct(self):
+        return self._struct
+
+    def init(self, config):
         raise NotImplementedError()
 
     def start(self):
@@ -62,15 +66,4 @@ class BaseModelDriver(TableDriver):
 
     def stop(self):
         raise NotImplementedError()
-        
-
-@NameSpace
-class BaseModel(BaseModelDriver):
-    STRUCT_CLASS = None
-    FORM = None
-
-    def __init__(self, name, db_engine):
-        super(BaseModel, self).__init__(db_engine)
-        self.form = self.FORM
-        self.struct = self.STRUCT_CLASS
-        self.name = name
+     

@@ -19,10 +19,8 @@ class NodeStructV1(NodeStruct):
         try:
             typ = self.get_type(key)
             data = dict(key=key,
-                        value=value,
-                        obj=self)
+                        value=value)
             k, v = typ().check(data)
             return k, v
-        except:
-            raise NodeItemTypeNotSupport('Get value:{0} is not supported by {1} defines.'.format(value, key))
-
+        except Exception as e:
+            raise NodeItemTypeNotSupport('Key:{0}, value:{1}, caused {2}.'.format(key, value, e))

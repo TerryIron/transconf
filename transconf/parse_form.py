@@ -1,6 +1,16 @@
 __author__ = 'chijun'
 
-from common.parser import BaseParser, Index
+class Index(object):
+    def __init__(self, idx=None):
+        self.uid = idx
+
+    @property
+    def idx(self):
+        return self.uid
+
+    def set(self, idx):
+        self.uid = idx
+
 
 class FormUnitTypeError(Exception):
     """Raised when unit type error"""
@@ -8,44 +18,18 @@ class FormUnitTypeError(Exception):
 class FormParser(object):
     """
       Parse form data to a parser object.
-    >>> from struct import *
-    >>> FORMAT = [{'node': 'if_name',
-    ...            'regex': ['^([0-9a-z]+) .*'],
-    ...            'subs': [
-    ...                    {'node': 'ip_addr',
-    ...                     'regex': ['^.*inet addr:([0-9.]+)']
-    ...                    },
-    ...                    {'node': 'hw_addr',
-    ...                     'regex': ['^.*HWaddr ([0-9a-e:]+.*)']
-    ...                    },
-    ...                    {'node': 'mask',
-    ...                     'regex': ['^.*Mask:([0-9.]+)']
-    ...                    },
-    ...                    {'node': 'boardcast',
-    ...                     'regex': ['^.*Bcast:([0-9.]+)']
-    ...                    }
-    ...           ]},
-    ...           {'node': 'test_node',
-    ...            'regex': ['^([0-9a-z]+) .*'],
-    ...            'subs': [
-    ...                    {'node': 'ip_addr',
-    ...                     'regex': ['^.*inet addr:([0-9.]+)']
-    ...                   },
-    ...                    {'node': 'hw_addr',
-    ...                     'regex': ['^.*HWaddr ([0-9a-e:]+.*)']
-    ...                    },
-    ...           ]}
-    ...    ]        
+    >>> from models.sys.ifconfig import Ifconfig
+    >>> from common.reg import register_local_driver
     >>> k = FormParser()
-    >>> k.register_struct(NodeStructV1())
-    >>> p = k.gen_parser(FORMAT)
-    >>> print len(p.unit)
-    >>> for a, b, c in p.unit:
-    ...     print a.idx, b, c
+    >>> i = Ifconfig('1234567')
+    >>> p = k.gen_real_model(i)
     """
 
 
     def __init__(self):
+        self.ext_struct = set()
+
+    def _reset(self):
         self.ext_struct = set()
 
     def register_struct(self, struct):
@@ -81,8 +65,7 @@ class FormParser(object):
             for k, v in self._walk_form_unit_item(struct, form_unit):
                 yield (form_unit[node_name], father, k, v)
 
-    def _gen_parser(self, parser, form):
-        p = parser
+    def _gen_parser(self, form):
         def new_buf():
             return {
                 'fid': None, 
@@ -108,7 +91,7 @@ class FormParser(object):
                     old_name= buf['node_name']
                     buf['node_name'] = n
                     buf['items'] = []
-                    yield (buf['fid'], old_name, old_items)
+                    yield (buf['fid'], f, old_name, old_items)
                     if not buf['father'] != n:
                         if buf['father'] == 'ROOT':
                             old_fid = buf['fid']
@@ -121,16 +104,20 @@ class FormParser(object):
                     buf['node_name'] = n
                 buf['father'] = f
                 buf['items'].append((k, v))
-        yield (buf['fid'], buf['node_name'], buf['items'])
+        yield (buf['fid'], buf['father'], buf['node_name'], buf['items'])
 
-    def gen_parser(self, form):
-        p = BaseParser()
-        for fid, node_name, items in self._gen_parser(p, form):
-            if not p.update(fid, node_name, items):
-                return None
-        return p
+    def gen_real_model(self, model):
+        self._reset()
+        self.register_struct(model.struct)
+        for fid, f, node_name, items in self._gen_parser(model.form):
+            print fid, f, node_name, items
+        
         
 
 if __name__ == '__main__':                                                                                                                                                                                
-    import doctest
-    doctest.testmod()
+    #import doctest
+    #doctest.testmod()
+    from models.sys.ifconfig import Ifconfig
+    k = FormParser()
+    i = Ifconfig('1234567')
+    p = k.gen_real_model(i)

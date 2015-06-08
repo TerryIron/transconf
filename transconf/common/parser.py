@@ -73,10 +73,7 @@ class BaseParser(object):
             return True
         return False
         
-    def readline(self, data):
-        raise NotImplementedError()
-
-    def translate(self, data):
-        for line in self.readline(data):
+    def translate(self, file_name):
+        for line in open(file_name, 'r').read():
             print line
 

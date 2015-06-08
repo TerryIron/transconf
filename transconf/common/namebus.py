@@ -1,8 +1,5 @@
 __author__ = 'chijun'
 
-from utils import NameSpace
-
-@NameSpace
 class NameBus(object):
     
     def __init__(self, name):
@@ -22,8 +19,8 @@ class NameBus(object):
               \/
          {
            'bus': {
-               'MODEL_A': {'is_started': A_API, 'is_stop': A_API},
-               'MODEL_B': {'is_started': B_API, 'stop_times': B_API},
+               'MODEL_A': {'is_started': A_DRV_API, 'is_stop': A_DRV_API},
+               'MODEL_B': {'is_started': B_DRV_API, 'stop_times': B_DRV_API},
            },
            'bus.driver': {
                'MODEL_A': {'start_bus': A_API, 'stop_bus': A_API},
