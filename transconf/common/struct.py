@@ -16,7 +16,6 @@ class NodeItemTypeNotSupport(Exception):
 class NodeItemStructError(Exception):
     """ Raised when struct is bad"""
 
-
 class IsString(BaseType): 
     def check(self, data):
         if isinstance(data['value'], str):

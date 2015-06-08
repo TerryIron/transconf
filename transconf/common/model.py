@@ -4,6 +4,14 @@ __all__ = ['BaseModel']
 
 from utils import NameSpace
 
+class DriverType(object):
+    def __ini__(self, typ):
+        self.name = typ
+
+    @property
+    def type(self):
+        return self.name
+
 class BaseModelDriver(TableDriver):
     TYPE = None
     NAMESPACE = None
@@ -40,13 +48,29 @@ class BaseModelDriver(TableDriver):
 
     def __init__(self, db_engine):
         self.db_engine = db_engine
-        self.database_name = self.TYPE
+        self.database_name = DriverType(self.TYPE).type
+        self.init()
+
+    def init(self):
+        raise NotImplementedError()
+
+    def start(self):
+        raise NotImplementedError()
+
+    def restart(self):
+        raise NotImplementedError()
+
+    def stop(self):
+        raise NotImplementedError()
+        
 
 @NameSpace
 class BaseModel(BaseModelDriver):
-    FORMAT = None
     STRUCT_CLASS = None
+    FORM = None
 
     def __init__(self, name, db_engine):
         super(BaseModel, self).__init__(db_engine)
+        self.form = self.FORM
+        self.struct = self.STRUCT_CLASS
         self.name = name
