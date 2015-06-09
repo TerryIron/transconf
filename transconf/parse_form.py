@@ -1,19 +1,27 @@
 __author__ = 'chijun'
 
-class Index(object):
-    def __init__(self, idx=None):
-        self.uid = idx
+
+class Name(object):
+    def __init__(self, name=None):
+        self.nm = [name]
 
     @property
-    def idx(self):
-        return self.uid
+    def name(self):
+        return self.nm
 
-    def set(self, idx):
-        self.uid = idx
+    def set(self, name):
+        self.nm = [name]
+
+    def append(self, name):
+        self.nm.append(name)
+
+    def push(self, name):
+        self.nm.insert(0, name)
 
 
 class FormUnitTypeError(Exception):
     """Raised when unit type error"""
+
 
 class FormParser(object):
     """
@@ -22,7 +30,7 @@ class FormParser(object):
     >>> from common.reg import register_local_driver
     >>> k = FormParser()
     >>> i = Ifconfig('1234567')
-    >>> p = k.gen_real_model(i)
+    >>> p = k.translate(i)
     """
 
 
@@ -66,12 +74,16 @@ class FormParser(object):
                 yield (form_unit[node_name], father, k, v)
 
     def _gen_parser(self, form):
+        """
+           Ver: 0.1.0 by chijun
+           Not: Only support 3 for node object's maxdepth.
+        """
         def new_buf():
             return {
-                'fid': None, 
                 'items': [],
                 'node_name': None,
                 'father': None,
+                'fname': None,
             }
         buf = new_buf()
         for n, f, k, v in self._parse_form(form):
@@ -81,38 +93,34 @@ class FormParser(object):
                     buf['node_name'] = n
                 if not buf['father']:
                     buf['father'] = f
-                if not buf['fid']:
-                    buf['fid'] = Index()
-                    buf['fid'].set(0)
-                buf['fid'].set(buf['fid'].idx + 1)
+                if not buf['fname']:
+                    buf['fname'] = Name(n)
                 #Diff buffer with current data
                 if buf['node_name'] != n:
                     old_items = buf['items']
+                    buf['items'] = []
                     old_name= buf['node_name']
                     buf['node_name'] = n
-                    buf['items'] = []
-                    yield (buf['fid'], f, old_name, old_items)
-                    if not buf['father'] != n:
-                        if buf['father'] == 'ROOT':
-                            old_fid = buf['fid']
-                            buf['fid'] = Index()
-                            buf['fid'].set(-1)
-                        else:
-                            old_fid = buf['fid']
-                            buf['fid'] = Index()
-                            buf['fid'].set(old_fid.idx)
-                    buf['node_name'] = n
+                    old_fname = buf['fname']
+                    buf['fname'] = Name(n)
+                    if f != buf['father']:
+                        old_fname.push(f)
+                    yield (old_fname, old_items)
+                buf['fname'].push(f)
                 buf['father'] = f
                 buf['items'].append((k, v))
-        yield (buf['fid'], buf['father'], buf['node_name'], buf['items'])
+        yield (buf['fname'], buf['items'])
 
-    def gen_real_model(self, model):
+    def translate(self, model):
         self._reset()
         self.register_struct(model.struct)
-        for fid, f, node_name, items in self._gen_parser(model.form):
-            print fid, f, node_name, items
-        
-        
+        for node_name, items in self._gen_parser(model.form):
+            name = node_name.name
+            model.set_nodeobj(name)
+            for k, v in items:
+                model.set_node_member(name, k, v)
+        for i, j in model.namebus.items():
+            print i, j
 
 if __name__ == '__main__':                                                                                                                                                                                
     #import doctest
@@ -120,4 +128,4 @@ if __name__ == '__main__':
     from models.sys.ifconfig import Ifconfig
     k = FormParser()
     i = Ifconfig('1234567')
-    p = k.gen_real_model(i)
+    p = k.translate(i)

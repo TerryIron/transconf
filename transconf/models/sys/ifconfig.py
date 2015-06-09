@@ -9,16 +9,26 @@ class Ifconfig(Model):
     FORM = [{'node': 'if_name',
                'subs': [
                         {'node': 'ip_addr',
-                         'method': 'mod:ifdev:ip_addr',
+                         'method': ['ip_addr', 'mod:ifdev:ip_addr'],
+                         'subs': [
+                                  {'node': 'aaaaa',
+                                   'method': ['ip_addr', 'mod:ifdev:ip_addr'],
+                                   'subs': [
+                                            {'node': 'bbbbb',
+                                             'method': ['ip_addr', 'mod:ifdev:ip_addr'],
+                                            },
+                                   ],
+                                  },
+                         ],
                         },
                         {'node': 'hw_addr',
-                         'method': 'mod:ifdev:hw_addr',
+                         'method': ['hw_addr', 'mod:ifdev:hw_addr'],
                         },
                         {'node': 'mask',
-                         'method': 'mod:ifdev:mask',
+                         'method': ['mask', 'mod:ifdev:mask'],
                         },
                         {'node': 'boardcast',
-                         'method': 'mod:ifdev:boardcast',
+                         'method': ['boardcast', 'mod:ifdev:boardcast'],
                         }
                ]}
             ]

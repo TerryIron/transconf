@@ -41,31 +41,33 @@ class IsDict(BaseType):
 
 class IsInterface(BaseType): 
     def check(self, data):
-        typ, name, val = data['value'].split(':')
+        key = data['value'][0]
+        typ, name, val = data['value'][1].split(':')
         obj = get_reg_target(typ, name)
         if not obj:
             return
         if hasattr(obj, val):
             _method = getattr(obj, val)
             if callable(_method):
-                return data['key'], _method
+                return key, _method
 
 
 class IsProperty(BaseType): 
     def check(self, data):
-        typ, name, val = data['value'].split(':')
+        key = data['value'][0]
+        typ, name, val = data['value'][1].split(':')
         obj = get_reg_target(typ, name)
         if not obj:
             return
         if hasattr(obj, val):
             _property = getattr(obj, val)
             if not callable(_property):
-                return data['key'], _property
+                return key, _property
 
 
 class NodeStruct(object):
 
-    SUPPORT_TYPES = [IsString, IsList, IsDict, IsInterface]
+    SUPPORT_TYPES = [IsString, IsList, IsDict, IsInterface, IsProperty]
 
     def __init__(self):
         self.support_types = self.SUPPORT_TYPES

@@ -2,9 +2,8 @@ __author__ = 'chijun'
 
 class NameBus(object):
     
-    def __init__(self, name):
-        self.name = name
-        self.bus = {}
+    def __init__(self):
+        self.namebus = {}
 
     """
         Target name's structure is like below:
@@ -51,23 +50,11 @@ class NameBus(object):
 
     """
 
-    def _is_readonly_mode(self, target_name):
-        if target_name.startswith('$'):
-            return False
-        return True
-
-    def _parse_target_name(self, target_name):
-        pass
-
     def run(self, target_name, method_name, *args, **kwargs):
-        if not self._is_readonly_mode(target_name):
-            return None 
-        pass
+        raise NotImplementedError()
 
     def getattr(self, target_name, property_name):
-        pass
+        raise NotImplementedError()
 
     def setattr(self, target_name, property_name, value):
-        if self._is_readonly_mode(target_name):
-            return False
-        pass
+        raise NotImplementedError()

@@ -14,6 +14,24 @@ class ModelShell(NameBus):
         self.init_drivers()
         self.init_models()
 
+    def _is_readonly_mode(self, target_name):
+        if target_name.startswith('$'):
+            return False
+        return True
+
+    def run(self, target_name, method_name, *args, **kwargs):
+        if not self._is_readonly_mode(target_name):
+            return None
+        pass
+
+    def getattr(self, target_name, property_name):
+        pass
+
+    def setattr(self, target_name, property_name, value):
+        if self._is_readonly_mode(target_name):
+            return False
+        pass
+
     def init_drivers(self):
         raise NotImplementedError()
 
