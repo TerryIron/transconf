@@ -67,16 +67,16 @@ class FormParser(object):
             if not struct:
                 raise FormUnitTypeError('Form: {0}'.format(form_unit))
             for branch in [form_unit.pop(b) for b in struct.get_branchname() if b in form_unit]:
-                for n, f, k, v in self._parse_form(branch, form_unit[struct.name]):
-                    yield (n, f, k, v)
+                for n, f, k, typ, v in self._parse_form(branch, form_unit[struct.name]):
+                    yield (n, f, k, typ, v)
             node_name = struct.get_nodename()
-            for k, v in self._walk_form_unit_item(struct, form_unit):
-                yield (form_unit[node_name], father, k, v)
+            for k, typ, v in self._walk_form_unit_item(struct, form_unit):
+                yield (form_unit[node_name], father, k, typ, v)
 
     def _gen_parser(self, form):
         """
            Ver: 0.1.0 by chijun
-           Not: Only support 3 for node object's maxdepth.
+           Not: Only support node object's maxdepth=3.
         """
         def new_buf():
             return {
@@ -86,7 +86,7 @@ class FormParser(object):
                 'fname': None,
             }
         buf = new_buf()
-        for n, f, k, v in self._parse_form(form):
+        for n, f, k, typ, v in self._parse_form(form):
             if n != v:
                 #Init buffer
                 if not buf['node_name']:
@@ -108,7 +108,7 @@ class FormParser(object):
                     yield (old_fname, old_items)
                 buf['fname'].push(f)
                 buf['father'] = f
-                buf['items'].append((k, v))
+                buf['items'].append((k, (typ, v)))
         yield (buf['fname'], buf['items'])
 
     def translate(self, model):
@@ -117,15 +117,16 @@ class FormParser(object):
         for node_name, items in self._gen_parser(model.form):
             name = node_name.name
             model.set_nodeobj(name)
-            for k, v in items:
-                model.set_node_member(name, k, v)
-        for i, j in model.namebus.items():
-            print i, j
+            for k, item  in items:
+                model.set_node_member(name, k, item)
+        for m, k in model.namebus.items():
+            print m, k
 
 if __name__ == '__main__':                                                                                                                                                                                
-    #import doctest
+    import doctest
     #doctest.testmod()
     from models.sys.ifconfig import Ifconfig
+    from common.reg import register_local_driver
     k = FormParser()
     i = Ifconfig('1234567')
     p = k.translate(i)

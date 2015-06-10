@@ -2,34 +2,41 @@ __author__ = 'chijun'
 
 
 from common.namebus import NameBus
+from form_parser import FormParser
+from model import Model
 
+
+class ShellTargetNameFormatErr(Exception):
+    """Raised when target's name got by a wrong format"""
 
 class ModelShell(NameBus):
+    SPLIT_DOT = '.'
     """
         Sample code:
     """
     def __init__(self, name):
         super(ModelShell, self).__init__(name)
-        self.parser = None
+        self.split = self.SPLIT_DOT
+        self.parser = FormParser()
         self.init_drivers()
         self.init_models()
 
-    def _is_readonly_mode(self, target_name):
-        if target_name.startswith('$'):
-            return False
-        return True
-
     def run(self, target_name, method_name, *args, **kwargs):
-        if not self._is_readonly_mode(target_name):
-            return None
-        pass
-
-    def getattr(self, target_name, property_name):
-        pass
-
-    def setattr(self, target_name, property_name, value):
-        if self._is_readonly_mode(target_name):
+        name_lst = str(target_name).split(self.split)
+        if len(name_lst) > 1:
+            model_name = name_lst[0]
+            model = self.get_namebus(model_name)
+            if isinstance(model, Model):
+                other_names = tuple(name_lst[1:-1])
+                return model.run(other_names, method_name, *args, **kwargs)
             return False
+        else:
+            raise ShellTargetNameFormatErr(target_name)
+
+    def set_env(self, key, value):
+        pass
+
+    def get_env(self, key, value):
         pass
 
     def init_drivers(self):
@@ -44,7 +51,7 @@ class ModelShell(NameBus):
     def remove_driver(self, name):
         raise NotImplementedError()
 
-    def update_model(self, name, model):
+    def load_model(self, name, model):
         raise NotImplementedError()
 
     def remove_model(self, name):

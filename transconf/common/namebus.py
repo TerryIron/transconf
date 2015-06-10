@@ -7,7 +7,6 @@ class NameBus(object):
 
     """
         Target name's structure is like below:
-        Sample 1 for memory mode:
                     ---->  NAMEBUS.NAMEBUS[MODEL_TYPE]
                     |                  
         ns.run('bus.driver[MODEL_A]', 'stop_bus') == True
@@ -27,34 +26,34 @@ class NameBus(object):
            }
          }
 
-        Sample 2 for database mode:
                     ---->  $NAMEBUS.NAMEBUS[MODEL_TYPE]
                     |                  
         ns.run('$bus.database[MODEL_A]', 'name') == False
-        ns.getattr('$bus.database[MODEL_A]', 'name') == 'ABC'
-        ns.setattr('$bus.database[MODEL_A]', 'name', 'ABC') == True
+        ns.getattr('bus.database[MODEL_A]', 'name') == 'ABC'
+        ns.setattr('bus.database[MODEL_A]', 'name', 'ABC') == True
          {
-           '$bus': {
+           'bus': {
                'MODEL_A': {'is_started': A_API, 'is_stop': A_API},
                'MODEL_B': {'is_started': B_API, 'is_stop': B_API},
            },
-           '$bus.driver': {
+           'bus.driver': {
                'MODEL_A': {'start_bus': A_API, 'stop_bus': A_API},
                'MODEL_B': {'start_bus': B_API, 'stop_bus': B_API},
            },
-           '$bus.database': {
+           'bus.database': {
                'MODEL_A': {'name': A_API)
                'MODEL_B': {'name': B_API)
            }
          }
 
     """
+    def get_namebus(self, key):
+        return self.namebus.get(key, None)
 
-    def run(self, target_name, method_name, *args, **kwargs):
-        raise NotImplementedError()
+    def set_namebus(self, key, value, force=False):
+        if force:
+            self.namebus[key] = value
+        else:
+            if key not in self.namebus:
+                self.namebus[key] = value
 
-    def getattr(self, target_name, property_name):
-        raise NotImplementedError()
-
-    def setattr(self, target_name, property_name, value):
-        raise NotImplementedError()

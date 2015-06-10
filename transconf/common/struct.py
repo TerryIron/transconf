@@ -1,12 +1,6 @@
 __author__ = 'chijun'
 
-from basetype import BaseType
-from reg import get_reg_target
-
-__all__ = [
- 'NodeItemNotFound', 'NodeItemTypeNotSupport', 'NodeItemStructError',
- 'IsString', 'IsList', 'IsDict', 'IsInterface', 'NodeStruct', 'IsProperty',
-]
+__all__ = ['NodeItemNotFound', 'NodeItemTypeNotSupport', 'NodeItemStructError', 'NodeStruct']
 
 
 class NodeItemNotFound(Exception):
@@ -21,53 +15,9 @@ class NodeItemStructError(Exception):
     """ Raised when struct is bad"""
 
 
-class IsString(BaseType): 
-    def check(self, data):
-        if isinstance(data['value'], str):
-            return data['key'], data['value']
-
-
-class IsList(BaseType): 
-    def check(self, data):
-        if isinstance(data['value'], list):
-            return data['key'], data['value']
-
-
-class IsDict(BaseType): 
-    def check(self, data):
-        if isinstance(data['value'], dict):
-            return data['key'], data['value']
-
-
-class IsInterface(BaseType): 
-    def check(self, data):
-        key = data['value'][0]
-        typ, name, val = data['value'][1].split(':')
-        obj = get_reg_target(typ, name)
-        if not obj:
-            return
-        if hasattr(obj, val):
-            _method = getattr(obj, val)
-            if callable(_method):
-                return key, _method
-
-
-class IsProperty(BaseType): 
-    def check(self, data):
-        key = data['value'][0]
-        typ, name, val = data['value'][1].split(':')
-        obj = get_reg_target(typ, name)
-        if not obj:
-            return
-        if hasattr(obj, val):
-            _property = getattr(obj, val)
-            if not callable(_property):
-                return key, _property
-
-
 class NodeStruct(object):
 
-    SUPPORT_TYPES = [IsString, IsList, IsDict, IsInterface, IsProperty]
+    SUPPORT_TYPES = None
 
     def __init__(self):
         self.support_types = self.SUPPORT_TYPES

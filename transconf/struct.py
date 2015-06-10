@@ -1,13 +1,25 @@
 __author__ = 'chijun'
 
 from common.struct import *
+from structtypes import *
 
 
 class NodeStructV1(NodeStruct): 
+    SUPPORTED_TYPES = [
+                       IsString, 
+                       IsDict, 
+                       IsList, 
+                       IsPublicInterface, 
+                       IsPrivateInterface, 
+                       IsProperty
+                      ]
+
     def __init__(self):
         super(NodeStructV1, self).__init__()
         self.set_default('node', IsString, 1, None)
-        self.set_default('method', IsInterface, 1, None)
+        self.set_default('found', IsNodeInterface, 1, None)
+        self.set_default('private', IsPrivateInterface, 1, None)
+        self.set_default('public', IsPublicInterface, 1, None)
         self.set_default('property', IsProperty, 1, None)
         self.set_default('subs', IsList, 50, {})
         self.set_nodename('node')
@@ -20,7 +32,7 @@ class NodeStructV1(NodeStruct):
             typ = self.get_type(key)
             data = dict(key=key,
                         value=value)
-            k, v = typ().check(data)
-            return k, v
+            return typ().check(data)
         except Exception as e:
-            raise NodeItemTypeNotSupport('Key:{0}, value:{1}, caused {2}.'.format(key, value, e))
+            raise NodeItemTypeNotSupport('Key:{0}, value:{1}, caused by {2}.'.format(key, value, e))
+

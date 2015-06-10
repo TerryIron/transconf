@@ -17,6 +17,9 @@ class Register(object):
     def get(self, name):
         return self.reg.get(name, None)
 
+    def unregister(self, name):
+        if name in self.reg:
+            self.reg.pop(name)
 
 def get_reg_target(reg_type, name):
     if reg_type.startswith('dri'): return get_local_driver(name)
@@ -37,6 +40,9 @@ def register_local_driver(name):
 def get_local_driver(name):
     return LocalReg.get('__is_driver__' + str(name))
     
+def unregister_local_driver(name):
+    return LocalReg.unregister('__is_driver__' + str(name))
+
 
 ModelReg = Register('model')
 
@@ -52,4 +58,5 @@ def register_model(name):
 def get_model(name):
     return ModelReg.get('__is_model__' + str(name)) 
 
-
+def unregister_model(name):
+    return LocalReg.unregister('__is_driver__' + str(name))

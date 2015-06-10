@@ -6,32 +6,31 @@ from __init__ import register_model
 
 @register_model('ifdev')
 class Ifconfig(Model):
+    METHOD_TABLE = {'owner_ip_addr': 'private'}
     FORM = [{'node': 'if_name',
                'subs': [
                         {'node': 'ip_addr',
-                         'method': ['ip_addr', 'mod:ifdev:ip_addr'],
+                         'public': ['ip_addr', 'mod:ifdev:ip_addr'],
                          'subs': [
                                   {'node': 'aaaaa',
-                                   'method': ['ip_addr', 'mod:ifdev:ip_addr'],
-                                   'subs': [
-                                            {'node': 'bbbbb',
-                                             'method': ['ip_addr', 'mod:ifdev:ip_addr'],
-                                            },
-                                   ],
+                                   'private': ['owner_ip_addr', 'mod:ifdev:ip_addr'],
                                   },
                          ],
                         },
                         {'node': 'hw_addr',
-                         'method': ['hw_addr', 'mod:ifdev:hw_addr'],
+                         'public': ['hw_addr', 'mod:ifdev:hw_addr'],
                         },
                         {'node': 'mask',
-                         'method': ['mask', 'mod:ifdev:mask'],
+                         'public': ['mask', 'mod:ifdev:mask'],
                         },
                         {'node': 'boardcast',
-                         'method': ['boardcast', 'mod:ifdev:boardcast'],
+                         'public': ['boardcast', 'mod:ifdev:boardcast'],
                         }
                ]}
             ]
+    def owner_ip_addr(self, ifname):
+        print 1
+
     def ip_addr(self, ifname):
         print 1
 
