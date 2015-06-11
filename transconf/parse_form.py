@@ -1,24 +1,6 @@
 __author__ = 'chijun'
 
 
-class Name(object):
-    def __init__(self, name=None):
-        self.nm = [name]
-
-    @property
-    def name(self):
-        return self.nm
-
-    def set(self, name):
-        self.nm = [name]
-
-    def append(self, name):
-        self.nm.append(name)
-
-    def push(self, name):
-        self.nm.insert(0, name)
-
-
 class FormUnitTypeError(Exception):
     """Raised when unit type error"""
 
@@ -26,13 +8,7 @@ class FormUnitTypeError(Exception):
 class FormParser(object):
     """
       Parse form data to a parser object.
-    >>> from models.sys.ifconfig import Ifconfig
-    >>> from common.reg import register_local_driver
-    >>> k = FormParser()
-    >>> i = Ifconfig('1234567')
-    >>> p = k.translate(i)
     """
-
 
     def __init__(self):
         self.ext_struct = set()
@@ -78,23 +54,23 @@ class FormParser(object):
            Ver: 0.1.0 by chijun
            Not: Only support node object's maxdepth=3.
         """
-        def new_buf():
-            return {
+        # Init buffer by lambda expression
+        new_buf = lambda : {
                 'items': [],
                 'node_name': None,
                 'father': None,
                 'fname': None,
             }
+        new_name = lambda x: [x]
         buf = new_buf()
         for n, f, k, typ, v in self._parse_form(form):
             if n != v:
-                #Init buffer
                 if not buf['node_name']:
                     buf['node_name'] = n
                 if not buf['father']:
                     buf['father'] = f
                 if not buf['fname']:
-                    buf['fname'] = Name(n)
+                    buf['fname'] = new_name(n)
                 #Diff buffer with current data
                 if buf['node_name'] != n:
                     old_items = buf['items']
@@ -102,11 +78,11 @@ class FormParser(object):
                     old_name= buf['node_name']
                     buf['node_name'] = n
                     old_fname = buf['fname']
-                    buf['fname'] = Name(n)
+                    buf['fname'] = new_name(n)
                     if f != buf['father']:
-                        old_fname.push(f)
+                        old_fname.insert(0, f)
                     yield (old_fname, old_items)
-                buf['fname'].push(f)
+                buf['fname'].insert(0, f)
                 buf['father'] = f
                 buf['items'].append((k, (typ, v)))
         yield (buf['fname'], buf['items'])
@@ -115,18 +91,7 @@ class FormParser(object):
         self._reset()
         self.register_struct(model.struct)
         for node_name, items in self._gen_parser(model.form):
-            name = node_name.name
-            model.set_nodeobj(name)
+            model.set_nodeobj(node_name)
             for k, item  in items:
-                model.set_node_member(name, k, item)
-        for m, k in model.namebus.items():
-            print m, k
+                model.set_node_member(node_name, k, item)
 
-if __name__ == '__main__':                                                                                                                                                                                
-    import doctest
-    #doctest.testmod()
-    from models.sys.ifconfig import Ifconfig
-    from common.reg import register_local_driver
-    k = FormParser()
-    i = Ifconfig('1234567')
-    p = k.translate(i)

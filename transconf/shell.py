@@ -2,24 +2,22 @@ __author__ = 'chijun'
 
 
 from common.namebus import NameBus
-from form_parser import FormParser
+from parse_form import FormParser
 from model import Model
 
 
-class ShellTargetNameFormatErr(Exception):
-    """Raised when target's name got by a wrong format"""
+class ShellTargetNotFound(Exception):
+    """Raised when target can not found"""
+
 
 class ModelShell(NameBus):
     SPLIT_DOT = '.'
-    """
-        Sample code:
-    """
-    def __init__(self, name):
-        super(ModelShell, self).__init__(name)
+
+    def __init__(self):
+        super(ModelShell, self).__init__()
         self.split = self.SPLIT_DOT
+        self.environ = {}
         self.parser = FormParser()
-        self.init_drivers()
-        self.init_models()
 
     def run(self, target_name, method_name, *args, **kwargs):
         name_lst = str(target_name).split(self.split)
@@ -27,32 +25,30 @@ class ModelShell(NameBus):
             model_name = name_lst[0]
             model = self.get_namebus(model_name)
             if isinstance(model, Model):
-                other_names = tuple(name_lst[1:-1])
+                other_names = tuple(name_lst[1:])
                 return model.run(other_names, method_name, *args, **kwargs)
+            # What is it ? I don't care.
             return False
         else:
-            raise ShellTargetNameFormatErr(target_name)
+            raise ShellTargetNotFound(target_name)
+
+    def init_models(self, config=None):
+        raise NotImplementedError()
 
     def set_env(self, key, value):
-        pass
+        raise NotImplementedError()
 
     def get_env(self, key, value):
-        pass
-
-    def init_drivers(self):
         raise NotImplementedError()
 
-    def init_models(self):
-        raise NotImplementedError()
-
-    def load_driver(self, name, driver):
-        raise NotImplementedError()
-
-    def remove_driver(self, name):
-        raise NotImplementedError()
-
-    def load_model(self, name, model):
-        raise NotImplementedError()
+    def load_model(self, name, model_class, config=None):
+        model = model_class()
+        model.init(config)
+        self.parser.translate(model)
+        self.set_namebus(name, model, False)
 
     def remove_model(self, name):
-        raise NotImplementedError()
+        self.remove_namebus(name)
+
+    def list_models(self):
+        return self.list_namebus()

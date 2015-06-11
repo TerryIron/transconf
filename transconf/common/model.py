@@ -43,12 +43,37 @@ class BaseModelDriver(NameBus):
 class BaseModel(BaseModelDriver):
     STRUCT = None
     FORM = None
+    SPLIT_DOT = '.'
 
-    def __init__(self, config, db_engine=None):
+    def __init__(self, db_engine=None):
         self._form = self.FORM
         self._struct = self.STRUCT
+        self.split = self.SPLIT_DOT
+        # First init db module
         super(BaseModel, self).__init__(db_engine)
-        self.init(config)
+
+    def _build_class_nodename(self, lst):
+        return self.split.join(lst)
+
+    def set_node_member(self, name_lst, key, value):
+        real_name = self._build_class_nodename(name_lst)
+        if real_name in self.namebus:
+            n = self.get_namebus(real_name)
+            if isinstance(n, dict):
+                n[key] = value
+                return True
+        return False
+
+    def set_nodeobj(self, name_lst):
+        real_name = self._build_class_nodename(name_lst)
+        self.set_namebus(real_name, {})
+
+    def get_nodeobj(self, name_lst):
+        real_name = self._build_class_nodename(name_lst)
+        return self.get_namebus(real_name)
+
+    def run(self, target_name, method_name, *args, **kwargs):
+        raise NotImplementedError()
 
     @property
     def form(self):
@@ -58,14 +83,6 @@ class BaseModel(BaseModelDriver):
     def struct(self):
         return self._struct
 
-    def init(self, config):
-        raise NotImplementedError()
-
-    def start(self):
-        raise NotImplementedError()
-
-    def restart(self):
-        raise NotImplementedError()
-
-    def stop(self):
-        raise NotImplementedError()
+    # Init libaray or drivers from config before use it.
+    def init(self, config=None):
+        pass

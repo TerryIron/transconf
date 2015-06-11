@@ -57,3 +57,9 @@ class NameBus(object):
             if key not in self.namebus:
                 self.namebus[key] = value
 
+    def remove_namebus(self, key):
+        if key in self.namebus:
+            self.namebus.pop(key)
+
+    def list_namebus(self):
+        return self.namebus.keys()

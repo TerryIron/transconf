@@ -1,7 +1,7 @@
 __author__ = 'chijun'
 
 from common.struct import *
-from structtypes import *
+from mystructtypes import *
 
 
 class NodeStructV1(NodeStruct): 
