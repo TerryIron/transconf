@@ -9,15 +9,15 @@ from shell import ModelShell
 
 @register_model('ifdev')
 class Ifconfig(Model):
- METHOD_TABLE = {'owner_ip_addr': 'private'}
- FORM = [{'node': 'if_name',
+    METHOD_TABLE = {'owner_ip_addr': 'private'}
+    FORM = [{'node': 'if_name',
             'subs': [
                      {'node': 'ip_addr',
                       'public': ['ip_addr', 'mod:ifdev:ip_addr'],
                       'subs': [
                                {'node': 'aaaaa',
                                 'private': ['owner_ip_addr', 'mod:ifdev:ip_addr'],
-                                'found': ['owner_found_ip_addr', 'mod:ifdev:owner_found_ip_addr'],
+                                'auth': ['owner_found_ip_addr', 'mod:ifdev:owner_found_ip_addr'],
                                },
                       ],
                      },
@@ -33,25 +33,25 @@ class Ifconfig(Model):
             ]}
          ]
 
- def owner_found_ip_addr(self, ifname):
+    def owner_found_ip_addr(self, ifname):
      print 'test'
 
- def owner_ip_addr(self, ifname):
+    def owner_ip_addr(self, ifname):
      print 0
 
- def ip_addr(self, ifname):
+    def ip_addr(self, ifname):
      print 1
 
- def hw_addr(self, ifname):
+    def hw_addr(self, ifname):
      print 2
 
- def mask(self, ifname):
+    def mask(self, ifname):
      print 3
 
- def boardcast(self, ifname):
+    def boardcast(self, ifname):
      print 4
 
 if __name__ == '__main__':
     sh = ModelShell()
     sh.load_model('1234567', Ifconfig)
-    print sh.run('1234567.ifname.ip_addr.aaaaa[test]', 'owner_ip_addr')
+    print sh.run('1234567.ifname.ip_addr.aaaaa:test', 'owner_ip_addr')

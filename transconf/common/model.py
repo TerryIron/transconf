@@ -44,11 +44,13 @@ class BaseModel(BaseModelDriver):
     STRUCT = None
     FORM = None
     SPLIT_DOT = '.'
+    MEMBER_SPLIT_DOT = ':'
 
     def __init__(self, db_engine=None):
         self._form = self.FORM
         self._struct = self.STRUCT
         self.split = self.SPLIT_DOT
+        self.member_split = self.MEMBER_SPLIT_DOT
         # First init db module
         super(BaseModel, self).__init__(db_engine)
 
