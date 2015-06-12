@@ -72,6 +72,7 @@ class FormParser(object):
                 if not buf['fname']:
                     buf['fname'] = new_name(n)
                 #Diff buffer with current data
+                #print 111, buf['fname']
                 if buf['node_name'] != n:
                     old_items = buf['items']
                     buf['items'] = []
@@ -79,10 +80,17 @@ class FormParser(object):
                     buf['node_name'] = n
                     old_fname = buf['fname']
                     buf['fname'] = new_name(n)
+                    #print 222, buf['father'], f
+                    #print 333, old_fname
                     if f != buf['father']:
                         old_fname.insert(0, f)
+                    #print 444, buf['fname']
                     yield (old_fname, old_items)
-                buf['fname'].insert(0, f)
+                #print 666, buf['fname'], n, buf['node_name'], f, buf['father']
+                if f != buf['fname'][0]:
+                    buf['fname'].insert(0, f)
+                #print 777, buf['fname']
+                #print '------------------------------'
                 buf['father'] = f
                 buf['items'].append((k, (typ, v)))
         yield (buf['fname'], buf['items'])

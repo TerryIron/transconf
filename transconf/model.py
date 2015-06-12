@@ -27,26 +27,26 @@ class Model(BaseModel):
 
     def _build_nodename(self, lst):
         def name(self, n, sub_name):
-            if not n:
-                n = sub_name
-                print 000, n
+            if not 'name' in n:
+                n['name'] = sub_name
             else:
-                n = n + self.split + sub_name
-                print 001, n
-            return n 
+                n['name'] = n['name'] + self.split + sub_name
+            return n['name'] 
         try:
-            ln = None
+            ln = {}
             new_lst = [self._found_nodename(name(self, ln, n)) for n in lst]
-            return self._build_class_nodename(new_lst)
+            return new_lst[-1]
         except TypeError:
             return None, None
 
     def _found_nodename(self, name):
         p, s = self._is_private_mode(name)
         if p and s:
-            print 111, name
+            auth_meth = self.node_rules.get(p, None)
+            if auth_meth and auth_meth(s):
+                return p, self.is_pri_rule
         else:
-            print 222, name
+            return name, self.is_pub_rule
 
     def _is_private_mode(self, name):
         l = name.split(self.member_split)        
@@ -60,7 +60,7 @@ class Model(BaseModel):
             n = self.get_namebus(real_name)
             if isinstance(n, dict):
 		if isinstance(value[0], self.is_node_rule):
-		    self.node_rules[key] = value
+		    self.node_rules[real_name] = value[1]
                 n[key] = value
                 return True
         return False
@@ -75,7 +75,7 @@ class Model(BaseModel):
             _type, meth = m_inst.get(method_name)
             if isinstance(_type, typ):
                 if callable(meth):
-                    return meth(*arg, **kwargs)
+                    return meth(*args, **kwargs)
                 else:
                     return meth
             else:
