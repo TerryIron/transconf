@@ -17,7 +17,7 @@ class NodeStructV1(NodeStruct):
     def __init__(self):
         super(NodeStructV1, self).__init__()
         self.set_default('node', IsString, 1, None)
-        self.set_default('auth', IsNodeInterface, 1, None)
+        self.set_default('name', IsNodeInterface, 1, None)
         self.set_default('private', IsPrivateInterface, 1, None)
         self.set_default('public', IsPublicInterface, 1, None)
         self.set_default('property', IsProperty, 1, None)

@@ -42,8 +42,8 @@ class Model(BaseModel):
     def _found_nodename(self, name):
         p, s = self._is_private_mode(name)
         if p and s:
-            auth_meth = self.node_rules.get(p, None)
-            if auth_meth and auth_meth(s):
+            name_meth = self.node_rules.get(p, None)
+            if name_meth and name_meth(s):
                 return p, self.is_pri_rule
         else:
             return name, self.is_pub_rule

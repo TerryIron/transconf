@@ -17,7 +17,7 @@ class Ifconfig(Model):
                       'subs': [
                                {'node': 'aaaaa',
                                 'private': ['owner_ip_addr', 'mod:ifdev:ip_addr'],
-                                'auth': ['owner_found_ip_addr', 'mod:ifdev:owner_found_ip_addr'],
+                                'name': ['owner_found_ip_addr', 'mod:ifdev:owner_found_ip_addr'],
                                },
                       ],
                      },
