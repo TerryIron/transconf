@@ -6,28 +6,48 @@ CONNECTION_TYPE = 'twisted'
 PORT = 5672
 HOST = 'localhost'
 
-def rpc_connection_adapter(type_name=CONNECTION_TYPE, *args, **kwargs):
+def rpc_connection_adapter(parms, type_name=CONNECTION_TYPE, *args, **kwargs):
     if type_name == 'twisted':
-        return pika.TwistedConnection(*args, **kwargs)
+        return pika.TwistedConnection(parms, *args, **kwargs)
     elif type_name == 'tonado':
-        return pika.TornadoConnection(*args, **kwargs)
+        return pika.TornadoConnection(parms, *args, **kwargs)
     elif type_name == 'sync':
-        return pika.BlockingConnection(*args, **kwargs)
+        return pika.BlockingConnection(parms, *args, **kwargs)
     elif type_name == 'async':
-        return pika.AsyncoreConnection(*args, **kwargs)
+        return pika.AsyncoreConnection(parms, *args, **kwargs)
     elif type_name == 'libev':
-        return pika.LibevConnection(*args, **kwargs)
+        return pika.LibevConnection(parms, *args, **kwargs)
     elif type_name == 'select':
-        return pika.SelectConnection(*args, **kwargs)
+        return pika.SelectConnection(parms, *args, **kwargs)
 
-class RPCMaster(object):
+
+class RPC(object):
     def __init__(self, host=HOST, port=PORT):
-        self.connection = rpc_connection_adapter()
-        self.channel = self.connection.channel()
-        self.topic = None
+        self.parms = pika.ConnectionParameters(host=host, port=port)
+        self.connection = rpc_connection_adapter(self.parms)
 
-class RPCWorker(object):
-    def __init__(self, master_host, port=PORT):
-        pass
+    def send(self, topic, routing_key):
+        def _send(self, func):
+            def do_send(self, *args, **kwargs):
+                message = func(*args, **kwargs)
+                channel = self.connection.channel()
+                if routing_key:
+                    return channel.basic_publish(exchange=topic or '',
+                                                 routing_key=routing_key,
+                                                 body=message)
+            return do_send
+        return _send
 
-m = RPCMaster()
+
+    def receive(self, topic, routing_key):
+        def _receive(self, func):
+            def do_receive(self, *args, **kwargs):
+                def _callback(ch, method, properties, body):
+                    return func(body, *args, **kwargs)
+                channel = self.connection.channel()
+                channel.basic_consume(_callback,
+                                      queue=func.__name__,
+                                      no_ack=True)
+                return channel.start_consuming()
+            return do_receive
+    return _receive
