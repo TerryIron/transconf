@@ -1,6 +1,5 @@
 from common.reg import register_model
 from model import Model
-from parse_form import FormParser
 from shell import ModelShell
 
 """
