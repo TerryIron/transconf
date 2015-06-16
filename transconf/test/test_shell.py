@@ -1,6 +1,6 @@
-from common.reg import register_model
-from model import Model
-from shell import ModelShell
+from ..common.reg import register_model
+from ..model import Model
+from ..shell import ModelShell
 
 """
     Simple unit test, or a sample code for developers.
