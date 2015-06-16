@@ -2,7 +2,11 @@ __author__ = 'chijun'
 
 __all__ = ['BaseModel']
 
+
+from sqlalchemy import *
+
 from namebus import NameBus
+
 
 class BaseModelDriver(NameBus):
     """
@@ -36,8 +40,85 @@ class BaseModelDriver(NameBus):
     """
 
     def __init__(self, db_engine=None):
-        self.db_engine = db_engine
         super(BaseModelDriver, self).__init__()
+        if db_engine:
+            self.db_engine = create_engine(db_engine)
+            self.db = {}
+        else:
+            self.db_engine = None
+
+    def available(self):
+        if not self.db_engine:
+            return False
+        else:
+            return True
+
+   """
+      Create a new table
+
+      @table_name: table name
+      @items: input list by unit (title, length)
+   """
+    def define_table(self, table_name, items):
+        if self.available() and table_name not in self.db:
+            table = Table(table_name, 
+                          self.db_engine, 
+                          Column('id', Integer, primary_key=True),
+                          *[Column(iname, String(length) for iname, length in tuple(items)],
+                         )  
+            table.create()
+            self.db[table_name] = table
+
+    def clear_table(self, table_name):
+        if self.available() and table_name in self.db:
+            table = Table(table_name, 
+                          self.db_engine,
+                          autoload=True)
+            self.db[table_name] = table
+
+    def undefine_table(self, table_name):
+        if self.available() and table_name in self.db:
+            table = self.db[table_name]
+            table.drop()
+            self.db.pop(table_name)
+
+   """
+      Push new column into table
+
+      @table_name: table name
+      @items: input list by unit {'column_title': value}
+   """
+
+    def push_table(self, table_name, items):
+        if self.available() and table_name in self.db:
+            table = self.db[table_name]
+            i = table.insert()
+            for dic in items:
+                i.execute(**dic)
+
+   """
+      Update pointed table's column by query line
+
+      @table_name: table name
+      @query_items: input list by unit (query_title, value)
+      @items: input list by unit {'column_title': value}
+   """
+    def update_table(self, table_name, query_items, items):
+        if self.available() and table_name in self.db:
+            pass
+
+   """
+      Pop column from table by query line
+
+      @table_name: table name
+      @query_items: input list by unit (query_title, value)
+   """
+    def pop_table(self, table_name, query_items):
+        if self.available() and table_name in self.db:
+            pass
+
+    def commit(self):
+        pass
 
 
 class BaseModel(BaseModelDriver):
@@ -87,4 +168,10 @@ class BaseModel(BaseModelDriver):
 
     # Init libaray or drivers from config before use it.
     def init(self, config=None):
+        pass
+
+    def start(self, config=None):
+        pass
+
+    def stop(self, config=None):
         pass

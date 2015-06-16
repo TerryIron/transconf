@@ -46,9 +46,11 @@ class ModelShell(NameBus):
         model.init(config)
         self.parser.translate(model)
         self.set_namebus(name, model, False)
+        model.start(config)
 
     def remove_model(self, name):
         self.remove_namebus(name)
+        model.stop(config)
 
     def list_models(self):
         return self.list_namebus()
