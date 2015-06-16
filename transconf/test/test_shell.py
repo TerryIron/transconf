@@ -1,6 +1,10 @@
-from ..common.reg import register_model
-from ..model import Model
-from ..shell import ModelShell
+import sys                                                                                                                                                                                                
+
+sys.path.insert(0, sys.path[0] + '/..')
+
+from common.reg import register_model
+from model import Model
+from shell import ModelShell
 
 """
     Simple unit test, or a sample code for developers.
@@ -56,4 +60,5 @@ class Ifconfig(Model):
 if __name__ == '__main__':
     sh = ModelShell()
     sh.load_model('1234567', Ifconfig)
-    sh.run('1234567.if_name.ip_addr.aaaaa:test', 'owner_ip_addr', 0)
+    for i in range(10000):
+        sh.run('1234567.if_name.ip_addr.aaaaa:test', 'owner_ip_addr', i)

@@ -1,4 +1,8 @@
-from ..message import RPC
+import sys                                                                                                                                                                                                
+
+sys.path.insert(0, sys.path[0] + '/..')
+
+from message import RPC
 
 RPC.CONNECTION_TYPE = 'sync'
 rpc = RPC('amqp://guest:guest@localhost:5672')
