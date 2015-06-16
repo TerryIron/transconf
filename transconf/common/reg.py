@@ -60,3 +60,24 @@ def get_model(name):
 
 def unregister_model(name):
     return LocalReg.unregister('__is_driver__' + str(name))
+
+
+CmdReg = Register('cmd')
+
+def register_local_cmd(name):
+    def _register_local_cmd(cls, *args, **kwargs):
+        def __register_local_cmd(*_args, **_kwargs):
+            obj = cls(*_args, **_kwargs)
+            CmdReg.register('__is_cmd__' + str(name), obj)
+            return obj
+        return __register_local_cmd
+    return _register_local_cmd
+ 
+def get_local_driver(name):
+    return CmdReg.get('__is_cmd__' + str(name))
+    
+def unregister_local_driver(name):
+    return CmdReg.unregister('__is_cmd__' + str(name))
+
+
+

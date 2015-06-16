@@ -32,6 +32,12 @@ class ModelShell(NameBus):
         else:
             raise ShellTargetNotFound(target_name)
 
+    def start(self, config):
+        pass
+
+    def stop(self, config):
+        pass
+
     def init_models(self, config=None):
         raise NotImplementedError()
 
