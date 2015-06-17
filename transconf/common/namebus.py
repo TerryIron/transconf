@@ -53,9 +53,15 @@ class NameBus(object):
     def set_namebus(self, key, value, force=False):
         if force:
             self.namebus[key] = value
+            return True
         else:
             if key not in self.namebus:
-                self.namebus[key] = value
+                if callable(value):
+                    self.namebus[key] = value()
+                else:
+                    self.namebus[key] = value
+                return True
+        return False
 
     def remove_namebus(self, key):
         if key in self.namebus:

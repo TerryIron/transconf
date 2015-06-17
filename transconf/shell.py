@@ -32,12 +32,6 @@ class ModelShell(NameBus):
         else:
             raise ShellTargetNotFound(target_name)
 
-    def start(self, config):
-        pass
-
-    def stop(self, config):
-        pass
-
     def init_models(self, config=None):
         raise NotImplementedError()
 
@@ -47,13 +41,25 @@ class ModelShell(NameBus):
     def get_env(self, key, value):
         raise NotImplementedError()
 
-    def load_model(self, name, model_class, config=None):
-        model = model_class()
-        model.init(config)
-        self.parser.translate(model)
-        self.set_namebus(name, model, False)
-        model.start(config)
+    def preload_model(self, name, model_class, config=None):
+        def translate():
+            model = model_class()
+            model.init(config)
+            self.parser.translate(model)
+            return model
+        return self.set_namebus(name, translate, False)
 
+    """
+        Load model class and finally call the start-code.
+    """
+    def load_model(self, name, model_class, config=None):
+        if self.preload_model(name, model_class, config):
+            model = self.get_namebus(name)
+            model.start(config)
+
+    """
+        Remove pointed model and finally call the stop-code.
+    """
     def remove_model(self, name):
         self.remove_namebus(name)
         model.stop(config)

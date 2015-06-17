@@ -1,142 +1,13 @@
-__author__ = 'chijun'
+__author_ = 'chijun'
 
 __all__ = ['BaseModel']
 
 
-from sqlalchemy import *
-from sqlalchemy.exc import *
-from sqlalchemy.orm import scoped_session
-from sqlalchemy.orm import sessionmaker
-
+from model_driver import BaseModelDriver
 from namebus import NameBus
 
 
-class BaseModelDriver(NameBus):
-    """
-        This class is used to register model into DB.
-        
-        Overview of DB table instance:
-
-            VirtHomeInstance
-              ||
-              \/
-        ------------------------------------------------
-        |                 BaseModelDriver              |
-        |                  ||                          |
-        |                  \/       _                  |
-        |NameBusA         ModelTypeA| FORM             |
-        |   ||             ||       | STRUCT           |
-        |   \/             \/       -                  |
-        |NameBus   ---- > DataBase                     |
-        |   ||             ||                          |
-        |   ||             ||                          |
-        |   ||             ||                          |
-        |   ||             ||                          |
-        |   \/             \/                          |
-        |Memory(Handler)  Mysql(Data)                  |
-        ------------------------------------------------
-
-        Data                                   Handler
-             | Table A -> nodeA API control            | NodeA
-             | Table B -> nodeB API control            | NodeB
-             | Table C -> nodeC API control            | NodeC
-    """
-
-    def __init__(self, db_engine=None):
-        super(BaseModelDriver, self).__init__()
-        if db_engine:
-            self.db_engine = create_engine(db_engine)
-            self.metadata = MetaData(self.db_engine)
-            self._session = scoped_session(
-                sessionmaker(
-                    autocommit=False,
-                    autoflush=False,
-                    bind=self.metadata,
-                )
-            )
-            self._is_available = True
-        else:
-            self._is_available = False
-
-    @property
-    def session(self):
-        return self._session
-
-    @property
-    def available(self):
-        return self._is_available
-
-    def table(self, table_name):
-        try:
-            table = Table(table_name, 
-                          self.metadata,
-                          autoload=True)
-            return table
-        except NoSuchTableError:
-            pass
-
-    """
-       Create a new table
-
-       @table_name: table name
-       @items: input list by unit (title, length)
-    """
-    def define_table(self, table_name, items):
-        if self.available:
-            table = self.table(table_name)
-            if not isinstance(table, Table):
-                table = Table(table_name, 
-                              self.metadata, 
-                              Column('id', Integer, primary_key=True),
-                              *[Column(str(iname), String(int(length))) for iname, length in tuple(items)])  
-                table.create()
-
-    def undefine_table(self, table_name):
-        if self.available:
-            table = self.table(table_name)
-            if isinstance(table, Table):
-                table.drop()
-
-    """
-       Push new column into table
-
-       @table_name: table name
-       @items: input list by unit {'column_title': value}
-    """
-    def push_table(self, table_name, items):
-        if self.available:
-            table = self.table(table_name)
-            if isinstance(table, Table):
-                i = table.insert()
-                i.execute(*[dic for dic in items if isinstance(dic, dict)])
-
-    """
-       Update pointed table's column by query line
-
-       @table_name: table name
-       @query_items: input list by unit (query_title, value)
-       @items: input list by unit {'column_title': value}
-    """
-    def update_table(self, table_name, query_items, items):
-        if self.available:
-            pass
-
-    """
-       Pop column from table by query line
-
-       @table_name: table name
-       @query_items: input list by unit (query_title, value)
-    """
-    def pop_table(self, table_name, query_items):
-        if self.available:
-            pass
-
-    def clear_table(self, table_name):
-        if self.available:
-            pass
-
-
-class BaseModel(BaseModelDriver):
+class BaseModel(BaseModelDriver, NameBus):
     STRUCT = None
     FORM = None
     SPLIT_DOT = '.'
@@ -181,12 +52,21 @@ class BaseModel(BaseModelDriver):
     def struct(self):
         return self._struct
 
-    # Init libaray or drivers from config before use it.
+    """
+       Pre-init model's dependences and owned driver which 
+       from its form-data. 
+    """
     def init(self, config=None):
         pass
 
+    """
+	Define auto-script code when it being startup.
+    """
     def start(self, config=None):
         pass
 
+    """
+	Define auto-script code when it being shutdown.
+    """
     def stop(self, config=None):
         pass
