@@ -2,6 +2,7 @@ __author__ = 'chijun'
 
 from common.reg import register_model                                                                                                                                                                     
 from model import Model
+from 
 
 
 @register_model('heartbeat')                                                                                                                                                                    
@@ -10,6 +11,9 @@ class HeartBeat(object):
              'public': ['heartbeat', 'mod:heartbeat:heartbeat'],
             }
     ]
+
+    def start(self, config=None):
+        
 
     def heartbeat(self, host, timeout=60):
         raise NotImplementedError()
@@ -23,6 +27,7 @@ class HeartCondition(object):
              'public': ['unregister_heart', 'mod:heartbeat:unregister'],
             }
     ]
+    def init()
 
     def register(self, context):
         raise NotImplementedError()

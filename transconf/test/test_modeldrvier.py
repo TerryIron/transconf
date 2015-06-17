@@ -20,5 +20,7 @@ class UserCollection(BaseTable):
 d = BaseModelDriver("mysql://root:123.com@localhost/test")
 d.define_table(UserCollection)
 session = d.session
-session.add(UserCollection('clouduser', 10, 'shanghai'))
+u = UserCollection('clouduser', 100, 'shanghai')
+f = session.query(UserCollection).filter_by(name='clouduser').first()
+f.update(name='test')
 session.commit()

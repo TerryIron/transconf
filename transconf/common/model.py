@@ -3,23 +3,21 @@ __author_ = 'chijun'
 __all__ = ['BaseModel']
 
 
-from model_driver import BaseModelDriver
 from namebus import NameBus
 
 
-class BaseModel(BaseModelDriver, NameBus):
+class BaseModel(NameBus):
     STRUCT = None
     FORM = None
     SPLIT_DOT = '.'
     MEMBER_SPLIT_DOT = ':'
 
-    def __init__(self, db_engine=None):
+    def __init__(self):
         self._form = self.FORM
         self._struct = self.STRUCT
         self.split = self.SPLIT_DOT
         self.member_split = self.MEMBER_SPLIT_DOT
-        # First init db module
-        super(BaseModel, self).__init__(db_engine)
+        self.backend = None
 
     def _build_class_nodename(self, lst):
         return self.split.join(lst)
@@ -40,6 +38,9 @@ class BaseModel(BaseModelDriver, NameBus):
     def get_nodeobj(self, name_lst):
         real_name = self._build_class_nodename(name_lst)
         return self.get_namebus(real_name)
+
+    def set_backend(self, backend):
+        self.backend = backend
 
     def run(self, target_name, method_name, *args, **kwargs):
         raise NotImplementedError()
