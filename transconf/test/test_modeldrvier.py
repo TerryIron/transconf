@@ -19,8 +19,13 @@ class UserCollection(BaseTable):
 
 d = BaseModelDriver("mysql://root:123.com@localhost/test")
 d.define_table(UserCollection)
-session = d.session
-u = UserCollection('clouduser', 100, 'shanghai')
-f = session.query(UserCollection).filter_by(name='clouduser').first()
-f.update(name='test')
-session.commit()
+#f = session.query(UserCollection).filter_by(name='test').first()
+for i in range(1000):
+    session = d.session
+    u = UserCollection('test', i, 'shanghai')
+    session.add(u)
+    session.commit()
+session.query(UserCollection).filter_by(name='test').delete()
+for k, v in session.__dict__.items():
+    print k, v
+print dir(session)
