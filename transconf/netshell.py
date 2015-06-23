@@ -15,5 +15,3 @@ class NetShell(ModelShell):
         super(NetShell, self).__init__(self)
         self.load_model('__heartbeat__', HeartBeat)
         self.run('__heartbeat__.heart', 'heartbeat', host)
-
-    

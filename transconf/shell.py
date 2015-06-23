@@ -61,8 +61,9 @@ class ModelShell(NameBus):
         Remove pointed model and finally call the stop-code.
     """
     def remove_model(self, name):
+        model = self.get_namebus(name)
+        model.stop()
         self.remove_namebus(name)
-        model.stop(config)
 
     def list_models(self):
         return self.list_namebus()

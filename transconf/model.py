@@ -18,16 +18,16 @@ class Model(BaseModel):
     IS_PRIVATE_METHOD = IsPrivateInterface
     IS_PUBLIC_METHOD = IsPublicInterface
 
-    def __init__(self, db_engine=None):
-	super(Model, self).__init__(db_engine)
-        self.is_pri_rule = self.IS_PRIVATE_METHOD 
+    def __init__(self):
+        super(Model, self).__init__()
+        self.is_pri_rule = self.IS_PRIVATE_METHOD
         self.is_pub_rule = self.IS_PUBLIC_METHOD 
         self.is_node_rule = self.IS_NODE_METHOD
-	self.node_rules = {}
+        self.node_rules = {}
 
     def _build_nodename(self, lst):
         def name(self, n, sub_name):
-            if not 'name' in n:
+            if 'name' not in n:
                 n['name'] = sub_name
             else:
                 n['name'] = n['name'] + self.split + sub_name
@@ -43,8 +43,9 @@ class Model(BaseModel):
         p, s = self._is_private_mode(name)
         if p and s:
             name_meth = self.node_rules.get(p, None)
-            if name_meth and name_meth(s):
-                return p, self.is_pri_rule
+            if callable(name_meth):
+                if name_meth(s):
+                    return p, self.is_pri_rule
         else:
             return name, self.is_pub_rule
 
@@ -59,8 +60,8 @@ class Model(BaseModel):
         if real_name in self.namebus:
             n = self.get_namebus(real_name)
             if isinstance(n, dict):
-		if isinstance(value[0], self.is_node_rule):
-		    self.node_rules[real_name] = value[1]
+                if isinstance(value[0], self.is_node_rule):
+                    self.node_rules[real_name] = value[1]
                 n[key] = value
                 return True
         return False
@@ -82,5 +83,3 @@ class Model(BaseModel):
                 return False
         else:
             raise ModelInternalStuctErr('Can not loading method name:{0} of {1}'.format(method_name, real_name))
-
-   

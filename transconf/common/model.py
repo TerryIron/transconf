@@ -13,6 +13,7 @@ class BaseModel(NameBus):
     MEMBER_SPLIT_DOT = ':'
 
     def __init__(self):
+        super(BaseModel, self).__init__()
         self._form = self.FORM
         self._struct = self.STRUCT
         self.split = self.SPLIT_DOT
@@ -61,13 +62,13 @@ class BaseModel(NameBus):
         pass
 
     """
-	Define auto-script code when it being startup.
+        Define auto-script code when it being startup.
     """
     def start(self, config=None):
         pass
 
     """
-	Define auto-script code when it being shutdown.
+        Define auto-script code when it being shutdown.
     """
     def stop(self, config=None):
         pass
