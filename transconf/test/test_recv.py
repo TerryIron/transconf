@@ -13,7 +13,7 @@ class A(object):
 
     def process(self):
         print '111111111'
-        @rpc.receive('create_server_1')
+        @rpc.simple_receive('create_server_1')
         def create(body):
             print  body
             print 'Create one!'
@@ -21,7 +21,7 @@ class A(object):
         yield create()
         print '333333333'
 
-        @rpc.receive('delete_server')
+        @rpc.simple_receive('delete_server')
         def delete(body):
             print  body
             print 'Delete one!'
@@ -29,12 +29,12 @@ class A(object):
         yield delete()
         print '555555555'
 
-    @rpc.receive('create_server_2')
+    @rpc.simple_receive('create_server_2')
     def create(self, body):
         print  body
         print 'Create it!'
 
-    @rpc.receive('delete_server')
+    @rpc.simple_receive('delete_server')
     def delete(self, body):
         print  body
         print 'Delete one!'
@@ -42,6 +42,7 @@ class A(object):
 
 
 a = A()
-#a.create()
+a.create()
+a.delete()
 for d in a.process():
     print d

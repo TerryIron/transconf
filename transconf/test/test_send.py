@@ -12,18 +12,18 @@ class A(object):
         self.name = None
 
     def create_all(self):
-        @rpc.send('', 'create_server_1')
+        @rpc.simple_send('create_server_1')
         def create(self):
             print 'Create one!'
             return {'SEND': 'will creat one'}
         create(self)
-        @rpc.send('', 'create_server_2')
+        @rpc.simple_send('create_server_2')
         def create_it(self):
             print 'Create it!'
             return {'SEND': 'will creat it'}
         return create_it(self)
 
-    @rpc.send('', 'delete_server')
+    @rpc.simple_send('delete_server')
     def delete(self):
         print 'Delete one!'
         return {'DEL': 'will delet one'}
