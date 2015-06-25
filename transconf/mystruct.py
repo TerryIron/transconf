@@ -1,7 +1,7 @@
 __author__ = 'chijun'
 
-from common.struct import *
-from mystructtypes import *
+from transconf.common.struct import *
+from transconf.mystructtypes import *
 
 
 class NodeStructV1(NodeStruct): 

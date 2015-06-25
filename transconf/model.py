@@ -1,10 +1,10 @@
 __author__ = 'chijun'
 
-from common.model import BaseModel
-from common.namebus import NameBus
-from common.basetype import BaseType
-from mystruct import NodeStructV1
-from mystructtypes import *
+from transconf.common.model import BaseModel
+from transconf.common.namebus import NameBus
+from transconf.common.basetype import BaseType
+from transconf.mystruct import NodeStructV1
+from transconf.mystructtypes import *
 
 
 class ModelInternalStuctErr(Exception):

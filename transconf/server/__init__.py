@@ -1,7 +1,7 @@
 __author__ = 'chijun'
 
 
-class MessageResponse(object):
+class MsgResponse(object):
     """Response to Request Client"""
     SUCCESS, FAIL = True, False
 

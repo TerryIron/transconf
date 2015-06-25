@@ -1,7 +1,7 @@
 __author__ = 'chijun'
 
-from common.basetype import BaseType
-from common.reg import get_reg_target
+from transconf.common.basetype import BaseType
+from transconf.common.reg import get_reg_target
 
 
 __all__ = [

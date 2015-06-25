@@ -3,7 +3,7 @@ __author_ = 'chijun'
 __all__ = ['BaseModel']
 
 
-from namebus import NameBus
+from transconf.common.namebus import NameBus
 
 
 class BaseModel(NameBus):

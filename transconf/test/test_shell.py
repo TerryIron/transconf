@@ -1,10 +1,10 @@
 import sys                                                                                                                                                                                                
 
-sys.path.insert(0, sys.path[0] + '/..')
+sys.path.insert(0, sys.path[0] + '/../..')
 
-from common.reg import register_model
-from model import Model
-from shell import ModelShell
+from transconf.common.reg import register_model
+from transconf.model import Model
+from transconf.shell import ModelShell
 
 """
     Simple unit test, or a sample code for developers.
@@ -46,7 +46,7 @@ class Ifconfig(Model):
         print 0
 
     def ip_addr(self, ifname):
-        print 1
+        return ifname
 
     def hw_addr(self, ifname):
         print 2

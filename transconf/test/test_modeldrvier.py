@@ -1,8 +1,8 @@
 import sys 
 
-sys.path.insert(0, sys.path[0] + '/..')
+sys.path.insert(0, sys.path[0] + '/../..')
 
-from common.model_driver import *
+from transconf.common.model_driver import *
 
 
 class UserCollection(BaseTable):

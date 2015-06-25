@@ -1,9 +1,9 @@
 __author__ = 'chijun'
 
 
-from common.namebus import NameBus
-from parse_form import FormParser
-from model import Model
+from transconf.common.namebus import NameBus
+from transconf.parse_form import FormParser
+from transconf.model import Model
 
 
 class ShellTargetNotFound(Exception):
@@ -27,7 +27,6 @@ class ModelShell(NameBus):
             if isinstance(model, Model):
                 other_names = tuple(name_lst[1:])
                 return model.run(other_names, method_name, *args, **kwargs)
-            # What is it ? I don't care.
             return False
         else:
             raise ShellTargetNotFound(target_name)

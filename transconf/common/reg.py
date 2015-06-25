@@ -1,7 +1,7 @@
 __author__ = 'chijun'
 
 
-from utils import NameSpace
+from transconf.common.utils import NameSpace
 
 
 @NameSpace
