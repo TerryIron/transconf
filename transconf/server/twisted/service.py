@@ -6,7 +6,7 @@ from pika import exceptions
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 
-from transconf.server.rpc import RabbitAMPQ
+from transconf.server.rpc import RabbitAMPQ, get_conf
 from transconf.server.rpc import RPCTranClient as RPCTranSyncClient
 
 class RPCMiddleware(object):
@@ -18,16 +18,31 @@ class RPCMiddleware(object):
 
 
 class RPCTranServer(RabbitAMPQ):
+    @get_conf('topic_binding_exchange', 'default_topic_exchange')
     @property
     def conf_topic_exchange(self):
-        import ConfigParser
-        config = ConfigParser.ConfigParser()  
-        config.read(self.conf)
-        default_sect = config._defaults
-        val = default_sect.get('binding_topic_exchange', None)
-        return val if val else 'default_topic_exchange'
+        return self.conf
+
+    @get_conf('topic_binding_queue', 'default_topic_queue')
+    @property
+    def conf_topic_queue(self):
+        return self.conf
+
+    @get_conf('topic_routing_key', 'default_topic_routing_key')
+    @property
+    def conf_topic_routing_key(self):
+        return self.conf
+
+    @get_conf('rpc_binding_queue', 'default_rpc_queue')
+    @property
+    def conf_rpc_queue(self):
+        return self.conf
 
     def init(self):
+        self.bind_rpc_queue = self.conf_rpc_queue
+        self.bind_topic_exchange = self.conf_topic_exchange
+        self.bind_topic_queue = self.conf_topic_queue
+        self.bind_topic_routing_key = self.conf_topic_routing_key
 
     def setup(self, middleware):
         assert isinstance(middleware, RPCMiddleware)
@@ -72,21 +87,20 @@ class RPCTranServer(RabbitAMPQ):
     @defer.inlineCallbacks
     def on_rpc_mode(self, connection):
         channel = yield connection.channel()
-        yield channel.queue_declare(queue=self.name)
-        yield self.on_channel(channel, '', self.name)
+        yield channel.queue_declare(queue=self.bind_rpc_queue)
+        yield self.on_channel(channel, '', self.bind_rpc_queue)
 
     @defer.inlineCallbacks
     def on_topic_mode(self, connection):
         channel = yield connection.channel()
-        exchange_name = yield '_'.join([self.name, 'topic'])
-        yield channel.exchange_declare(exchange=exchange_name,
+        yield channel.exchange_declare(exchange=self.bind_topic_exchange,
                                        type='topic')
         yield channel.queue_declare(queue=self.topic, auto_delete=False, exclusive=False)
-        yield channel.queue_bind(exchange=exchange_name,
-                                 queue=self.topic,
-                                 routing_key='.'.join([self.topic, '#']),
+        yield channel.queue_bind(exchange=self.bind_topic_exchange,
+                                 queue=self.bind_topic_queue,
+                                 routing_key=self.bind_topic_routing_key,
                                  )
-        yield self.on_channel(channel, exchange_name, self.topic)
+        yield self.on_channel(channel, self.bind_topic_exchange, self.bind_topic_queue)
 
     def serve_forever(self):
         self.connect(self.on_rpc_mode)

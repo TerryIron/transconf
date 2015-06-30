@@ -16,6 +16,21 @@ class JsonSerializionPacker(object):
         return json.loads(json_data)
 
 
+def get_conf(opt, default_val, sect=None):
+    def _get_conf(func):
+        def __get_conf(*args, **kwargs):
+            conf = func(*args, **kwargs)
+            import ConfigParser
+            config = ConfigParser.ConfigParser()  
+            config.read(conf)
+            if not sect:
+                default_sect = config._defaults
+                val = default_sect.get(opt, None)
+                return val if val else default_val
+        return __get_conf
+    return _get_conf
+
+
 class RabbitAMQP(object):
     CONNECTION_ATTEMPTS = 3
     DEFAULT_CONF = os.path.join(os.path.dirname(__file__), 'default.ini')
@@ -33,20 +48,14 @@ class RabbitAMQP(object):
             self.conf = self.CONF_FILE
         else:
             self.conf = self.DEFAULT_CONF
-        self.bind_rpc_exchange = None
         self.bind_rpc_queue = None
         self.bind_topic_exchange = None
-        self.bind_topic_name = None
         self.bind_topic_queue = None
         self.bind_topic_routing_key = None
         self.init()
 
     def init(self):
         pass
-
-    @property
-    def conf_rpc_exchange(self):
-        raise NotImplementedError()
 
     @property
     def conf_rpc_queue(self):
@@ -57,23 +66,12 @@ class RabbitAMQP(object):
         raise NotImplementedError()
 
     @property
-    def conf_topic_name(self):
-        raise NotImplementedError()
-
-    @property
     def conf_topic_queue(self):
         raise NotImplementedError()
 
     @property
     def conf_topic_routing_key(self):
         raise NotImplementedError()
-
-        import ConfigParser
-        config = ConfigParser.ConfigParser()  
-        config.read(self.conf)
-        default_sect = config._defaults
-        topic = default_sect.get('service_topic', None)
-        return topic if topic else 'trans_topic'
 
 
 def hold_on(func):
@@ -100,7 +98,6 @@ class RPCTranClient(RabbitAMQP):
         self.channel = self.connection.channel()
 
     def config(self):
-        self.bind_rpc_exchange = self.conf_rpc_exchange
         self.bind_rpc_queue = self.conf_rpc_queue
 
     def init(self):
@@ -109,23 +106,10 @@ class RPCTranClient(RabbitAMQP):
         result = self.channel.queue_declare(exclusive=True)
         self.callback_queue = result.method.queue
 
+    @get_conf('rpc_binding_queue', 'default_rpc_queue')
     @property
     def default_rpc_queue(self):
-        import ConfigParser
-        config = ConfigParser.ConfigParser()  
-        config.read(self.conf)
-        default_sect = config._defaults
-        val = default_sect.get('binding_rpc_queue', None)
-        return val if val else 'default_rpc_queue'
-
-    @property
-    def default_rpc_exchange(self):
-        import ConfigParser
-        config = ConfigParser.ConfigParser()  
-        config.read(self.conf)
-        default_sect = config._defaults
-        val = default_sect.get('binding_rpc_exchange', None)
-        return val if val else 'default_rpc_exchange'
+        return self.conf
 
     @property
     def own_corr_id(self):
@@ -144,7 +128,7 @@ class RPCTranClient(RabbitAMQP):
 
     def call(self, context):
         return self._call(context, 
-                          self.bind_rpc_exchange, 
+                          '', 
                           self.bind_rpc_queue, 
                           self.callback_queue, 
                           self.own_corr_id)
@@ -164,14 +148,10 @@ class TopicTranClient(RPCTranClient):
         self.channel.exchange_declare(exchange=self.bind_topic_exchange,
                                       type='topic')
 
+    @get_conf('topic_binding_exchange', 'default_topic_exchange')
     @property
     def conf_topic_exchange(self):
-        import ConfigParser
-        config = ConfigParser.ConfigParser()  
-        config.read(self.conf)
-        default_sect = config._defaults
-        val = default_sect.get('binding_topic_exchange', None)
-        return val if val else 'default_topic_exchange'
+        return self.conf
 
     def call(self, routing_key, context):
         real_routing = str(routing_key)
