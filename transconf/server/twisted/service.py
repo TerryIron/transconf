@@ -6,7 +6,7 @@ from pika import exceptions
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 
-from transconf.server.rpc import RabbitAMPQ, get_conf
+from transconf.server.rpc import RabbitAMQP, get_conf
 from transconf.server.rpc import RPCTranClient as RPCTranSyncClient
 
 class RPCMiddleware(object):
@@ -17,24 +17,24 @@ class RPCMiddleware(object):
         raise NotImplementedError()
 
 
-class RPCTranServer(RabbitAMPQ):
-    @get_conf('topic_binding_exchange', 'default_topic_exchange')
+class RPCTranServer(RabbitAMQP):
     @property
+    @get_conf('topic_binding_exchange', 'default_topic_exchange')
     def conf_topic_exchange(self):
         return self.conf
 
-    @get_conf('topic_binding_queue', 'default_topic_queue')
     @property
+    @get_conf('topic_binding_queue', 'default_topic_queue')
     def conf_topic_queue(self):
         return self.conf
 
-    @get_conf('topic_routing_key', 'default_topic_routing_key')
     @property
+    @get_conf('topic_routing_key', 'default_topic_routing_key')
     def conf_topic_routing_key(self):
         return self.conf
 
-    @get_conf('rpc_binding_queue', 'default_rpc_queue')
     @property
+    @get_conf('rpc_binding_queue', 'default_rpc_queue')
     def conf_rpc_queue(self):
         return self.conf
 
@@ -95,7 +95,7 @@ class RPCTranServer(RabbitAMPQ):
         channel = yield connection.channel()
         yield channel.exchange_declare(exchange=self.bind_topic_exchange,
                                        type='topic')
-        yield channel.queue_declare(queue=self.topic, auto_delete=False, exclusive=False)
+        yield channel.queue_declare(queue=self.bind_topic_queue, auto_delete=False, exclusive=False)
         yield channel.queue_bind(exchange=self.bind_topic_exchange,
                                  queue=self.bind_topic_queue,
                                  routing_key=self.bind_topic_routing_key,

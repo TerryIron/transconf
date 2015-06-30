@@ -106,8 +106,8 @@ class RPCTranClient(RabbitAMQP):
         result = self.channel.queue_declare(exclusive=True)
         self.callback_queue = result.method.queue
 
-    @get_conf('rpc_binding_queue', 'default_rpc_queue')
     @property
+    @get_conf('rpc_binding_queue', 'default_rpc_queue')
     def default_rpc_queue(self):
         return self.conf
 
@@ -148,8 +148,8 @@ class TopicTranClient(RPCTranClient):
         self.channel.exchange_declare(exchange=self.bind_topic_exchange,
                                       type='topic')
 
-    @get_conf('topic_binding_exchange', 'default_topic_exchange')
     @property
+    @get_conf('topic_binding_exchange', 'default_topic_exchange')
     def conf_topic_exchange(self):
         return self.conf
 
