@@ -16,7 +16,7 @@ class JsonSerializionPacker(object):
         return json.loads(json_data)
 
 
-class RPC(object):
+class RabbitAMQP(object):
     CONNECTION_ATTEMPTS = 3
     DEFAULT_CONF = os.path.join(os.path.dirname(__file__), 'default.ini')
     CONF_FILE = None
@@ -33,20 +33,41 @@ class RPC(object):
             self.conf = self.CONF_FILE
         else:
             self.conf = self.DEFAULT_CONF
-        self.name = self.own_name
-        self.topic = self.own_topic
+        self.bind_rpc_exchange = None
+        self.bind_rpc_queue = None
+        self.bind_topic_exchange = None
+        self.bind_topic_name = None
+        self.bind_topic_queue = None
+        self.bind_topic_routing_key = None
+        self.init()
+
+    def init(self):
+        pass
 
     @property
-    def own_name(self):
-        import ConfigParser
-        config = ConfigParser.ConfigParser()  
-        config.read(self.conf)
-        default_sect = config._defaults
-        name = default_sect.get('service_name', None)
-        return name if name else 'trans_rpc'
+    def conf_rpc_exchange(self):
+        raise NotImplementedError()
 
     @property
-    def own_topic(self):
+    def conf_rpc_queue(self):
+        raise NotImplementedError()
+
+    @property
+    def conf_topic_exchange(self):
+        raise NotImplementedError()
+
+    @property
+    def conf_topic_name(self):
+        raise NotImplementedError()
+
+    @property
+    def conf_topic_queue(self):
+        raise NotImplementedError()
+
+    @property
+    def conf_topic_routing_key(self):
+        raise NotImplementedError()
+
         import ConfigParser
         config = ConfigParser.ConfigParser()  
         config.read(self.conf)
@@ -72,20 +93,39 @@ def hold_on(func):
     return __do_hold_on
 
 
-class RPCTranClient(RPC):
-
-    def __init__(self, amqp_url, timeout=5):
-        super(RPCTranClient, self).__init__(amqp_url, timeout)
-        self.init()
+class RPCTranClient(RabbitAMQP):
 
     def _on_connect(self):
         self.connection = pika.BlockingConnection(self.parms)
         self.channel = self.connection.channel()
 
+    def config(self):
+        self.bind_rpc_exchange = self.conf_rpc_exchange
+        self.bind_rpc_queue = self.conf_rpc_queue
+
     def init(self):
+        self.config()
         self._on_connect()
         result = self.channel.queue_declare(exclusive=True)
         self.callback_queue = result.method.queue
+
+    @property
+    def default_rpc_queue(self):
+        import ConfigParser
+        config = ConfigParser.ConfigParser()  
+        config.read(self.conf)
+        default_sect = config._defaults
+        val = default_sect.get('binding_rpc_queue', None)
+        return val if val else 'default_rpc_queue'
+
+    @property
+    def default_rpc_exchange(self):
+        import ConfigParser
+        config = ConfigParser.ConfigParser()  
+        config.read(self.conf)
+        default_sect = config._defaults
+        val = default_sect.get('binding_rpc_exchange', None)
+        return val if val else 'default_rpc_exchange'
 
     @property
     def own_corr_id(self):
@@ -104,8 +144,8 @@ class RPCTranClient(RPC):
 
     def call(self, context):
         return self._call(context, 
-                          '', 
-                          self.name, 
+                          self.bind_rpc_exchange, 
+                          self.bind_rpc_queue, 
                           self.callback_queue, 
                           self.own_corr_id)
         
@@ -116,17 +156,28 @@ class RPCTranClient(RPC):
 
 class TopicTranClient(RPCTranClient):
 
+    def config(self):
+        self.bind_topic_exchange = self.conf_topic_exchange()
+
     def init(self):
         super(TopicTranClient, self).init()
-        self.name =  '_'.join([self.name, 'topic'])
-        self.channel.exchange_declare(exchange=self.name,
+        self.channel.exchange_declare(exchange=self.bind_topic_exchange,
                                       type='topic')
+
+    @property
+    def conf_topic_exchange(self):
+        import ConfigParser
+        config = ConfigParser.ConfigParser()  
+        config.read(self.conf)
+        default_sect = config._defaults
+        val = default_sect.get('binding_topic_exchange', None)
+        return val if val else 'default_topic_exchange'
 
     def call(self, routing_key, context):
         real_routing = str(routing_key)
         uid = self.own_corr_id
         self._call(context, 
-                   self.name, 
+                   self.bind_topic_exchange, 
                    real_routing,
                    real_routing + uid,
                    uid

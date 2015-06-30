@@ -6,7 +6,7 @@ from pika import exceptions
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 
-from transconf.server.rpc import RPC
+from transconf.server.rpc import RabbitAMPQ
 from transconf.server.rpc import RPCTranClient as RPCTranSyncClient
 
 class RPCMiddleware(object):
@@ -17,7 +17,17 @@ class RPCMiddleware(object):
         raise NotImplementedError()
 
 
-class RPCTranServer(RPC):
+class RPCTranServer(RabbitAMPQ):
+    @property
+    def conf_topic_exchange(self):
+        import ConfigParser
+        config = ConfigParser.ConfigParser()  
+        config.read(self.conf)
+        default_sect = config._defaults
+        val = default_sect.get('binding_topic_exchange', None)
+        return val if val else 'default_topic_exchange'
+
+    def init(self):
 
     def setup(self, middleware):
         assert isinstance(middleware, RPCMiddleware)
