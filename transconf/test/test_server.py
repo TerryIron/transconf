@@ -28,6 +28,6 @@ if __name__ == '__main__':
     sh = TxShell()
     sh.load_model('1234567', Ifconfig)
     m = ShellMiddleware(sh)
-    serve = RPCTranServer('amqp://guest:guest@localhost:5672')
+    serve = RPCTranServer()
     serve.setup(m)
     serve.serve_forever()

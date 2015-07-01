@@ -6,8 +6,9 @@ from pika import exceptions
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 
-from transconf.server.rpc import RabbitAMQP, get_conf
-from transconf.server.rpc import RPCTranClient as RPCTranSyncClient
+from transconf.server.rabbit_msg import RabbitAMQP
+from transconf.server.utils import from_config
+from transconf.server.rabbit_msg import RPCTranClient as RPCTranSyncClient
 
 class RPCMiddleware(object):
     def __init__(self, handler):
@@ -19,23 +20,33 @@ class RPCMiddleware(object):
 
 class RPCTranServer(RabbitAMQP):
     @property
-    @get_conf('topic_binding_exchange', 'default_topic_exchange')
+    @from_config('topic_binding_exchange', 'default_topic_exchange')
     def conf_topic_exchange(self):
         return self.conf
 
     @property
-    @get_conf('topic_binding_queue', 'default_topic_queue')
+    @from_config('topic_binding_queue', 'default_topic_queue')
     def conf_topic_queue(self):
         return self.conf
 
     @property
-    @get_conf('topic_routing_key', 'default_topic_routing_key')
+    @from_config('topic_routing_key', 'default_topic_routing_key')
     def conf_topic_routing_key(self):
         return self.conf
 
     @property
-    @get_conf('rpc_binding_queue', 'default_rpc_queue')
+    @from_config('rpc_binding_queue', 'default_rpc_queue')
     def conf_rpc_queue(self):
+        return self.conf
+
+    @property
+    @from_config('fanout_binding_queue', 'default_fanout_queue')
+    def conf_fanout_queue(self):
+        return self.conf
+
+    @property
+    @from_config('fanout_binding_exchange', 'default_fanout_exchange')
+    def conf_fanout_exchange(self):
         return self.conf
 
     def init(self):
@@ -43,6 +54,8 @@ class RPCTranServer(RabbitAMQP):
         self.bind_topic_exchange = self.conf_topic_exchange
         self.bind_topic_queue = self.conf_topic_queue
         self.bind_topic_routing_key = self.conf_topic_routing_key
+        self.bind_fanout_exchange = self.conf_fanout_exchange
+        self.bind_fanout_queue = str(self.conf_fanout_queue) + self.rand_corr_id
 
     def setup(self, middleware):
         assert isinstance(middleware, RPCMiddleware)
@@ -78,9 +91,7 @@ class RPCTranServer(RabbitAMQP):
 
     @defer.inlineCallbacks
     def on_channel(self, channel, exchange, queue):
-        yield channel.basic_qos(prefetch_count=1)
-        queue_object, consumer_tag = yield channel.basic_consume(queue=queue,
-                                                                 no_ack=False)
+        queue_object, consumer_tag = yield channel.basic_consume(queue=queue, no_ack=False)
         l = task.LoopingCall(lambda: self.on_request(queue_object, exchange))
         l.start(0.001)
 
@@ -88,41 +99,32 @@ class RPCTranServer(RabbitAMQP):
     def on_rpc_mode(self, connection):
         channel = yield connection.channel()
         yield channel.queue_declare(queue=self.bind_rpc_queue)
+        yield channel.basic_qos(prefetch_count=1)
         yield self.on_channel(channel, '', self.bind_rpc_queue)
 
     @defer.inlineCallbacks
     def on_topic_mode(self, connection):
         channel = yield connection.channel()
-        yield channel.exchange_declare(exchange=self.bind_topic_exchange,
-                                       type='topic')
+        yield channel.exchange_declare(exchange=self.bind_topic_exchange, type='topic')
         yield channel.queue_declare(queue=self.bind_topic_queue, auto_delete=False, exclusive=False)
         yield channel.queue_bind(exchange=self.bind_topic_exchange,
                                  queue=self.bind_topic_queue,
-                                 routing_key=self.bind_topic_routing_key,
-                                 )
+                                 routing_key='.'.join([self.bind_topic_queue, self.bind_topic_routing_key]))
+        yield channel.basic_qos(prefetch_count=1)
         yield self.on_channel(channel, self.bind_topic_exchange, self.bind_topic_queue)
 
+    @defer.inlineCallbacks
+    def on_fanout_mode(self, connection):
+        channel = yield connection.channel()
+        yield channel.exchange_declare(exchange=self.bind_fanout_exchange, type='fanout')
+        yield channel.queue_declare(queue=self.bind_fanout_queue, auto_delete=True)
+        yield channel.queue_bind(exchange=self.bind_fanout_exchange, queue=self.bind_fanout_queue)
+        yield self.on_channel(channel, self.bind_fanout_exchange, self.bind_fanout_queue)
+
     def serve_forever(self):
-        self.connect(self.on_rpc_mode)
+        self.connect(self.on_fanout_mode)
         self.connect(self.on_topic_mode)
+        self.connect(self.on_rpc_mode)
         reactor.run()
+            
 
-
-class RPCTranClient(RPCTranSyncClient):
-
-    def init(self):
-        self.connection = pika.TwistedConnection(self.parms)
-        self.channel = yield self.connection.channel()
-        result = yield self.channel.queue_declare(exclusive=True)
-        self.queue_name = yield result.method.queue
-
-    def call(self, context):
-        self.corr_id = yield str(uuid.uuid4())
-        yield self.channel.basic_publish(exchange='',
-                                         routing_key=self.name,
-                                         properties=pika.BasicProperties(
-                                             reply_to=self.queue_name,                                
-                                             correlation_id=self.corr_id,
-                                             delivery_mode=2,
-                                         ),
-                                         body=self.packer.pack(context))
