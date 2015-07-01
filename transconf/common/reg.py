@@ -11,7 +11,8 @@ class Register(object):
         self.reg = {}
 
     def register(self, name, obj):
-        self.reg[name] = obj
+        if name not in self.reg:
+            self.reg[name] = obj
 
 
     def get(self, name):
@@ -42,10 +43,6 @@ def get_local_driver(name):
     return LocalReg.get('__is_driver__' + str(name))
 
 
-def unregister_local_driver(name):
-    return LocalReg.unregister('__is_driver__' + str(name))
-
-
 ModelReg = Register('model')
 
 def register_model(name):
@@ -62,10 +59,6 @@ def get_model(name):
     return ModelReg.get('__is_model__' + str(name)) 
 
 
-def unregister_model(name):
-    return LocalReg.unregister('__is_driver__' + str(name))
-
-
 CmdReg = Register('cmd')
 
 def register_local_cmd(name):
@@ -80,10 +73,5 @@ def register_local_cmd(name):
 
 def get_local_cmd(name):
     return CmdReg.get('__is_cmd__' + str(name))
-
-
-def unregister_local_cmd(name):
-    return CmdReg.unregister('__is_cmd__' + str(name))
-
 
 

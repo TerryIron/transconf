@@ -75,9 +75,6 @@ class RabbitAMQP(object):
 # It is a static method, don's use it outside.
 def hold_on(func):
     def __do_hold_on(self, *args, **kwargs):
-        def on_response(self, ch, method, properties, body):
-            if self.corr_id == properties.correlation_id:
-               self.res = body
         self.channel.basic_consume(self.on_response,
                                    no_ack=True,
                                    queue=self.callback_queue)
@@ -92,9 +89,6 @@ def hold_on(func):
 
 class RPCTranClient(RabbitAMQP):
 
-    """
-    We use rpc cleint to notify local binding queue as function callback.
-    """
     def _on_connect(self):
         self.connection = pika.BlockingConnection(self.parms)
         self.channel = self.connection.channel()
@@ -112,6 +106,10 @@ class RPCTranClient(RabbitAMQP):
     @from_config('rpc_binding_queue', 'default_rpc_queue')
     def conf_rpc_queue(self):
         return self.conf
+
+    def on_response(self, ch, method, properties, body):
+        if self.corr_id == properties.correlation_id:
+           self.res = body
 
     def _call(self, context, exchange, routing_key, reply_to, corr_id):
         self.corr_id = corr_id
@@ -134,7 +132,7 @@ class RPCTranClient(RabbitAMQP):
         
     @hold_on
     def call_ack(self, context, routing_key=None):
-        self.call(self, context, routing_key)
+        self.call(context, routing_key)
 
 
 class TopicTranClient(RPCTranClient):
@@ -208,14 +206,14 @@ class FanoutTranClient(RPCTranClient):
         
     @hold_on
     def call_ack(self, context, routing_key=None):
-        self.call(self, context, routing_key)
+        self.call(context, routing_key)
 
 
 def get_rabbit_client(amqp_url=None, exchange=None, queue=None, type=''):
     client_list = [
-        ('rpc', RPCTranClient),
         ('topic', TopicTranClient),
         ('fanout', FanoutTranClient),
+        ('rpc', RPCTranClient), # Please use topic client as better.
     ]
     try:
         c = [cls(amqp_url) for t, cls in client_list if t == type].pop(0)

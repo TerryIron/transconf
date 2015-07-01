@@ -14,7 +14,7 @@ class RPCMiddleware(object):
     def __init__(self, handler):
         self.handler = handler
 
-    def run(self, context):
+    def process_request(self, context):
         raise NotImplementedError()
 
 
@@ -62,7 +62,7 @@ class RPCTranServer(RabbitAMQP):
         self.middleware = middleware
 
     def process_request(self, body):
-        return self.middleware.run(body)
+        return self.middleware.process_request(body)
 
     def _connect(self):
         cc = protocol.ClientCreator(reactor, 
@@ -95,12 +95,14 @@ class RPCTranServer(RabbitAMQP):
         l = task.LoopingCall(lambda: self.on_request(queue_object, exchange))
         l.start(0.001)
 
+    """
     @defer.inlineCallbacks
     def on_rpc_mode(self, connection):
         channel = yield connection.channel()
         yield channel.queue_declare(queue=self.bind_rpc_queue)
         yield channel.basic_qos(prefetch_count=1)
         yield self.on_channel(channel, '', self.bind_rpc_queue)
+    """
 
     @defer.inlineCallbacks
     def on_topic_mode(self, connection):
@@ -124,7 +126,5 @@ class RPCTranServer(RabbitAMQP):
     def serve_forever(self):
         self.connect(self.on_fanout_mode)
         self.connect(self.on_topic_mode)
-        self.connect(self.on_rpc_mode)
+        #self.connect(self.on_rpc_mode)
         reactor.run()
-            
-

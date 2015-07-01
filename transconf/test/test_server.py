@@ -14,7 +14,7 @@ from transconf.server.twisted.netshell import TxShell
 from transconf.shell import ModelShell
 
 class ShellMiddleware(RPCMiddleware):
-    def run(self, context):
+    def process_request(self, context):
         if not hasattr(self, '_itm'):
             setattr(self, '_itm', datetime.now())
         else:
