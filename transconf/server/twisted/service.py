@@ -8,7 +8,6 @@ from twisted.internet import defer, reactor, protocol, task
 
 from transconf.server.rabbit_msg import RabbitAMQP
 from transconf.server.utils import from_config
-from transconf.server.rabbit_msg import RPCTranClient as RPCTranSyncClient
 
 class RPCMiddleware(object):
     def __init__(self, handler):
@@ -19,6 +18,8 @@ class RPCMiddleware(object):
 
 
 class RPCTranServer(RabbitAMQP):
+    CONNECTION_CLASS = twisted_connection.TwistedProtocolConnection
+
     @property
     @from_config('topic_binding_exchange', 'default_topic_exchange')
     def conf_topic_exchange(self):
@@ -66,7 +67,7 @@ class RPCTranServer(RabbitAMQP):
 
     def _connect(self):
         cc = protocol.ClientCreator(reactor, 
-                                    twisted_connection.TwistedProtocolConnection, 
+                                    self.connection_class,
                                     self.parms)
         return cc.connectTCP(self.parms.host, self.parms.port)
 
@@ -81,13 +82,13 @@ class RPCTranServer(RabbitAMQP):
         body = self.packer.unpack(body)
         if body:
             body = yield self.process_request(body)
+            yield ch.basic_ack(delivery_tag=method.delivery_tag)
             yield ch.basic_publish(exchange=exchange,
                                    routing_key=properties.reply_to,
                                    properties=pika.BasicProperties(
                                        correlation_id=properties.correlation_id
                                    ),
                                    body=self.packer.pack(body))
-            yield ch.basic_ack(delivery_tag=method.delivery_tag)
 
     @defer.inlineCallbacks
     def on_channel(self, channel, exchange, queue):
@@ -95,14 +96,12 @@ class RPCTranServer(RabbitAMQP):
         l = task.LoopingCall(lambda: self.on_request(queue_object, exchange))
         l.start(0.001)
 
-    """
     @defer.inlineCallbacks
     def on_rpc_mode(self, connection):
         channel = yield connection.channel()
         yield channel.queue_declare(queue=self.bind_rpc_queue)
         yield channel.basic_qos(prefetch_count=1)
         yield self.on_channel(channel, '', self.bind_rpc_queue)
-    """
 
     @defer.inlineCallbacks
     def on_topic_mode(self, connection):
@@ -113,7 +112,7 @@ class RPCTranServer(RabbitAMQP):
                                  queue=self.bind_topic_queue,
                                  routing_key='.'.join([self.bind_topic_queue, self.bind_topic_routing_key]))
         yield channel.basic_qos(prefetch_count=1)
-        yield self.on_channel(channel, self.bind_topic_exchange, self.bind_topic_queue)
+        yield self.on_channel(channel, '', self.bind_topic_queue)
 
     @defer.inlineCallbacks
     def on_fanout_mode(self, connection):
@@ -121,10 +120,10 @@ class RPCTranServer(RabbitAMQP):
         yield channel.exchange_declare(exchange=self.bind_fanout_exchange, type='fanout')
         yield channel.queue_declare(queue=self.bind_fanout_queue, auto_delete=True)
         yield channel.queue_bind(exchange=self.bind_fanout_exchange, queue=self.bind_fanout_queue)
-        yield self.on_channel(channel, self.bind_fanout_exchange, self.bind_fanout_queue)
+        yield self.on_channel(channel, '', self.bind_fanout_queue)
 
     def serve_forever(self):
         self.connect(self.on_fanout_mode)
         self.connect(self.on_topic_mode)
-        #self.connect(self.on_rpc_mode)
+        self.connect(self.on_rpc_mode)
         reactor.run()

@@ -2,9 +2,12 @@ import sys
 
 sys.path.insert(0, sys.path[0] + '/../..')
 
+from twisted.internet import defer
+
 from transconf.common.reg import register_model
 from transconf.model import Model
 from transconf.shell import ModelShell
+from transconf.server.twisted.client import FanoutTranClient
 
 """
     Simple unit test, or a sample code for developers.
@@ -46,10 +49,21 @@ class Ifconfig(Model):
         print 0
 
     def ip_addr(self, ifname):
+        c = FanoutTranClient()
+        data = dict(expression='client.fanout',
+                    args=[1,2,3,4],
+                    kwargs={'value': ifname}
+                   )
+        #from time import sleep
+        #d = defer.Deferred()
+        #d.addCallback(lambda: sleep(5))
+        c.cast(data, 'default_fanout_exchange')
+        v = c.call(data, 'default_fanout_exchange')
+        print 'ip_addr:{0}'.format(v)
         return ifname
 
     def hw_addr(self, ifname):
-        print 2
+        print 'hw_addr'
 
     def mask(self, ifname):
         print 3

@@ -17,10 +17,17 @@ class ShellMiddleware(RPCMiddleware):
     def process_request(self, context):
         if not hasattr(self, '_itm'):
             setattr(self, '_itm', datetime.now())
+            self.off = True
         else:
             print 'used:{0}'.format((datetime.now() - self._itm).seconds)
         value = context['kwargs']['value']
-        d = self.handler.run('1234567.if_name.ip_addr.aaaaa:test', 'owner_ip_addr', value)
+        if self.off:
+            d = self.handler.run('1234567.if_name.ip_addr.aaaaa:test', 'owner_ip_addr', value)
+            self.off = False
+        else:
+            d = self.handler.run('1234567.if_name.hw_addr', 'hw_addr', value)
+            self.off = True
+        print d
         print context
         return d
 

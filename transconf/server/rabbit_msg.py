@@ -9,11 +9,13 @@ from transconf.server.utils import from_config
 
 
 class RabbitAMQP(object):
+    CONNECTION_CLASS = pika.BlockingConnection
     CONNECTION_ATTEMPTS = 3
     DEFAULT_CONF = os.path.join(os.path.dirname(__file__), 'rabbit_default.ini')
     CONF_FILE = None
 
     def __init__(self, amqp_url=None, timeout=5):
+        self.connection_class = self.CONNECTION_CLASS
         self.packer = JsonSerializionPacker()
         if self.CONF_FILE:
             self.conf = self.CONF_FILE
@@ -83,33 +85,15 @@ def hold_on(func):
         func(self, *args, **kwargs)
         while self.res is None:
             self.connection.process_data_events()
-        return self.res
+        return self.res if not 'null' else None
     return __do_hold_on
 
 
-class RPCTranClient(RabbitAMQP):
+class BaseClient(RabbitAMQP):
 
     def _on_connect(self):
-        self.connection = pika.BlockingConnection(self.parms)
+        self.connection = self.connection_class(self.parms)
         self.channel = self.connection.channel()
-
-    def config(self, exchange=None, queue=None):
-        self.bind_rpc_queue = self.conf_rpc_queue if not queue else queue
-
-    def init(self):
-        self.config()
-        self._on_connect()
-        result = self.channel.queue_declare(exclusive=True)
-        self.callback_queue = result.method.queue
-
-    @property
-    @from_config('rpc_binding_queue', 'default_rpc_queue')
-    def conf_rpc_queue(self):
-        return self.conf
-
-    def on_response(self, ch, method, properties, body):
-        if self.corr_id == properties.correlation_id:
-           self.res = body
 
     def _call(self, context, exchange, routing_key, reply_to, corr_id):
         self.corr_id = corr_id
@@ -122,20 +106,44 @@ class RPCTranClient(RabbitAMQP):
                                    ),
                                    body=self.packer.pack(context))
 
-    def call(self, context, routing_key=None):
+    def config(self):
+        raise NotImplementedError()
+
+    def init(self):
+        self.config()
+        self._on_connect()
+        result = self.channel.queue_declare(exclusive=True, auto_delete=True)
+        self.callback_queue = result.method.queue
+
+    def on_response(self, ch, method, properties, body):
+        if self.corr_id == properties.correlation_id:
+           self.res = body
+
+
+class RPCTranClient(BaseClient):
+
+    def config(self, exchange=None, queue=None):
+        self.bind_rpc_queue = self.conf_rpc_queue if not queue else queue
+
+    @property
+    @from_config('rpc_binding_queue', 'default_rpc_queue')
+    def conf_rpc_queue(self):
+        return self.conf
+
+    def cast(self, context, routing_key=None):
         rpc_queue = self.bind_rpc_queue if not routing_key else routing_key
-        return self._call(context, 
-                          '', 
-                          rpc_queue,
-                          self.callback_queue, 
-                          self.rand_corr_id)
+        self._call(context, 
+                   '', 
+                   rpc_queue,
+                   self.callback_queue, 
+                   self.rand_corr_id)
         
     @hold_on
-    def call_ack(self, context, routing_key=None):
-        self.call(context, routing_key)
+    def call(self, context, routing_key=None):
+        self.cast(context, routing_key)
 
 
-class TopicTranClient(RPCTranClient):
+class TopicTranClient(BaseClient):
 
     """
     We use topic client to send tasks to worker's queue.
@@ -159,21 +167,19 @@ class TopicTranClient(RPCTranClient):
     def conf_topic_queue(self):
         return self.conf
 
-    def call(self, context, routing_key):
+    def cast(self, context, routing_key):
         real_routing = str(routing_key)
-        uid = self.rand_corr_id
         self._call(context, 
                    self.bind_topic_exchange, 
                    '.'.join([self.bind_topic_queue, real_routing]),
-                   real_routing + uid,
-                   uid
-                   )
+                   self.callback_queue,
+                   self.rand_corr_id)
 
     @hold_on
-    def call_ack(self, context, routing_key):
-        self.call(routing_key, context)
+    def call(self, context, routing_key):
+        self.cast(context, routing_key)
 
-class FanoutTranClient(RPCTranClient):
+class FanoutTranClient(BaseClient):
     """
     We use fanout client to sync server's status by binding fanout queue as server topic.
     """
@@ -196,24 +202,24 @@ class FanoutTranClient(RPCTranClient):
     def conf_fanout_queue(self):
         return self.conf
 
-    def call(self, context, routing_key=None):
+    def cast(self, context, routing_key=None):
         fanout_exchange= self.bind_fanout_exchange if not routing_key else routing_key
-        return self._call(context, 
-                          fanout_exchange, 
-                          '',
-                          self.callback_queue, 
-                          self.rand_corr_id)
+        self._call(context, 
+                   fanout_exchange, 
+                   '',
+                   self.callback_queue, 
+                   self.rand_corr_id)
         
     @hold_on
-    def call_ack(self, context, routing_key=None):
-        self.call(context, routing_key)
+    def call(self, context, routing_key=None):
+        self.cast(context, routing_key)
 
 
 def get_rabbit_client(amqp_url=None, exchange=None, queue=None, type=''):
     client_list = [
         ('topic', TopicTranClient),
         ('fanout', FanoutTranClient),
-        ('rpc', RPCTranClient), # Please use topic client as better.
+        ('rpc', RPCTranClient), # Recommand local callback
     ]
     try:
         c = [cls(amqp_url) for t, cls in client_list if t == type].pop(0)
