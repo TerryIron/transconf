@@ -14,7 +14,8 @@ class RPCMiddleware(object):
         self.handler = handler
 
     def process_request(self, context):
-        raise NotImplementedError()
+        from twisted.internet.defer import succeed
+        return succeed({})
 
 
 class RPCTranServer(RabbitAMQP):

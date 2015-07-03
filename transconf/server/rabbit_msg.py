@@ -74,7 +74,7 @@ class RabbitAMQP(object):
         raise NotImplementedError()
 
 
-# It is a static method, don's use it outside.
+# It is a static method for sync-call, don's use it outside.
 def hold_on(func):
     def __do_hold_on(self, *args, **kwargs):
         self.channel.basic_consume(self.on_response,
@@ -85,8 +85,12 @@ def hold_on(func):
         func(self, *args, **kwargs)
         while self.res is None:
             self.connection.process_data_events()
-        return self.res if not 'null' else None
+        return self.res if not isinstance(self.res, NoneBody) else None
     return __do_hold_on
+
+
+class NoneBody(object):
+    pass
 
 
 class BaseClient(RabbitAMQP):
@@ -95,7 +99,7 @@ class BaseClient(RabbitAMQP):
         self.connection = self.connection_class(self.parms)
         self.channel = self.connection.channel()
 
-    def _call(self, context, exchange, routing_key, reply_to, corr_id):
+    def _ready(self, context, exchange, routing_key, reply_to, corr_id):
         self.corr_id = corr_id
         self.channel.basic_publish(exchange=exchange,
                                    routing_key=routing_key,
@@ -117,7 +121,11 @@ class BaseClient(RabbitAMQP):
 
     def on_response(self, ch, method, properties, body):
         if self.corr_id == properties.correlation_id:
-           self.res = body
+            body = self.packer.unpack(body)
+            if body:
+                self.res = body
+            else:
+                self.res = NoneBody()
 
 
 class RPCTranClient(BaseClient):
@@ -132,11 +140,11 @@ class RPCTranClient(BaseClient):
 
     def cast(self, context, routing_key=None):
         rpc_queue = self.bind_rpc_queue if not routing_key else routing_key
-        self._call(context, 
-                   '', 
-                   rpc_queue,
-                   self.callback_queue, 
-                   self.rand_corr_id)
+        self._ready(context, 
+                    '', 
+                    rpc_queue,
+                    self.callback_queue, 
+                    self.rand_corr_id)
         
     @hold_on
     def call(self, context, routing_key=None):
@@ -169,11 +177,11 @@ class TopicTranClient(BaseClient):
 
     def cast(self, context, routing_key):
         real_routing = str(routing_key)
-        self._call(context, 
-                   self.bind_topic_exchange, 
-                   '.'.join([self.bind_topic_queue, real_routing]),
-                   self.callback_queue,
-                   self.rand_corr_id)
+        self._ready(context, 
+                    self.bind_topic_exchange, 
+                    '.'.join([self.bind_topic_queue, real_routing]),
+                    self.callback_queue,
+                    self.rand_corr_id)
 
     @hold_on
     def call(self, context, routing_key):
@@ -204,11 +212,11 @@ class FanoutTranClient(BaseClient):
 
     def cast(self, context, routing_key=None):
         fanout_exchange= self.bind_fanout_exchange if not routing_key else routing_key
-        self._call(context, 
-                   fanout_exchange, 
-                   '',
-                   self.callback_queue, 
-                   self.rand_corr_id)
+        self._ready(context, 
+                    fanout_exchange, 
+                    '',
+                    self.callback_queue, 
+                    self.rand_corr_id)
         
     @hold_on
     def call(self, context, routing_key=None):

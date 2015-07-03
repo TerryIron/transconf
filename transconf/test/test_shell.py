@@ -3,11 +3,12 @@ import sys
 sys.path.insert(0, sys.path[0] + '/../..')
 
 from twisted.internet import defer
+from twisted.internet.threads import deferToThread
 
 from transconf.common.reg import register_model
 from transconf.model import Model
 from transconf.shell import ModelShell
-from transconf.server.twisted.client import FanoutTranClient
+from transconf.server.twisted.client import RPCTranClient
 
 """
     Simple unit test, or a sample code for developers.
@@ -49,21 +50,33 @@ class Ifconfig(Model):
         print 0
 
     def ip_addr(self, ifname):
-        c = FanoutTranClient()
-        data = dict(expression='client.fanout',
-                    args=[1,2,3,4],
-                    kwargs={'value': ifname}
-                   )
-        #from time import sleep
-        #d = defer.Deferred()
-        #d.addCallback(lambda: sleep(5))
-        c.cast(data, 'default_fanout_exchange')
-        v = c.call(data, 'default_fanout_exchange')
-        print 'ip_addr:{0}'.format(v)
-        return ifname
+        def do_things_later():
+            data = dict(expression='client.rpc',
+                        args=[1,2,3,4],
+                        kwargs={'value': ifname,
+                                'target': '1234567.if_name.hw_addr',
+                                'method': 'hw_addr',
+                               }
+                        )
+            c = RPCTranClient()
+            v = c.call(data)
+            print 'get result:{0}'.format(v)
+            print '{0}'.format(dir(v))
+
+        def print_out(string, r):
+            print string
+            print r
+        def sleeping(timeout):
+            from time import sleep
+            sleep(timeout)
+        d = deferToThread(lambda: sleeping(5))
+        d.addCallback(lambda r: do_things_later())
+        d.addCallback(lambda r: print_out('sleep ok', r))
+        print 'ip_addr:{0}'.format(ifname)
 
     def hw_addr(self, ifname):
         print 'hw_addr'
+        return 10
 
     def mask(self, ifname):
         print 3
