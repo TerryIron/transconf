@@ -5,7 +5,6 @@ from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 
 from transconf.server.rabbit_msg import BaseClient as BaseSyncClient
-from transconf.server.rabbit_msg import NoneBody
 from transconf.server.utils import from_config
 
 
@@ -27,28 +26,30 @@ class BaseClient(BaseSyncClient):
         raise NotImplementedError()
 
     def _on_connect(self, channel_callback, context, need_result=False):
+        self.result = None
         cc = protocol.ClientCreator(reactor,
                                     self.connection_class,
                                     self.parms)
         d = cc.connectTCP(self.parms.host, self.parms.port)
         d.addCallback(lambda procotol: procotol.ready)
         d.addCallback(lambda con: channel_callback(con, context, need_result))
+        d.addCallback(lambda r: self._get_result())
         return d
 
     def _ready(self, context, exchange, routing_key, corr_id):
         self.corr_id = corr_id
         return Context(context, exchange, routing_key)
 
+    def _get_result(self):
+        return self.result
 
     @defer.inlineCallbacks
-    def on_response(self, queue_object):
+    def on_request(self, queue_object):
         ch, method, properties, body = yield queue_object.get()
+        #print 'diff corr_id:{0} with {1}'.format(self.corr_id, properties.correlation_id)
         if self.corr_id == properties.correlation_id:
-            body = self.packer.unpack(body)
-            if body:
-                yield body 
-            else:
-                yield NoneBody()
+            body = yield self.packer.unpack(body)
+            self.result = yield body if body else None
 
     @defer.inlineCallbacks
     def on_channel(self, connection, context, need_result=False):
@@ -69,7 +70,7 @@ class BaseClient(BaseSyncClient):
         if need_result:
             queue_object, consumer_tag = yield channel.basic_consume(no_ack=True,
                                                                      queue=reply_to)
-            l = task.LoopingCall(lambda: self.on_response(queue_object))
+            l = task.LoopingCall(lambda: self.on_request(queue_object))
             l.start(0.001)
 
 
