@@ -123,7 +123,7 @@ class BaseClient(RabbitAMQP):
         if self.corr_id == properties.correlation_id:
             body = self.packer.unpack(body)
             if body:
-                self.res = body
+                self.res = body['result']
             else:
                 self.res = NoneBody()
 

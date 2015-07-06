@@ -52,8 +52,7 @@ class Ifconfig(Model):
     def ip_addr(self, ifname):
         def do_things_later():
             def get_result(r):
-                print 'get result:{0}'.format(v)
-                print '{0}'.format(dir(v))
+                print 'get result:{0}, in defer callback'.format(r)
             data = dict(expression='client.rpc',
                         args=[1,2,3,4],
                         kwargs={'value': ifname,
@@ -76,7 +75,7 @@ class Ifconfig(Model):
         print 'ip_addr:{0}'.format(ifname)
 
     def hw_addr(self, ifname):
-        print 'hw_addr'
+        print 'hw_addr:{0}'.format(ifname)
         return 10
 
     def mask(self, ifname):

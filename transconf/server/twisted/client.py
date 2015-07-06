@@ -10,6 +10,7 @@ from transconf.server.utils import from_config
 
 class Context(object):
     def __init__(self, context, exchange, routing_key):
+        self.channel = None
         self.context = context
         self.exchange = exchange
         self.routing_key = routing_key
@@ -26,30 +27,26 @@ class BaseClient(BaseSyncClient):
         raise NotImplementedError()
 
     def _on_connect(self, channel_callback, context, need_result=False):
-        self.result = None
         cc = protocol.ClientCreator(reactor,
                                     self.connection_class,
                                     self.parms)
         d = cc.connectTCP(self.parms.host, self.parms.port)
         d.addCallback(lambda procotol: procotol.ready)
         d.addCallback(lambda con: channel_callback(con, context, need_result))
-        d.addCallback(lambda r: self._get_result())
         return d
 
     def _ready(self, context, exchange, routing_key, corr_id):
         self.corr_id = corr_id
         return Context(context, exchange, routing_key)
 
-    def _get_result(self):
-        return self.result
-
     @defer.inlineCallbacks
     def on_request(self, queue_object):
-        ch, method, properties, body = yield queue_object.get()
-        #print 'diff corr_id:{0} with {1}'.format(self.corr_id, properties.correlation_id)
-        if self.corr_id == properties.correlation_id:
-            body = yield self.packer.unpack(body)
-            self.result = yield body if body else None
+        if queue_object:
+            ch, method, properties, body = yield queue_object.get()
+            if self.corr_id == properties.correlation_id:
+                body = yield self.packer.unpack(body)
+                result = yield body['result'] if body else None
+                yield defer.returnValue(result)
 
     @defer.inlineCallbacks
     def on_channel(self, connection, context, need_result=False):
@@ -68,10 +65,14 @@ class BaseClient(BaseSyncClient):
                                     ),
                                     body=self.packer.pack(context.context))
         if need_result:
-            queue_object, consumer_tag = yield channel.basic_consume(no_ack=True,
-                                                                     queue=reply_to)
-            l = task.LoopingCall(lambda: self.on_request(queue_object))
-            l.start(0.001)
+            def get_result(result):
+                print 'getting result:{0}'.format(result)
+            queue_object, consumer_tag = yield channel.basic_consume(queue=reply_to,
+                                                                     no_ack=False)
+            l = yield task.LoopingCall(lambda: self.on_request(queue_object))
+            ld = l.start(0.001)
+            ld.addCallback(get_result)
+            yield defer.returnValue(None)
 
 
 class RPCTranClient(BaseClient):

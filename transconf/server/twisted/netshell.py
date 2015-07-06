@@ -1,5 +1,7 @@
 __author__ = 'chijun'
 
+import functools
+
 from transconf.shell import ModelShell, ShellTargetNotFound
 from transconf.model import Model
 
@@ -15,7 +17,8 @@ class TxShell(ModelShell):
             model = yield self.get_namebus(model_name)
             if isinstance(model, Model):
                 other_names = yield tuple(name_lst[1:])
-                yield model.run(other_names, method_name, *args, **kwargs)
+                cb = yield functools.partial(model.run, other_names, method_name, *args, **kwargs)
+                yield defer.returnValue(cb())
             yield False
         else:
             raise ShellTargetNotFound(target_name)
