@@ -2,7 +2,7 @@ __author__ = 'chijun'
 
 import pika
 from pika.adapters import twisted_connection
-from twisted.internet import defer, reactor, protocol, task
+from twisted.internet import defer, reactor, protocol, task, threads
 
 from transconf.server.rabbit_msg import BaseClient as BaseSyncClient
 from transconf.server.utils import from_config
@@ -10,7 +10,6 @@ from transconf.server.utils import from_config
 
 class Context(object):
     def __init__(self, context, exchange, routing_key):
-        self.channel = None
         self.context = context
         self.exchange = exchange
         self.routing_key = routing_key
@@ -26,18 +25,32 @@ class BaseClient(BaseSyncClient):
     def config(self):
         raise NotImplementedError()
 
-    def _on_connect(self, channel_callback, context, need_result=False):
+    def _on_connect(self, channel_callback, context, callback=None):
         cc = protocol.ClientCreator(reactor,
                                     self.connection_class,
                                     self.parms)
         d = cc.connectTCP(self.parms.host, self.parms.port)
         d.addCallback(lambda procotol: procotol.ready)
-        d.addCallback(lambda con: channel_callback(con, context, need_result))
-        return d
+        d.addCallback(lambda con: channel_callback(con, context))
+        if callback:
+            rd = defer.Deferred()
+            rd.addCallback(lambda result: self.on_response(*result))
+            od = defer.DeferredList([d, rd])
+            return od
 
     def _ready(self, context, exchange, routing_key, corr_id):
         self.corr_id = corr_id
         return Context(context, exchange, routing_key)
+
+    @defer.inlineCallbacks
+    def on_response(self, channel, reply_to):
+        def get_result(r):
+            print '[CLIENT] get result:{0}'.format(r)
+        queue_object, consumer_tag = yield channel.basic_consume(queue=reply_to,
+                                                                 no_ack=False)
+        d = threads.deferToThread(lambda: self.on_request(queue_object))
+        d.addCallback(get_result)
+        yield d
 
     @defer.inlineCallbacks
     def on_request(self, queue_object):
@@ -49,7 +62,7 @@ class BaseClient(BaseSyncClient):
                 yield defer.returnValue(result)
 
     @defer.inlineCallbacks
-    def on_channel(self, connection, context, need_result=False):
+    def on_channel(self, connection, context):
         channel = yield connection.channel()
         if self.exchange_type:
             yield channel.exchange_declare(exchange=context.exchange,
@@ -64,15 +77,13 @@ class BaseClient(BaseSyncClient):
                                         delivery_mode=2,
                                     ),
                                     body=self.packer.pack(context.context))
-        if need_result:
-            def get_result(result):
-                print 'getting result:{0}'.format(result)
-            queue_object, consumer_tag = yield channel.basic_consume(queue=reply_to,
-                                                                     no_ack=False)
-            l = yield task.LoopingCall(lambda: self.on_request(queue_object))
-            ld = l.start(0.001)
-            ld.addCallback(get_result)
-            yield defer.returnValue(None)
+        yield defer.returnValue((channel, reply_to))
+
+    def cast(self, context, routing_key=None):
+        self._on_connect(self.on_channel, self._ready(context, routing_key))
+        
+    def call(self, context, routing_key=None, callback=None):
+        return self._on_connect(self.on_channel, self._ready(context, routing_key), callback)
 
 
 class RPCTranClient(BaseClient):
@@ -91,12 +102,6 @@ class RPCTranClient(BaseClient):
                                                  '', 
                                                  rpc_queue, 
                                                  self.rand_corr_id)
-
-    def cast(self, context, routing_key=None):
-        self._on_connect(self.on_channel, self._ready(context, routing_key))
-        
-    def call(self, context, routing_key=None):
-        return self._on_connect(self.on_channel, self._ready(context, routing_key), True)
 
 
 class TopicTranClient(BaseClient):
@@ -125,12 +130,6 @@ class TopicTranClient(BaseClient):
                                                    '.'.join([self.bind_topic_queue, real_routing]),
                                                    self.rand_corr_id)
 
-    def cast(self, context, routing_key):
-        self._on_connect(self.on_channel, self._ready(context, routing_key))
-
-    def call(self, context, routing_key):
-        return self._on_connect(self.on_channel, self._ready(context, routing_key), True)
-
 
 class FanoutTranClient(BaseClient):
     def init(self):
@@ -157,11 +156,4 @@ class FanoutTranClient(BaseClient):
                                                     fanout_exchange,
                                                     '',
                                                     self.rand_corr_id)
-
-    def cast(self, context, routing_key=None):
-        self._on_connect(self.on_channel, self._ready(context, routing_key))
-
-    def call(self, context, routing_key=None):
-        return self._on_connect(self.on_channel, self._ready(context, routing_key), True)
-
 

@@ -80,7 +80,7 @@ class RPCTranServer(RabbitAMQP):
     @defer.inlineCallbacks
     def result_callback(self, ch, properties, exchange, result):
         result = {'result': result}
-        print 'result:{0}, need reply to client'.format(result)
+        print '[SERVER] result:{0}, need reply to client'.format(result)
         yield ch.basic_publish(exchange=exchange,
                                routing_key=properties.reply_to,
                                properties=pika.BasicProperties(

@@ -2,7 +2,7 @@ import sys
 
 sys.path.insert(0, sys.path[0] + '/../..')
 
-from twisted.internet import defer
+from twisted.internet import defer, reactor
 from twisted.internet.threads import deferToThread
 
 from transconf.common.reg import register_model
@@ -51,8 +51,8 @@ class Ifconfig(Model):
 
     def ip_addr(self, ifname):
         def do_things_later():
-            def get_result(r):
-                print 'get result:{0}, in defer callback'.format(r)
+            def get_result(t):
+                print '[SHELL] get result:{0}'.format(t)
             data = dict(expression='client.rpc',
                         args=[1,2,3,4],
                         kwargs={'value': ifname,
@@ -62,7 +62,7 @@ class Ifconfig(Model):
                         )
             c = RPCTranClient()
             v = c.call(data)
-            v.addCallback(lambda r: get_result(r))
+            #v.addCallback(get_result)
         def print_out(string, r):
             print string
             print r
@@ -73,6 +73,7 @@ class Ifconfig(Model):
         d.addCallback(lambda r: do_things_later())
         d.addCallback(lambda r: print_out('sleep ok', r))
         print 'ip_addr:{0}'.format(ifname)
+        return 100
 
     def hw_addr(self, ifname):
         print 'hw_addr:{0}'.format(ifname)
