@@ -35,7 +35,8 @@ class BaseClient(BaseSyncClient):
         if callback:
             rd = defer.Deferred()
             rd.addCallback(lambda result: self.on_response(*result))
-            od = defer.DeferredList([d, rd])
+            print '[CLIENT] we put on_response'
+            od = defer.gatherResults([d, rd], consumeErrors=True)
             return od
 
     def _ready(self, context, exchange, routing_key, corr_id):
@@ -44,6 +45,7 @@ class BaseClient(BaseSyncClient):
 
     @defer.inlineCallbacks
     def on_response(self, channel, reply_to):
+        print '[CLIENT] we are in on_response'
         def get_result(r):
             print '[CLIENT] get result:{0}'.format(r)
         queue_object, consumer_tag = yield channel.basic_consume(queue=reply_to,
@@ -54,6 +56,7 @@ class BaseClient(BaseSyncClient):
 
     @defer.inlineCallbacks
     def on_request(self, queue_object):
+        print '[CLIENT] we are in on_request'
         if queue_object:
             ch, method, properties, body = yield queue_object.get()
             if self.corr_id == properties.correlation_id:
@@ -63,6 +66,7 @@ class BaseClient(BaseSyncClient):
 
     @defer.inlineCallbacks
     def on_channel(self, connection, context):
+        print '[CLIENT] we are in on_channel'
         channel = yield connection.channel()
         if self.exchange_type:
             yield channel.exchange_declare(exchange=context.exchange,
