@@ -63,21 +63,24 @@ class Ifconfig(Model):
             c = RPCTranClient()
             v = c.call(data)
             v.addCallback(get_result)
-        def print_out(string, r):
-            print string
-            print r
         def sleeping(timeout):
             from time import sleep
             sleep(timeout)
         d = deferToThread(lambda: sleeping(5))
         d.addCallback(lambda r: do_things_later())
-        d.addCallback(lambda r: print_out('sleep ok', r))
         print 'ip_addr:{0}'.format(ifname)
         return 100
 
     def hw_addr(self, ifname):
-        print 'hw_addr:{0}'.format(ifname)
-        return 10
+        def sleeping(timeout):
+            from time import sleep
+            sleep(timeout)
+        def foo(r):
+            print 'hw_addr:{0}'.format(ifname)
+            return 10
+        d = deferToThread(lambda: sleeping(5))
+        d.addCallback(foo)
+        return d
 
     def mask(self, ifname):
         print 3

@@ -24,8 +24,6 @@ class ShellMiddleware(RPCMiddleware):
         target = context['kwargs']['target']
         method = context['kwargs']['method']
         print context
-        def get_result(result):
-            return result
         cb = functools.partial(self.handler.run, target, method, value)
         return cb()
 
