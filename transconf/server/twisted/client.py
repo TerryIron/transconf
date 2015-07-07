@@ -25,19 +25,16 @@ class BaseClient(BaseSyncClient):
     def config(self):
         raise NotImplementedError()
 
-    def _on_connect(self, channel_callback, context, callback=None):
+    def _on_connect(self, channel_callback, context, need_result=False):
         cc = protocol.ClientCreator(reactor,
                                     self.connection_class,
                                     self.parms)
         d = cc.connectTCP(self.parms.host, self.parms.port)
         d.addCallback(lambda procotol: procotol.ready)
         d.addCallback(lambda con: channel_callback(con, context))
-        if callback:
-            rd = defer.Deferred()
-            rd.addCallback(lambda result: self.on_response(*result))
-            print '[CLIENT] we put on_response'
-            od = defer.gatherResults([d, rd], consumeErrors=True)
-            return od
+        if need_result:
+            d.addCallback(lambda result: self.on_response(*result))
+            return d
 
     def _ready(self, context, exchange, routing_key, corr_id):
         self.corr_id = corr_id
@@ -46,13 +43,10 @@ class BaseClient(BaseSyncClient):
     @defer.inlineCallbacks
     def on_response(self, channel, reply_to):
         print '[CLIENT] we are in on_response'
-        def get_result(r):
-            print '[CLIENT] get result:{0}'.format(r)
         queue_object, consumer_tag = yield channel.basic_consume(queue=reply_to,
                                                                  no_ack=False)
-        d = threads.deferToThread(lambda: self.on_request(queue_object))
-        d.addCallback(get_result)
-        yield d
+        result = yield self.on_request(queue_object)
+        yield defer.returnValue(result)
 
     @defer.inlineCallbacks
     def on_request(self, queue_object):
@@ -86,8 +80,8 @@ class BaseClient(BaseSyncClient):
     def cast(self, context, routing_key=None):
         self._on_connect(self.on_channel, self._ready(context, routing_key))
         
-    def call(self, context, routing_key=None, callback=None):
-        return self._on_connect(self.on_channel, self._ready(context, routing_key), callback)
+    def call(self, context, routing_key=None, need_result=True):
+        return self._on_connect(self.on_channel, self._ready(context, routing_key), need_result)
 
 
 class RPCTranClient(BaseClient):

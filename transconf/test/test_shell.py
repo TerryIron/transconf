@@ -62,7 +62,7 @@ class Ifconfig(Model):
                         )
             c = RPCTranClient()
             v = c.call(data)
-            #v.addCallback(get_result)
+            v.addCallback(get_result)
         def print_out(string, r):
             print string
             print r
