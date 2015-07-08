@@ -2,7 +2,6 @@ import sys
 
 sys.path.insert(0, sys.path[0] + '/../..')
 
-from twisted.internet import defer, reactor
 from twisted.internet.threads import deferToThread
 
 from transconf.common.reg import register_model
@@ -14,15 +13,18 @@ from transconf.server.twisted.client import RPCTranClient
     Simple unit test, or a sample code for developers.
 """
 
+def sleeping(timeout):
+    from time import sleep
+    sleep(timeout)
+
 @register_model('ifdev')
 class Ifconfig(Model):
-    METHOD_TABLE = {'owner_ip_addr': 'private'}
     FORM = [{'node': 'if_name',
             'subs': [
                      {'node': 'ip_addr',
                       'public': ['ip_addr', 'mod:ifdev:ip_addr'],
                       'subs': [
-                               {'node': 'aaaaa',
+                               {'node': 'test_name',
                                 'private': ['owner_ip_addr', 'mod:ifdev:ip_addr'],
                                 'name': ['owner_found_ip_addr', 'mod:ifdev:owner_found_ip_addr'],
                                },
@@ -47,49 +49,39 @@ class Ifconfig(Model):
         return False
 
     def owner_ip_addr(self, ifname):
-        print 0
+        pass
 
     def ip_addr(self, ifname):
         def do_things_later():
             def get_result(t):
                 print '[SHELL] get result:{0}'.format(t)
-            data = dict(expression='client.rpc',
-                        args=[1,2,3,4],
-                        kwargs={'value': ifname,
-                                'target': '1234567.if_name.hw_addr',
+            data = dict(kwargs={'value': ifname,
+                                'target': 'network.if_name.hw_addr',
                                 'method': 'hw_addr',
                                }
                         )
             c = RPCTranClient()
             v = c.call(data)
             v.addCallback(get_result)
-        def sleeping(timeout):
-            from time import sleep
-            sleep(timeout)
         d = deferToThread(lambda: sleeping(5))
         d.addCallback(lambda r: do_things_later())
-        print 'ip_addr:{0}'.format(ifname)
-        return 100
+        return '1.1.1.1'
 
     def hw_addr(self, ifname):
-        def sleeping(timeout):
-            from time import sleep
-            sleep(timeout)
         def foo(r):
-            print 'hw_addr:{0}'.format(ifname)
-            return 10
+            return 'xx:xx:xx:xx:xx:xx'
         d = deferToThread(lambda: sleeping(5))
         d.addCallback(foo)
         return d
 
     def mask(self, ifname):
-        print 3
+        pass
 
     def boardcast(self, ifname):
-        print 4
+        pass
 
 if __name__ == '__main__':
     sh = ModelShell()
-    sh.load_model('1234567', Ifconfig)
+    sh.load_model('network', Ifconfig)
     for i in range(10000):
-        sh.run('1234567.if_name.ip_addr.aaaaa:test', 'owner_ip_addr', i)
+        sh.run('network.if_name.ip_addr.test_name:test', 'owner_ip_addr', i)
