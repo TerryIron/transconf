@@ -1,0 +1,137 @@
+#!/usr/bin/env python
+
+__author__ = 'chijun'
+
+import re
+import sys
+import logging
+
+from pip import main
+from pip import basecommand
+from pip.commands import install
+from pip.commands import commands_dict, commands_order
+from pip import index
+from pip.req import req_set
+
+logger = logging.getLogger(__name__)
+
+class SpecialVerError(Exception):
+    """Raise when installing special version"""
+
+class PackageFinder(index.PackageFinder):
+    def __init__(self, find_links, index_urls,
+                 allow_external=(), allow_unverified=(),
+                 allow_all_external=False, allow_all_prereleases=False,
+                 trusted_hosts=None, process_dependency_links=False,
+                 session=None, format_control=None):
+        self.allow_unverifieds = allow_unverified
+        super(PackageFinder, self).__init__(find_links, index_urls,
+             allow_external, allow_unverified,
+             allow_all_external, allow_all_prereleases,
+             trusted_hosts, process_dependency_links,
+             session, format_control)
+
+    def find_requirement(self, req, upgrade):
+        if not self.allow_unverifieds:
+            return super(PackageFinder, self).find_requirement(req, upgrade)
+        else:
+            allow_unverifieds = self.allow_unverifieds[0].lower()
+            if req.name.lower() not in allow_unverifieds:
+                return super(PackageFinder, self).find_requirement(req, upgrade)
+            else:
+                if req.conflicts_with:
+                    if '-' in req.conflicts_with.version:
+                        raise SpecialVerError()
+                versions = [i[1] for i in req.req.specs]
+                for version in versions:
+                    if '-' in version:
+                        raise SpecialVerError()
+                return super(PackageFinder, self).find_requirement(req, upgrade)
+
+
+class RequirementSet(req_set.RequirementSet):
+    def prepare_files(self, finder):
+        super(RequirementSet, self).prepare_files(finder)
+        if finder.allow_unverifieds:
+            names = finder.allow_unverifieds[0]
+            keys = self.requirements._keys
+            self.requirements._keys = [i for i in keys if i not in names]
+            for name in names.split():
+                self.requirements._dict.pop(name, None)
+
+    def _prepare_file(self, finder, req_to_install):
+        self.finder = finder
+        try:
+            return super(RequirementSet, self)._prepare_file(finder, req_to_install)
+        except SpecialVerError:
+            return []
+
+    def _check_if_specal(self, req):
+        versions = [i[1] for i in req.req.specs]
+        for version in versions:
+            if '-' in version:
+                return True
+        return False
+
+    def _to_install(self):
+        order = super(RequirementSet, self)._to_install()
+        if not hasattr(self, 'finder'):
+            return order
+        new_order = list()
+        if self.finder.allow_unverifieds:
+            names = self.finder.allow_unverifieds[0].lower()
+            for req in order:
+                if req.name.lower() in names:
+                    if req.conflicts_with:
+                        if '-' in req.conflicts_with.version:
+                            logger.warning(
+                                'Found existing another special version: %s',
+                                req.conflicts_with,
+                            )
+                        elif not self._check_if_specal(req):
+                            new_order.append(req)
+                        else:
+                            logger.warning(
+                                'The requirement %s has not been installed'
+                                ', please install it manually later!',
+                                req,
+                            )
+                    else:
+                        if self._check_if_specal(req):
+                            logger.warning(
+                                'The requirement %s has not been installed'
+                                ', please install it manually later!',
+                                req,
+                            )
+                        else:
+                            new_order.append(req)
+                else:
+                    new_order.append(req)
+        else:
+            return order
+        return new_order
+
+
+class InstallCommand(install.InstallCommand):
+    def _build_package_finder(self, options, index_urls, session):
+        return PackageFinder(
+            find_links=options.find_links,
+            format_control=options.format_control,
+            index_urls=index_urls,
+            allow_external=options.allow_external,
+            allow_unverified=options.allow_unverified,
+            allow_all_external=options.allow_all_external,
+            trusted_hosts=options.trusted_hosts,
+            allow_all_prereleases=options.pre,
+            process_dependency_links=options.process_dependency_links,
+            session=session,
+        )
+
+
+install.RequirementSet = RequirementSet
+commands_dict['install'] = InstallCommand
+commands_order.append(InstallCommand)
+
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(main())
