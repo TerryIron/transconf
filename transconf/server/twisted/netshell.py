@@ -9,7 +9,7 @@ from transconf.model import Model
 
 from twisted.internet import defer
 
-class TxShell(ModelShell):
+class NetShell(ModelShell):
 
     def run(self, target_name, method_name, *args, **kwargs):
         name_lst = str(target_name).split(self.split)
