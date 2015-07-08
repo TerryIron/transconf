@@ -42,7 +42,6 @@ class BaseClient(BaseSyncClient):
 
     @defer.inlineCallbacks
     def on_response(self, channel, reply_to):
-        print '[CLIENT] we are in on_response'
         queue_object, consumer_tag = yield channel.basic_consume(queue=reply_to,
                                                                  no_ack=False)
         result = yield self.on_request(queue_object)
@@ -50,7 +49,6 @@ class BaseClient(BaseSyncClient):
 
     @defer.inlineCallbacks
     def on_request(self, queue_object):
-        print '[CLIENT] we are in on_request'
         if queue_object:
             ch, method, properties, body = yield queue_object.get()
             if self.corr_id == properties.correlation_id:
@@ -60,7 +58,6 @@ class BaseClient(BaseSyncClient):
 
     @defer.inlineCallbacks
     def on_channel(self, connection, context):
-        print '[CLIENT] we are in on_channel'
         channel = yield connection.channel()
         if self.exchange_type:
             yield channel.exchange_declare(exchange=context.exchange,
