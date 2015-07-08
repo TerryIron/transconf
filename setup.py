@@ -68,10 +68,10 @@ Save in a server.py:
         import functools
         from shell import Ifconfig
 
-        from transconf.server.twisted.service import RPCTranServer, RPCMiddleware
+        from transconf.server.twisted.service import RPCTranServer, Middleware
         from transconf.server.twisted.netshell import NetShell
 
-        class ShellMiddleware(RPCMiddleware):
+        class ShellMiddleware(Middleware):
             def process_request(self, context):
                 value = context['kwargs']['value']
                 target = context['kwargs']['target']
