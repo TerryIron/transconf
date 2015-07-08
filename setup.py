@@ -99,5 +99,14 @@ setup(
       description="A framework based on Twisted, AMQP, SqlAlChemy",
       long_description=__doc__,
       author="Chi Jun",
-      packages=['transconf'],
+      packages=[
+        'transconf',
+        'transconf.test',
+        'transconf.common',
+        'transconf.server',
+        'transconf.server.twisted',
+        'transconf.msg',
+        'transconf.msg.rabbit',
+        'transconf.models',
+      ]
 )
