@@ -13,7 +13,7 @@ Save in a shell.py:
     from transconf.common.reg import register_model
     from transconf.model import Model
     from transconf.shell import ModelShell
-    from transconf.server.twisted.client import RPCTranClient
+    from transconf.server.twisted.internet import get_client
 
     @register_model('ifdev')
     class Ifconfig(Model):
@@ -49,7 +49,7 @@ Save in a shell.py:
                                 'method': 'hw_addr',
                                }
                         )
-            c = RPCTranClient()
+            c = get_client('remote_worker', type='rpc')
             v = c.call(data)
             return '1.1.1.1'
 
@@ -68,7 +68,8 @@ Save in a server.py:
         import functools
         from shell import Ifconfig
 
-        from transconf.server.twisted.service import RPCTranServer, Middleware
+        from transconf.server.twisted.service import Middleware
+        from transconf.server.twisted.internet import TranServer
         from transconf.server.twisted.netshell import NetShell
 
         class ShellMiddleware(Middleware):
@@ -83,7 +84,7 @@ Save in a server.py:
             sh = NetShell()
             sh.load_model('network', Ifconfig)
             m = ShellMiddleware(sh)
-            serve = RPCTranServer()
+            serve = TranServer()
             serve.setup(m)
             serve.serve_forever()
 """
