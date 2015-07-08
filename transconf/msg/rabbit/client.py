@@ -1,77 +1,9 @@
 __author__ = 'chijun'
 
-import os
-import uuid
 import pika
 
-from transconf.server.utils import JsonSerializionPacker
+from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.utils import from_config
-
-
-class RabbitAMQP(object):
-    CONNECTION_CLASS = pika.BlockingConnection
-    CONNECTION_ATTEMPTS = 3
-    DEFAULT_CONF = os.path.join(os.path.dirname(__file__), 'rabbit_default.ini')
-    CONF_FILE = None
-
-    def __init__(self, amqp_url=None, timeout=5):
-        self.connection_class = self.CONNECTION_CLASS
-        self.packer = JsonSerializionPacker()
-        if self.CONF_FILE:
-            self.conf = self.CONF_FILE
-        else:
-            self.conf = self.DEFAULT_CONF
-        if not amqp_url:
-            amqp_url = self.conf_amqp_url
-        self.parms = pika.URLParameters(
-            amqp_url +
-            '?socket_timeout={0}&'
-            'connection_attempts={1}'.format(timeout,
-                                             self.CONNECTION_ATTEMPTS)
-        )
-        self.bind_rpc_queue = None
-        self.bind_topic_exchange = None
-        self.bind_topic_queue = None
-        self.bind_topic_routing_key = None
-        self.bind_fanout_exchange = None
-        self.bind_fanout_queue = None
-        self.init()
-
-    def init(self):
-        pass
-
-    @property
-    def rand_corr_id(self):
-        return str(uuid.uuid4())
-
-    @property
-    @from_config('rabbit_url', 'amqp://guest:guest@localhost:5672')
-    def conf_amqp_url(self):
-        return self.conf
-
-    @property
-    def conf_rpc_queue(self):
-        raise NotImplementedError()
-
-    @property
-    def conf_topic_exchange(self):
-        raise NotImplementedError()
-
-    @property
-    def conf_topic_queue(self):
-        raise NotImplementedError()
-
-    @property
-    def conf_topic_routing_key(self):
-        raise NotImplementedError()
-
-    @property
-    def conf_fanout_exchange(self):
-        raise NotImplementedError()
-
-    @property
-    def conf_fanout_queue(self):
-        raise NotImplementedError()
 
 
 # It is a static method for sync-call, don's use it outside.
@@ -223,7 +155,7 @@ class FanoutTranClient(BaseClient):
         self.cast(context, routing_key)
 
 
-def get_rabbit_client(amqp_url=None, exchange=None, queue=None, type=''):
+def get_client(amqp_url=None, exchange=None, queue=None, type=''):
     client_list = [
         ('topic', TopicTranClient),
         ('fanout', FanoutTranClient),

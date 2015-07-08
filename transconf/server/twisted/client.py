@@ -2,9 +2,9 @@ __author__ = 'chijun'
 
 import pika
 from pika.adapters import twisted_connection
-from twisted.internet import defer, reactor, protocol, task, threads
+from twisted.internet import defer, reactor, protocol
 
-from transconf.server.rabbit_msg import BaseClient as BaseSyncClient
+from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
 from transconf.server.utils import from_config
 
 

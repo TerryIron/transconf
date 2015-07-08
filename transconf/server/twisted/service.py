@@ -6,8 +6,9 @@ from pika import exceptions
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 
-from transconf.server.rabbit_msg import RabbitAMQP
+from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.utils import from_config
+
 
 class RPCMiddleware(object):
     def __init__(self, handler):

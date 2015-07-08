@@ -7,13 +7,13 @@ sys.path.insert(0, sys.path[0] + '/../..')
 from test_shell import Ifconfig
 
 from transconf.shell import ModelShell
-from transconf.server.rabbit_msg import get_rabbit_client
+from transconf.msg.rabbit.client import get_client
 
 
 if __name__ == '__main__':
     sh = ModelShell()
     sh.load_model('network', Ifconfig)
-    client = get_rabbit_client(type='rpc')
+    client = get_client(type='rpc')
     for i in range(1):
         data = dict(kwargs={'value': i,
                             'target': 'network.if_name.ip_addr.test_name:test',
@@ -21,7 +21,7 @@ if __name__ == '__main__':
                     }
                 )
         client.cast(data)
-    client = get_rabbit_client(type='topic')
+    client = get_client(type='topic')
     for i in range(1):
         data = dict(kwargs={'value': i,
                             'target': 'network.if_name.hw_addr',
@@ -29,7 +29,7 @@ if __name__ == '__main__':
                     }
                 )
         client.cast(data, 'default_worker')
-    client = get_rabbit_client(type='fanout')
+    client = get_client(type='fanout')
     for i in range(1):
         data = dict(kwargs={'value': i,
                             'target': 'network.if_name.ip_addr.test_name:test',
