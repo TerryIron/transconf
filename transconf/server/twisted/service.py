@@ -2,7 +2,6 @@ __author__ = 'chijun'
 
 import pika
 
-from pika import exceptions
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 
@@ -10,7 +9,7 @@ from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.utils import from_config
 
 
-class RPCMiddleware(object):
+class Middleware(object):
     def __init__(self, handler):
         self.handler = handler
 
@@ -61,7 +60,7 @@ class RPCTranServer(RabbitAMQP):
         self.bind_fanout_queue = str(self.conf_fanout_queue) + self.rand_corr_id
 
     def setup(self, middleware):
-        assert isinstance(middleware, RPCMiddleware)
+        assert isinstance(middleware, Middleware)
         self.middleware = middleware
 
     def process_request(self, body):

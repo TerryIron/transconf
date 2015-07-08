@@ -9,11 +9,11 @@ from test_shell import Ifconfig
 
 from datetime import datetime
 
-from transconf.server.twisted.service import RPCTranServer, RPCMiddleware
+from transconf.server.twisted.service import RPCTranServer, Middleware
 from transconf.server.twisted.netshell import NetShell
 from transconf.shell import ModelShell
 
-class ShellMiddleware(RPCMiddleware):
+class ShellMiddleware(Middleware):
     def process_request(self, context):
         if not hasattr(self, '_itm'):
             setattr(self, '_itm', datetime.now())

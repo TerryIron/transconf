@@ -121,7 +121,7 @@ class TopicTranClient(BaseClient):
 
 class FanoutTranClient(BaseClient):
     """
-    We use fanout client to sync server's status by binding fanout queue as server topic.
+    We use fanout client to sync server's status.
     """
     def config(self, exchange=None, queue=None):
         self.bind_fanout_exchange = self.conf_fanout_exchange if not exchange else exchange
@@ -155,15 +155,22 @@ class FanoutTranClient(BaseClient):
         self.cast(context, routing_key)
 
 
-def get_client(amqp_url=None, exchange=None, queue=None, type=''):
-    client_list = [
-        ('topic', TopicTranClient),
-        ('fanout', FanoutTranClient),
-        ('rpc', RPCTranClient), # Recommand local callback
-    ]
+client_list = [
+    ('topic', TopicTranClient),
+    ('fanout', FanoutTranClient),
+    ('rpc', RPCTranClient),
+]
+
+
+def _get_client(client_list, type, amqp_url=None, exchange='', queue=''):
     try:
         c = [cls(amqp_url) for t, cls in client_list if t == type].pop(0)
         c.config(exchange, queue)
         return c
-    except e as IndexError:
+    except IndexError:
         pass
+
+
+def get_client(amqp_url=None, exchange=None, queue=None, type='topic'):
+    global client_list
+    return _get_client(client_list, type, amqp_url, exchange, queue)

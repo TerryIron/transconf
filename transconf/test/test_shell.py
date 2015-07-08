@@ -53,6 +53,7 @@ class Ifconfig(Model):
 
     def ip_addr(self, ifname):
         def do_things_later():
+            print '[SHELL] get ip addr'
             def get_result(t):
                 print '[SHELL] get result:{0}'.format(t)
             data = dict(kwargs={'value': ifname,
@@ -62,6 +63,7 @@ class Ifconfig(Model):
                         )
             c = RPCTranClient()
             v = c.call(data)
+            print '[SHELL] rpc call hw addr'
             v.addCallback(get_result)
         d = deferToThread(lambda: sleeping(5))
         d.addCallback(lambda r: do_things_later())
@@ -69,6 +71,7 @@ class Ifconfig(Model):
 
     def hw_addr(self, ifname):
         def foo(r):
+            print '[SHELL] get hw addr'
             return 'xx:xx:xx:xx:xx:xx'
         d = deferToThread(lambda: sleeping(5))
         d.addCallback(foo)

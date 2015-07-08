@@ -77,8 +77,8 @@ class BaseClient(BaseSyncClient):
     def cast(self, context, routing_key=None):
         self._on_connect(self.on_channel, self._ready(context, routing_key))
         
-    def call(self, context, routing_key=None, need_result=True):
-        return self._on_connect(self.on_channel, self._ready(context, routing_key), need_result)
+    def call(self, context, routing_key=None):
+        return self._on_connect(self.on_channel, self._ready(context, routing_key), True)
 
 
 class RPCTranClient(BaseClient):
