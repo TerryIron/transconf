@@ -90,15 +90,19 @@ client_list = [
 
 client_conf_file = CONF 
 
-def get_client(section_name, type='topic', amqp_url=None, conf=client_conf_file):
+
+def _get_conf_members(section_name, conf=client_conf_file):
     @from_config('group_name', None, sect=section_name)
     def get_group_name(conf):
         return conf
     @from_config('group_type', None, sect=section_name)
     def get_group_type(conf):
         return conf
-    group_name = get_group_name(conf)
-    group_type = get_group_type(conf)
+    return (get_group_name(conf), get_group_type(conf))
+
+
+def get_client(section_name, type='topic', amqp_url=None, conf=client_conf_file):
+    group_name, group_type = _get_conf_members(section_name)
     global client_list
     c = _get_client(client_list, type, amqp_url)
     if not c: 
@@ -115,4 +119,3 @@ def get_client(section_name, type='topic', amqp_url=None, conf=client_conf_file)
         if group_name:
             c.config(exchange=group_name+'fanout')
             return c
-     
