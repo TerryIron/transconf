@@ -11,6 +11,13 @@ from transconf.msg.rabbit.client import _get_client
 
 CONF = os.path.join(os.path.dirname(__file__), 'default.ini')
 
+@from_config('connection', None, sect='database')
+def get_sql_engine()
+    global CONF
+    return CONF
+
+SQL_ENGINE = get_sql_engine()
+
 
 class TranServer(AsyncServer):
     DEFAULT_CONF = CONF
