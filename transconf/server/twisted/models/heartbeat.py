@@ -1,11 +1,19 @@
 __author__ = 'chijun'
 
-from transconf.common.reg import register_model                                                                                                                                                                     
+from transconf.common.reg import register_model, get_model
 from transconf.model import Model
 from transconf.backend.heartbeat import HeartBeatBackend
-from transconf.server.twisted.internet import SQL_ENGINE
+from transconf.server.twisted.internet import SQL_ENGINE, _get_conf_members
 
-BACKEND = HeartBeatBackend(SQL_ENGINE)
+sql_engine = SQL_ENGINE
+
+BACKEND = HeartBeatBackend(sql_engine)
+
+
+class HeartBeatNotFound(Exception):
+    def __str__(group_name, group_type):
+        return 'Group name:{0}, Group type:{1} can not found.'.format(group_name, group_type))
+
 
 @register_model('heartbeat')                                                                                                                                                                    
 class HeartBeat(Model):
@@ -21,14 +29,17 @@ class HeartBeat(Model):
 @register_model('heartcondition')                                                                                                                                                                    
 class HeartCondition(Model):
     FORM = [{'node': 'heartcond',
-             'public': ['has', 'mod:heartbeat:heartbeats'],
-             'public': ['register', 'mod:heartbeat:register'],
-             'public': ['unregister', 'mod:heartbeat:unregister'],
+             'public': ['has', 'mod:heartcondition:heartbeats'],
+             'public': ['register', 'mod:heartcondition:register'],
+             'public': ['unregister', 'mod:heartcondition:unregister'],
             }
     ]
 
-    def init(self):
+    def start(self):
         BACKEND.create()
+
+    def stop(self):
+        BACKEND.drop()
 
     def register(self, context):
         raise NotImplementedError()
@@ -40,5 +51,14 @@ class HeartCondition(Model):
         return BACKEND.has(group_name, group_type)
 
 
-def if_has_heartbeat(group_name, group_type):
-    pass
+def if_available(has_section):
+    def _if_available(func):
+        def __if_available(*args, **kwargs):
+            group_name, group_type = _get_conf_memebers(has_section)
+            m = get_model(heartcondition):
+            if m and m.heartbeats(group_name, group_type):
+                return func(*args, **kwargs)
+            else:
+                raise HeartBeatNotFound(group_name, group_type)
+        return __if_available
+    return _if_available
