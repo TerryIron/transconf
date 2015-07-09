@@ -56,11 +56,6 @@ Save in a shell.py:
         def hw_addr(self, ifname):
             return 'xx.xx.xx.xx.xx.xx'
 
-    if __name__ == '__main__':
-        sh = ModelShell()
-        sh.load_model('network', Ifconfig)
-        sh.run('network.if_name.ip_addr.test_name:test', 'owner_ip_addr', 'eth0')
-
 Save in a server.py:
 
 .. code:: python
@@ -97,7 +92,7 @@ version = '.'.join(map(str, __version__))
 setup(
       name="TransConf",
       version=version,
-      description="A framework based on Twisted, AMQP, SqlAlChemy",
+      description="A framework based on Twisted, AMQP, SqlAlChemy etc",
       long_description=__doc__,
       author="Chi Jun",
       packages=[
@@ -109,5 +104,7 @@ setup(
         'transconf.msg',
         'transconf.msg.rabbit',
         'transconf.models',
-      ]
+        'transconf.models.heartbeat',
+      ],
+      include_package_data=True
 )
