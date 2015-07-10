@@ -17,10 +17,7 @@ class RabbitAMQP(object):
     def __init__(self, amqp_url=None, timeout=5):
         self.connection_class = self.CONNECTION_CLASS
         self.packer = JsonSerializionPacker()
-        if self.CONF_FILE:
-            self.conf = self.CONF_FILE
-        else:
-            self.conf = self.DEFAULT_CONF
+        self.conf = self.DEFAULT_CONF if not self.CONF_FILE else self.CONF_FILE
         if not amqp_url:
             amqp_url = self.conf_amqp_url
         self.parms = pika.URLParameters(

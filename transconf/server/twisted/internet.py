@@ -106,10 +106,7 @@ client_list = [
 ]
 
 
-client_conf_file = CONF 
-
-
-def get_client(group_name, group_type, type='topic', amqp_url=None, conf=client_conf_file):
+def get_client(group_name, group_type, type='topic', amqp_url=None):
     global client_list
     c = _get_client(client_list, type, amqp_url)
     if not c: 
