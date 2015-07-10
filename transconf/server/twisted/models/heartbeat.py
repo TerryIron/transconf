@@ -51,10 +51,9 @@ class HeartCondition(Model):
         return BACKEND.has(group_name, group_type)
 
 
-def if_available(has_section):
+def if_available(group_name, group_type):
     def _if_available(func):
         def __if_available(*args, **kwargs):
-            group_name, group_type = _get_conf_memebers(has_section)
             m = get_model(heartcondition):
             if m and m.heartbeats(group_name, group_type):
                 return func(*args, **kwargs)

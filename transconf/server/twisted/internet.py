@@ -95,34 +95,21 @@ client_list = [
     ('rpc', RPCClient),
 ]
 
+
 client_conf_file = CONF 
 
 
-def _get_conf_members(section_name, conf=client_conf_file):
-    @from_config('group_name', None, sect=section_name)
-    def get_group_name(conf):
-        return conf
-    @from_config('group_type', None, sect=section_name)
-    def get_group_type(conf):
-        return conf
-    return (get_group_name(conf), get_group_type(conf))
-
-
-def get_client(section_name, type='topic', amqp_url=None, conf=client_conf_file):
-    group_name, group_type = _get_conf_members(section_name)
+def get_client(group_name, group_type, type='topic', amqp_url=None, conf=client_conf_file):
     global client_list
     c = _get_client(client_list, type, amqp_url)
     if not c: 
         return 
     if type == 'topic':
-        if group_name and group_type:
-            c.config(group_name, group_type)
-            return c
+        c.config(group_name, group_type)
     elif type == 'rpc':
-        if group_name:
-            c.config(queue=group_name+'rpc')
-            return c
+        c.config(queue=group_name+'rpc')
     elif type == 'fanout':
-        if group_name:
-            c.config(exchange=group_name+'fanout')
-            return c
+        c.config(exchange=group_name+'fanout')
+    else:
+        return None
+    return c
