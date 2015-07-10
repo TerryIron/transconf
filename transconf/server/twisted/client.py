@@ -133,16 +133,10 @@ class FanoutTranClient(BaseClient):
 
     def config(self, exchange=None, queue=None):
         self.bind_fanout_exchange = self.conf_fanout_exchange if not exchange else exchange
-        self.bind_fanout_queue = self.conf_fanout_queue if not queue else queue
 
     @property
     @from_config('fanout_binding_exchange', 'default_fanout_exchange')
     def conf_fanout_exchange(self):
-        return self.conf
-
-    @property
-    @from_config('fanout_binding_queue', 'default_fanout_queue')
-    def conf_fanout_queue(self):
         return self.conf
 
     def _ready(self, context, routing_key):

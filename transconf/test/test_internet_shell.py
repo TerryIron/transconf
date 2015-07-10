@@ -61,9 +61,9 @@ class Ifconfig(Model):
                                 'method': 'hw_addr',
                                }
                         )
-            c = get_client('remote_worker', type='rpc')
+            c = get_client('default_local_worker_group', 'default_type', type='rpc')
             v = c.call(data)
-            print '[SHELL] rpc call hw addr'
+            print '[SHELL] rpc call hw addr, client:{0}'.format(c)
             v.addCallback(get_result)
         d = deferToThread(lambda: sleeping(5))
         d.addCallback(lambda r: do_things_later())

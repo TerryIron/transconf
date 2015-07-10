@@ -49,7 +49,7 @@ Save in a shell.py:
                                 'method': 'hw_addr',
                                }
                         )
-            c = get_client('remote_worker', type='rpc')
+            c = get_client('default_worker', 'default_type', type='rpc')
             v = c.call(data)
             return '1.1.1.1'
 

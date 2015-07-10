@@ -12,7 +12,7 @@ from transconf.msg.rabbit.client import _get_client
 CONF = os.path.join(os.path.dirname(__file__), 'default.ini')
 
 @from_config('connection', None, sect='database')
-def get_sql_engine()
+def get_sql_engine():
     global CONF
     return CONF
 
@@ -73,6 +73,11 @@ class TranServer(AsyncServer):
         self.bind_fanout_queue = self.conf_fanout_queue
 
 
+class RPCTranClient(RPCClient):
+    def config(self, group='', type=''):
+        self.bind_rpc_queue = group + 'rpc'
+
+
 class TopicTranClient(TopicClient):
     def init(self):
         super(TopicTranClient, self).init()
@@ -89,10 +94,15 @@ class TopicTranClient(TopicClient):
         super(TopicTranClient, self)._ready(context, routing_key)
 
 
+class FanoutTranClient(FanoutClient):
+    def config(self, group='', type=''):
+        self.bind_fanout_exchange = group + 'fanout'
+
+
 client_list = [
     ('topic', TopicTranClient),
-    ('fanout', FanoutClient),
-    ('rpc', RPCClient),
+    ('fanout', FanoutTranClient),
+    ('rpc', RPCTranClient),
 ]
 
 
@@ -104,12 +114,5 @@ def get_client(group_name, group_type, type='topic', amqp_url=None, conf=client_
     c = _get_client(client_list, type, amqp_url)
     if not c: 
         return 
-    if type == 'topic':
-        c.config(group_name, group_type)
-    elif type == 'rpc':
-        c.config(queue=group_name+'rpc')
-    elif type == 'fanout':
-        c.config(exchange=group_name+'fanout')
-    else:
-        return None
+    c.config(group_name, group_type)
     return c
