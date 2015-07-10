@@ -4,12 +4,12 @@ __author__ = 'chijun'
 class Request(object):
     """Pick parameters as a request."""
     def __init__(self, **kwargs):
-        self.__contains__ = dict(kwargs)
+        self.__contains__ = kwargs
 
-    def __getattr__(self, item):   
+    def __getitem__(self, item):   
         return self.__contains__.get(item, None)
 
-    def __setattr__(self, item, val):   
+    def __setitem__(self, item, val):   
         self.__contains__[item] = val
 
     def to_dict(self):

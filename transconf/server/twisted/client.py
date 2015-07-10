@@ -8,7 +8,7 @@ from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
 from transconf.server.utils import from_config
 
 
-class Context(object):
+class Content(object):
     def __init__(self, context, exchange, routing_key):
         self.context = context
         self.exchange = exchange
@@ -38,7 +38,7 @@ class BaseClient(BaseSyncClient):
 
     def _ready(self, context, exchange, routing_key, corr_id):
         self.corr_id = corr_id
-        return Context(context, exchange, routing_key)
+        return Content(context, exchange, routing_key)
 
     @defer.inlineCallbacks
     def on_response(self, channel, reply_to):

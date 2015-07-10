@@ -8,6 +8,7 @@ from transconf.common.reg import register_model
 from transconf.model import Model
 from transconf.shell import ModelShell
 from transconf.server.twisted.internet import get_client
+from transconf.server.twisted.netshell import ShellRequest
 
 """
     Simple unit test, or a sample code for developers.
@@ -56,11 +57,7 @@ class Ifconfig(Model):
             print '[SHELL] get ip addr'
             def get_result(t):
                 print '[SHELL] get result:{0}'.format(t)
-            data = dict(kwargs={'value': ifname,
-                                'target': 'network.if_name.hw_addr',
-                                'method': 'hw_addr',
-                               }
-                        )
+            data = dict(shell_command=ShellRequest('network.if_name.hw_addr', 'hw_addr', ifname).to_dict())
             c = get_client('default_local_worker_group', 'default_type', type='rpc')
             v = c.call(data)
             print '[SHELL] rpc call hw addr, client:{0}'.format(c)
