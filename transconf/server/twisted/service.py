@@ -20,6 +20,7 @@ class Middleware(object):
 
 class RPCTranServer(RabbitAMQP):
     CONNECTION_CLASS = twisted_connection.TwistedProtocolConnection
+    TIMEOUT = 30
 
     @property
     @from_config('topic_binding_exchange', 'default_topic_exchange')
@@ -70,7 +71,9 @@ class RPCTranServer(RabbitAMQP):
         cc = protocol.ClientCreator(reactor, 
                                     self.connection_class,
                                     self.parms)
-        return cc.connectTCP(self.parms.host, self.parms.port)
+        return cc.connectTCP(self.parms.host, 
+                             self.parms.port,
+                             timeout=self.TIMEOUT)
 
     def connect(self, callback):
         d = self._connect()

@@ -25,11 +25,11 @@ class BaseClient(BaseSyncClient):
     def config(self):
         raise NotImplementedError()
 
-    def _on_connect(self, channel_callback, context, need_result=False):
+    def _on_connect(self, channel_callback, context, need_result=False, timeout=30):
         cc = protocol.ClientCreator(reactor,
                                     self.connection_class,
                                     self.parms)
-        d = cc.connectTCP(self.parms.host, self.parms.port)
+        d = cc.connectTCP(self.parms.host, self.parms.port, timeout=timeout)
         d.addCallback(lambda procotol: procotol.ready)
         d.addCallback(lambda con: channel_callback(con, context))
         if need_result:
@@ -77,8 +77,8 @@ class BaseClient(BaseSyncClient):
     def cast(self, context, routing_key=None):
         self._on_connect(self.on_channel, self._ready(context, routing_key))
         
-    def call(self, context, routing_key=None):
-        return self._on_connect(self.on_channel, self._ready(context, routing_key), True)
+    def call(self, context, routing_key=None, timeout=30):
+        return self._on_connect(self.on_channel, self._ready(context, routing_key), True, timeout)
 
 
 class RPCTranClient(BaseClient):
