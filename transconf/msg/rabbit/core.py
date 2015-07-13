@@ -5,7 +5,7 @@ import uuid
 import pika
 
 from transconf.server.utils import JsonSerializionPacker
-from transconf.server.utils import from_config, as_config
+from transconf.server.utils import from_config_option, as_config
 
 
 class RabbitAMQP(object):
@@ -42,7 +42,7 @@ class RabbitAMQP(object):
         return str(uuid.uuid4())
 
     @property
-    @from_config('rabbit_url', 'amqp://guest:guest@localhost:5672')
+    @from_config_option('rabbit_url', 'amqp://guest:guest@localhost:5672')
     def conf_amqp_url(self):
         return self.conf
 

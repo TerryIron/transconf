@@ -6,7 +6,7 @@ from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 
 from transconf.msg.rabbit.core import RabbitAMQP
-from transconf.server.utils import from_config
+from transconf.server.utils import from_config_option
 
 
 class Middleware(object):
@@ -23,32 +23,32 @@ class RPCTranServer(RabbitAMQP):
     TIMEOUT = 30
 
     @property
-    @from_config('topic_binding_exchange', 'default_topic_exchange')
+    @from_config_option('topic_binding_exchange', 'default_topic_exchange')
     def conf_topic_exchange(self):
         return self.conf
 
     @property
-    @from_config('topic_binding_queue', 'default_topic_queue')
+    @from_config_option('topic_binding_queue', 'default_topic_queue')
     def conf_topic_queue(self):
         return self.conf
 
     @property
-    @from_config('topic_routing_key', 'default_topic_routing_key')
+    @from_config_option('topic_routing_key', 'default_topic_routing_key')
     def conf_topic_routing_key(self):
         return self.conf
 
     @property
-    @from_config('rpc_binding_queue', 'default_rpc_queue')
+    @from_config_option('rpc_binding_queue', 'default_rpc_queue')
     def conf_rpc_queue(self):
         return self.conf
 
     @property
-    @from_config('fanout_binding_queue', 'default_fanout_queue')
+    @from_config_option('fanout_binding_queue', 'default_fanout_queue')
     def conf_fanout_queue(self):
         return self.conf
 
     @property
-    @from_config('fanout_binding_exchange', 'default_fanout_exchange')
+    @from_config_option('fanout_binding_exchange', 'default_fanout_exchange')
     def conf_fanout_exchange(self):
         return self.conf
 

@@ -5,7 +5,7 @@ from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol
 
 from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
-from transconf.server.utils import from_config
+from transconf.server.utils import from_config_option
 
 
 class Content(object):
@@ -86,7 +86,7 @@ class RPCTranClient(BaseClient):
         self.bind_rpc_queue = self.conf_rpc_queue if not queue else queue
 
     @property
-    @from_config('rpc_binding_queue', 'default_rpc_queue')
+    @from_config_option('rpc_binding_queue', 'default_rpc_queue')
     def conf_rpc_queue(self):
         return self.conf
 
@@ -109,12 +109,12 @@ class TopicTranClient(BaseClient):
         self.bind_topic_queue = self.conf_topic_queue if not queue else queue
 
     @property
-    @from_config('topic_binding_exchange', 'default_topic_exchange')
+    @from_config_option('topic_binding_exchange', 'default_topic_exchange')
     def conf_topic_exchange(self):
         return self.conf
 
     @property
-    @from_config('topic_binding_queue', 'default_topic_queue')
+    @from_config_option('topic_binding_queue', 'default_topic_queue')
     def conf_topic_queue(self):
         return self.conf
 
@@ -135,7 +135,7 @@ class FanoutTranClient(BaseClient):
         self.bind_fanout_exchange = self.conf_fanout_exchange if not exchange else exchange
 
     @property
-    @from_config('fanout_binding_exchange', 'default_fanout_exchange')
+    @from_config_option('fanout_binding_exchange', 'default_fanout_exchange')
     def conf_fanout_exchange(self):
         return self.conf
 

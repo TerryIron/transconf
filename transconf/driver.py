@@ -3,7 +3,7 @@ __author__ = 'chijun'
 import os
 import functools
 
-from transconf.server.utils import from_config, as_config
+from transconf.server.utils import from_config_option, as_config
 
 
 class Command(object):
@@ -37,7 +37,7 @@ class Command(object):
                 self._setup(em)
 
     def _setup(self, method_name, exp=None):
-        @from_config(method_name, None, sect=self.name)
+        @from_config_option(method_name, None, sect=self.name)
         def get_enabled_method(conf):
             return conf
         if not exp:

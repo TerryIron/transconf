@@ -6,12 +6,12 @@ from transconf.server.twisted.service import RPCTranServer as AsyncServer
 from transconf.server.twisted.client import RPCTranClient as RPCClient
 from transconf.server.twisted.client import TopicTranClient as TopicClient
 from transconf.server.twisted.client import FanoutTranClient as FanoutClient
-from transconf.server.utils import from_config, as_config
+from transconf.server.utils import from_config_option, as_config
 from transconf.msg.rabbit.client import _get_client
 
 CONF = as_config(os.path.join(os.path.dirname(__file__), 'default.ini'))
 
-@from_config('connection', None, sect='database')
+@from_config_option('connection', None, sect='database')
 def get_sql_engine():
     global CONF
     return CONF
@@ -23,17 +23,17 @@ class TranServer(AsyncServer):
     DEFAULT_CONF = CONF
 
     @property
-    @from_config('local_group_uuid', None)
+    @from_config_option('local_group_uuid', None)
     def _conf_get_uuid(self):
         return self.conf
 
     @property
-    @from_config('local_group_name', 'default_group_name')
+    @from_config_option('local_group_name', 'default_group_name')
     def _conf_get_name(self):
         return self.conf
 
     @property
-    @from_config('local_group_type', 'default_group_type')
+    @from_config_option('local_group_type', 'default_group_type')
     def _conf_get_type(self):
         return self.conf
 

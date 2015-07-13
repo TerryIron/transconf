@@ -3,7 +3,7 @@ __author__ = 'chijun'
 import pika
 
 from transconf.msg.rabbit.core import RabbitAMQP
-from transconf.server.utils import from_config
+from transconf.server.utils import from_config_option
 
 
 # It is a static method for sync-call, don's use it outside.
@@ -66,7 +66,7 @@ class RPCTranClient(BaseClient):
         self.bind_rpc_queue = self.conf_rpc_queue if not queue else queue
 
     @property
-    @from_config('rpc_binding_queue', 'default_rpc_queue')
+    @from_config_option('rpc_binding_queue', 'default_rpc_queue')
     def conf_rpc_queue(self):
         return self.conf
 
@@ -98,12 +98,12 @@ class TopicTranClient(BaseClient):
                                       type='topic')
 
     @property
-    @from_config('topic_binding_exchange', 'default_topic_exchange')
+    @from_config_option('topic_binding_exchange', 'default_topic_exchange')
     def conf_topic_exchange(self):
         return self.conf
 
     @property
-    @from_config('topic_binding_queue', 'default_topic_queue')
+    @from_config_option('topic_binding_queue', 'default_topic_queue')
     def conf_topic_queue(self):
         return self.conf
 
@@ -133,12 +133,12 @@ class FanoutTranClient(BaseClient):
                                       type='fanout')
 
     @property
-    @from_config('fanout_binding_exchange', 'default_fanout_exchange')
+    @from_config_option('fanout_binding_exchange', 'default_fanout_exchange')
     def conf_fanout_exchange(self):
         return self.conf
 
     @property
-    @from_config('fanout_binding_queue', 'default_fanout_queue')
+    @from_config_option('fanout_binding_queue', 'default_fanout_queue')
     def conf_fanout_queue(self):
         return self.conf
 
