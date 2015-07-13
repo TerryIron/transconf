@@ -32,13 +32,17 @@ class Command(object):
 
     def setup(self):
         for em in self.enabled_method:
-            self._setup(em)
+            if isinstance(em, list):
+                self._setup(*em)
+            else:
+                self._setup(em)
 
-    def _setup(self, method_name):
+    def _setup(self, method_name, exp=None):
         @from_config(method_name, None, sect=self.name)
         def get_enabled_method(conf):
             return conf
-        exp = get_enabled_method(self.conf)
+        if not exp:
+            exp = get_enabled_method(self.conf)
         if exp:
             self.exp[method_name] = exp
 
