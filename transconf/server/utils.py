@@ -1,25 +1,24 @@
 __author__ = 'chijun'
 
+import json
+import ConfigParser
+
 
 class JsonSerializionPacker(object):
     @staticmethod
     def pack(dict_data):
-        import json
         return json.dumps(dict_data)
 
     @staticmethod
     def unpack(json_data):
-        import json
         return json.loads(json_data)
 
 
 def from_config(opt, default_val, sect=None):
     def _from_config(func):
         def __from_config(*args, **kwargs):
-            conf = func(*args, **kwargs)
-            import ConfigParser
-            config = ConfigParser.ConfigParser()  
-            config.read(conf)
+            config = func(*args, **kwargs)
+            assert isinstance(config, ConfigParser.ConfigParser)
             if not sect:
                 default_sect = config._defaults
                 val = default_sect.get(opt, None)
@@ -31,3 +30,8 @@ def from_config(opt, default_val, sect=None):
     return _from_config
 
 
+
+def as_config(config_file):
+    config = ConfigParser.ConfigParser()  
+    config.read(config_file)
+    return config

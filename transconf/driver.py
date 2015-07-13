@@ -3,13 +3,12 @@ __author__ = 'chijun'
 import os
 import functools
 
-from transconf.server.utils import from_config
+from transconf.server.utils import from_config, as_config
 
 
 class Command(object):
-    DEFAULT_CONF = os.path.join(os.path.dirname(__file__), 'cmd/default.ini')
-    CONF_FILE = None
-
+    DEFAULT_CONF = as_config(os.path.join(os.path.dirname(__file__), 'cmd/default.ini'))
+    CONF_FILE = None 
     """
         Sample code:
         cmd = Command('regular_file')

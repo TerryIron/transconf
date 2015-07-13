@@ -5,13 +5,13 @@ import uuid
 import pika
 
 from transconf.server.utils import JsonSerializionPacker
-from transconf.server.utils import from_config
+from transconf.server.utils import from_config, as_config
 
 
 class RabbitAMQP(object):
     CONNECTION_CLASS = pika.BlockingConnection
     CONNECTION_ATTEMPTS = 3
-    DEFAULT_CONF = os.path.join(os.path.dirname(__file__), 'default.ini')
+    DEFAULT_CONF = as_config(os.path.join(os.path.dirname(__file__), 'default.ini'))
     CONF_FILE = None
 
     def __init__(self, amqp_url=None, timeout=5):
