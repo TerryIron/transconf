@@ -1,10 +1,15 @@
 __author__ = 'chijun'
 
+from twisted.internet import tast
+
 from transconf.common.reg import register_model, get_model
 from transconf.model import Model
 from transconf.backend.heartbeat import HeartBeatBackend, HeartBeatIsEnabledBackend
-from transconf.server.twisted.internet import SQL_ENGINE
+from transconf.server.twisted.internet import SQL_ENGINE, get_client
 from transconf.server.twisted.internet import CONF as global_conf
+from transconf.server.utils import from_config, from_config_option
+from transconf.server.twisted.netshell import ShellRequest
+
 
 CONF = global_conf
 
@@ -17,24 +22,56 @@ CONF_BACKEND = HeartBeatIsEnabledBackend(sql_engine)
 
 class HeartBeatNotFound(Exception):
     def __str__(group_name, group_type):
-        return 'Group name:{0}, Group type:{1} can not found.'.format(group_name, group_type))
+        return 'Group name:{0}, Group type:{1} can not found.'.format(group_name, group_type)
 
 
 @register_model('heartbeat')                                                                                                                                                                    
 class HeartBeat(Model):
     FORM = [{'node': 'heart',
-             'public': ['push', 'mod:heartbeat:heartbeat'],
+             'public': ['beat', 'mod:heartbeat:heartbeat'],
+             'public': ['dead', 'mod:heartbeat:stop'],
             }
     ]
 
     def start(self):
-        self.heart_is_start = True
+        global CONF
+        @from_config_option('timeout', 60, sect='controller:heartbeat:fanout')
+        def get_timeout(conf):
+            return conf
+        self.heart = self.heartbeat()
+        if self.heart:
+            timeout = float(get_timeout(CONF))
+            for h in self.heart:
+                h.start(timeout)
 
     def stop(self):
-        self.heart_is_start = False
+        if self.is_start and self.heart:
+            for h in self.heart:
+                h.stop()
+            self.is_start = False
 
-    def heartbeat(self, eventer, timeout=60):
-        raise NotImplementedError()
+    def heartbeat(self, target_name):
+        global CONF
+        if self.is_start:
+            return True
+        self.is_start = True
+        @from_config(sect='controller:heartbeat:fanout')
+        def get_group_names(conf):
+            return conf
+        @from_config_option('local_group_name', None)
+        def local_group_name(conf):
+            return conf
+        @from_config_option('local_group_type', None)
+        def local_group_type(conf):
+            return conf
+        local_name = local_group_name(CONF)
+        local_type = local_group_type(CONF)
+        if local_name and local_type:
+            d = [task.LoopingCall(get_client(g_name, '', type='fanout').cast(
+                 dict(shell_command=ShellRequest('{0}.heartcond'.format(target_name), 
+                                                 'register', 
+                 dict(group_name=local_name, group_type=local_type))))) for g_name, is_enabled in get_group_names(CONF) if is_enabled]
+            return d
 
 
 @register_model('heartcondition')                                                                                                                                                                    
@@ -72,7 +109,7 @@ class HeartCondition(Model):
 def if_available(group_name, group_type):
     def _if_available(func):
         def __if_available(*args, **kwargs):
-            m = get_model(heartcondition):
+            m = get_model(heartcondition)
             if m and m.heartbeats(group_name, group_type):
                 return func(*args, **kwargs)
             else:
@@ -81,17 +118,13 @@ def if_available(group_name, group_type):
     return _if_available
 
 
-def configuare_heartbeat():
-    pass
-
-
 def configuare_heartcondition():
     global CONF_BACKEND
     CONF_BACKEND.drop()
     CONF_BACKEND.create()
     global CONF
     @from_config(sect='controller:heartbeat:listen')
-    def get_heartbeat_members(conf)
+    def get_heartbeat_members(conf):
         return conf
     for uuid, is_enabled in get_heartbeat_members(CONF):
         if is_enabled:

@@ -27,6 +27,8 @@ def from_config_option(opt, default_val, sect=None):
             else:
                 if config.has_section(sect) and config.has_option(sect, opt):
                     return config.get(sect, opt)
+                else:
+                    return default_val
         return __from_config_option
     return _from_config_option
 
@@ -50,6 +52,5 @@ def from_config(sect=None):
             else:
                 if config.has_section(sect):
                     return config.items(sect)
-                    
         return __from_config
     return _from_config
