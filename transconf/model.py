@@ -5,7 +5,9 @@ from transconf.common.namebus import NameBus
 from transconf.common.basetype import BaseType
 from transconf.mystruct import NodeStructV1
 from transconf.mystructtypes import *
+from transconf.server.utils import as_config
 
+CONF = as_config(os.path.join(os.path.dirname(__file__), 'cmd/default.ini'))
 
 class ModelInternalStuctErr(Exception):
     """Raised when pointed node object's struct or its env struct being bad"""
@@ -24,6 +26,7 @@ class Model(BaseModel):
         self.is_pub_rule = self.IS_PUBLIC_METHOD 
         self.is_node_rule = self.IS_NODE_METHOD
         self.node_rules = {}
+        self.conf = DEFAULT_CONF if not self.CONF else self.CONF
 
     def _build_nodename(self, lst):
         def name(self, n, sub_name):

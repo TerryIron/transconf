@@ -12,12 +12,12 @@ class RabbitAMQP(object):
     CONNECTION_CLASS = pika.BlockingConnection
     CONNECTION_ATTEMPTS = 3
     DEFAULT_CONF = as_config(os.path.join(os.path.dirname(__file__), 'default.ini'))
-    CONF_FILE = None
+    CONF = None
 
     def __init__(self, amqp_url=None, timeout=5):
         self.connection_class = self.CONNECTION_CLASS
         self.packer = JsonSerializionPacker()
-        self.conf = self.DEFAULT_CONF if not self.CONF_FILE else self.CONF_FILE
+        self.conf = self.DEFAULT_CONF if not self.CONF else self.CONF
         if not amqp_url:
             amqp_url = self.conf_amqp_url
         self.parms = pika.URLParameters(

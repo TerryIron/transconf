@@ -7,11 +7,10 @@ from transconf.model import Model
 from transconf.backend.heartbeat import HeartBeatBackend, HeartBeatIsEnabledBackend
 from transconf.server.twisted.internet import SQL_ENGINE, get_client
 from transconf.server.twisted.internet import CONF as global_conf
-from transconf.server.utils import from_config, from_config_option
+from transconf.server.utils import from_config, from_config_option, as_config
 from transconf.server.twisted.netshell import ShellRequest
 
-
-CONF = global_conf
+SERVER_CONF = global_conf
 
 sql_engine = SQL_ENGINE
 
@@ -33,25 +32,30 @@ class HeartBeat(Model):
             }
     ]
 
-    def start(self):
-        global CONF
-        @from_config_option('timeout', 60, sect='controller:heartbeat:fanout')
-        def get_timeout(conf):
+    def start(self, config=None):
+        global SERVER_CONF
+        @from_model_option('name', None, sect='heartcondition')
+        def get_target_name(conf):
             return conf
-        self.heart = self.heartbeat()
-        if self.heart:
-            timeout = float(get_timeout(CONF))
-            for h in self.heart:
-                h.start(timeout)
+        name = get_target_name(config)
+        if name:
+            self.heart = self.heartbeat(name)
+            @from_config_option('timeout', 60, sect='controller:heartbeat:fanout')
+            def get_timeout(conf):
+                return conf
+            if self.heart:
+                timeout = float(get_timeout(SERVER_CONF))
+                for h in self.heart:
+                    h.start(timeout)
 
-    def stop(self):
+    def stop(self, config=None):
         if self.is_start and self.heart:
             for h in self.heart:
                 h.stop()
             self.is_start = False
 
     def heartbeat(self, target_name):
-        global CONF
+        global SERVER_CONF
         if self.is_start:
             return True
         self.is_start = True
@@ -64,13 +68,13 @@ class HeartBeat(Model):
         @from_config_option('local_group_type', None)
         def local_group_type(conf):
             return conf
-        local_name = local_group_name(CONF)
-        local_type = local_group_type(CONF)
+        local_name = local_group_name(SERVER_CONF)
+        local_type = local_group_type(SERVER_CONF)
         if local_name and local_type:
             d = [task.LoopingCall(get_client(g_name, '', type='fanout').cast(
                  dict(shell_command=ShellRequest('{0}.heartcond'.format(target_name), 
                                                  'register', 
-                 dict(group_name=local_name, group_type=local_type))))) for g_name, is_enabled in get_group_names(CONF) if is_enabled]
+                 dict(group_name=local_name, group_type=local_type))))) for g_name, is_enabled in get_group_names(SERVER_CONF) if is_enabled]
             return d
 
 
@@ -82,7 +86,7 @@ class HeartCondition(Model):
             }
     ]
 
-    def start(self):
+    def start(self, config=None):
         # Re-initialize sql table
         configuare_heartbeats()
 
@@ -122,11 +126,11 @@ def configuare_heartcondition():
     global CONF_BACKEND
     CONF_BACKEND.drop()
     CONF_BACKEND.create()
-    global CONF
+    global SERVER_CONF
     @from_config(sect='controller:heartbeat:listen')
     def get_heartbeat_members(conf):
         return conf
-    for uuid, is_enabled in get_heartbeat_members(CONF):
+    for uuid, is_enabled in get_heartbeat_members(SERVER_CONF):
         if is_enabled:
             d = dict(group_uuid=uuid)
             CONF_BACKEND.update(**d)

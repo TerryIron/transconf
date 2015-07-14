@@ -8,7 +8,7 @@ from transconf.server.utils import from_config_option, as_config
 
 class Command(object):
     DEFAULT_CONF = as_config(os.path.join(os.path.dirname(__file__), 'cmd/default.ini'))
-    CONF_FILE = None 
+    CONF = None 
     """
         Sample code:
         cmd = Command('regular_file')
@@ -16,7 +16,7 @@ class Command(object):
         cmd['forced_remove'](name='kkk')
     """
     def __init__(self, name):
-        self.conf = self.DEFAULT_CONF if not self.CONF_FILE else self.CONF_FILE
+        self.conf = self.DEFAULT_CONF if not self.CONF else self.CONF
         self.name = name #Section Name
         self.enabled_method = []
         self.exp = {}
