@@ -12,9 +12,9 @@ from transconf.server.twisted import internet
 from transconf.server.utils import as_config
 
 serve_conf = as_config(os.path.join(os.path.dirname(__file__), 
-                                    '{0}/exchange.ini'.format(INSTALL_PATH)))
+                                    '{0}/compute.ini'.format(INSTALL_PATH)))
 model_conf = as_config(os.path.join(os.path.dirname(__file__), 
-                                    '{0}/exchange_models.ini'.format(INSTALL_PATH)))
+                                    '{0}/compute_models.ini'.format(INSTALL_PATH)))
 internet.CONF = serve_conf
 
 from transconf.server.twisted.internet import TranServer
@@ -25,7 +25,6 @@ from transconf.server.twisted.models import model_configure
 
 class ServerMiddleware(ShellMiddleware):
     def process_request(self, context):
-        print context
         return super(ServerMiddleware, self).process_request(context)
 
 
