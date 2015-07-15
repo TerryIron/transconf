@@ -92,7 +92,8 @@ class FormParser(object):
         self._reset()
         self.register_struct(model.struct)
         for node_name, items in self._gen_parser(model.form):
+            node_name = [n for n in node_name if n != 'ROOT']
             model.set_nodeobj(node_name)
-            for k, item  in items:
+            for k, item in items:
                 model.set_node_member(node_name, k, item)
 

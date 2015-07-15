@@ -87,7 +87,7 @@ class BaseModelDriver(object):
     """
 
     def __init__(self, db_engine=None):
-        super(BaseModelDriver, self).__init__()
+        #super(BaseModelDriver, self).__init__()
         if db_engine:
             self.db_engine = create_engine(db_engine)
             self.metadata = MetaData(self.db_engine)
@@ -128,11 +128,17 @@ class BaseModelDriver(object):
         if self.available:
             table = self.table(table_class.__tablename__)
             if not isinstance(table, Table):
-                Base.metadata.create_all(self.db_engine)
+                BaseTable.metadata.create_all(self.db_engine)
 
     def undefine_table(self, table_class):
         if self.available:
             table = self.table(table_class.__tablename__)
             if isinstance(table, Table):
                 table.drop()
+
+    def clear_table(self, table_class):
+        if self.available:
+            table = self.table(table_class.__tablename__)
+            if isinstance(table, Table):
+                table.delete()
 

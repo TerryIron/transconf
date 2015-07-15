@@ -1,20 +1,22 @@
 __author__ = 'chijun'
 
-from twisted.internet import tast
+import functools
+
+from twisted.internet import task, reactor
 
 from transconf.common.reg import register_model, get_model
 from transconf.model import Model
-from transconf.backend.heartbeat import HeartBeatBackend, HeartBeatIsEnabledBackend
-from transconf.server.twisted.internet import SQL_ENGINE, get_client
+from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
+from transconf.server.twisted.internet import get_client, get_sql_engine 
 from transconf.server.twisted.internet import CONF as global_conf
-from transconf.server.utils import from_config, from_config_option, as_config
+from transconf.server.utils import from_config, from_config_option, from_model_option, as_config
 from transconf.server.twisted.netshell import ShellRequest
 
 SERVER_CONF = global_conf
 
-sql_engine = SQL_ENGINE
+sql_engine = get_sql_engine()
 
-BACKEND = HeartBeatBackend(sql_engine)
+BACKEND = HeartBeatCollectionBackend(sql_engine)
 
 CONF_BACKEND = HeartBeatIsEnabledBackend(sql_engine)
 
@@ -32,11 +34,29 @@ class HeartBeat(Model):
             }
     ]
 
+    @from_model_option('name', None, sect='heartcondition')
+    def _conf_target_name(self, config):
+        return config
+
+    @from_config(sect='controller:heartbeat:fanout')
+    def _conf_group_names(self):
+        return SERVER_CONF
+
+    @from_config_option('local_group_name', None)
+    def _conf_group_name(self):
+        return SERVER_CONF
+
+    @from_config_option('local_group_type', None)
+    def _conf_group_type(self):
+        return SERVER_CONF
+
+    @from_config_option('local_group_uuid', None)
+    def _conf_group_uuid(self):
+        return SERVER_CONF
+
     def start(self, config=None):
-        @from_model_option('name', None, sect='heartcondition')
-        def get_target_name():
-            return config
-        name = get_target_name()
+        self.is_start = None
+        name = self._conf_target_name(config)
         if name:
             self.heart = self.heartbeat(name)
             @from_config_option('timeout', 60, sect='controller:heartbeat:fanout')
@@ -48,31 +68,43 @@ class HeartBeat(Model):
                     h.start(timeout)
 
     def stop(self, config=None):
-        if self.is_start and self.heart:
+        if self.heart:
             for h in self.heart:
                 h.stop()
+        if self.is_start:
             self.is_start = False
+        name = self._get_target_name(config)
+        if name:
+            local_name = self._conf_group_name()
+            local_type = self._conf_group_type()
+            local_uuid = self._conf_group_uuid()
+            if local_name and local_type and local_uuid:
+                d = [reactor.callLater(0, lambda: get_client(g_name, '', type='fanout').cast(
+                 dict(shell_command=ShellRequest('{0}.heartcond'.format(target_name), 
+                                                 'register', 
+                 dict(group_name=local_name, 
+                      uuid=local_uuid,
+                      available=str(False),
+                      group_type=local_type)).to_dict()))) for g_name, 
+                 is_enabled in self._conf_group_names() if is_enabled and g_name != 'timeout']
+            
 
     def heartbeat(self, target_name):
         if self.is_start:
             return True
         self.is_start = True
-        @from_config(sect='controller:heartbeat:fanout')
-        def get_group_names():
-            return SERVER_CONF
-        @from_config_option('local_group_name', None)
-        def local_group_name():
-            return SERVER_CONF
-        @from_config_option('local_group_type', None)
-        def local_group_type(conf):
-            return SERVER_CONF
-        local_name = local_group_name()
-        local_type = local_group_type()
-        if local_name and local_type:
-            d = [task.LoopingCall(get_client(g_name, '', type='fanout').cast(
+        local_name = self._conf_group_name()
+        local_type = self._conf_group_type()
+        local_uuid = self._conf_group_uuid()
+        if local_name and local_type and local_uuid:
+            d = [task.LoopingCall(lambda: get_client(g_name, '', type='fanout').cast(
                  dict(shell_command=ShellRequest('{0}.heartcond'.format(target_name), 
                                                  'register', 
-                 dict(group_name=local_name, group_type=local_type))))) for g_name, is_enabled in get_group_names() if is_enabled]
+                 dict(group_name=local_name, 
+                      uuid=local_uuid,
+                      available=str(True),
+                      group_type=local_type)).to_dict()))) for g_name, 
+                 is_enabled in self._conf_group_names() if is_enabled and g_name != 'timeout']
             return d
 
 
@@ -91,14 +123,14 @@ class HeartCondition(Model):
     def register(self, context):
         group_name = context.get('group_name', None)
         group_type = context.get('group_type', None)
-        uuid = context.get('group_uuid', None)
+        uuid = context.get('uuid', None)
         available = context.get('available', None) or False
         if group_name and group_type and uuid:
             d = dict(group_name=group_name,
                      group_type=group_type,
                      uuid=uuid,
-                     available=available)
-            BACKEND.update(**d)
+                     available=str(available))
+            BACKEND.update(d)
 
     def heartbeats(self, context):
         group_name = context.get('group_name', None)
@@ -121,14 +153,14 @@ def if_available(group_name, group_type):
 
 
 def configure_heartcondition():
-    CONF_BACKEND.drop()
     CONF_BACKEND.create()
+    CONF_BACKEND.clear()
     @from_config(sect='controller:heartbeat:listen')
     def get_heartbeat_members():
         return SERVER_CONF
     for uuid, is_enabled in get_heartbeat_members():
-        if is_enabled:
-            d = dict(group_uuid=uuid)
-            CONF_BACKEND.update(**d)
-    BACKEND.drop()
+        if str(is_enabled) == 'True':
+            d = dict(uuid=uuid)
+            CONF_BACKEND.update(d)
     BACKEND.create()
+    BACKEND.clear()

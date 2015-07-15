@@ -25,7 +25,6 @@ class Model(BaseModel):
         self.is_pub_rule = self.IS_PUBLIC_METHOD 
         self.is_node_rule = self.IS_NODE_METHOD
         self.node_rules = {}
-        self.conf = DEFAULT_CONF if not self.CONF else self.CONF
 
     def _build_nodename(self, lst):
         def name(self, n, sub_name):

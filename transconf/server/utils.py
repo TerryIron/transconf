@@ -67,6 +67,7 @@ def from_config(sect=None):
                     return default_sect.items()
             else:
                 if config.has_section(sect):
-                    return config.items(sect)
+                    d = [(k, v) for k, v in config.items(sect) if k not in config.defaults()]
+                    return d
         return __from_config
     return _from_config
