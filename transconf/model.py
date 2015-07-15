@@ -7,7 +7,6 @@ from transconf.mystruct import NodeStructV1
 from transconf.mystructtypes import *
 from transconf.server.utils import as_config
 
-CONF = as_config(os.path.join(os.path.dirname(__file__), 'cmd/default.ini'))
 
 class ModelInternalStuctErr(Exception):
     """Raised when pointed node object's struct or its env struct being bad"""

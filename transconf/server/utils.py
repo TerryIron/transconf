@@ -36,7 +36,7 @@ def from_config_option(opt, default_val, sect=None):
 
 def from_model_option(opt, default_val, sect):
     def _from_model_option(func):
-        def __from_config_option(*args, **kwargs):
+        def __from_model_option(*args, **kwargs):
             config = func(*args, **kwargs)
             assert isinstance(config, ConfigParser.ConfigParser)
             target = get_model(sect)
