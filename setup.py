@@ -97,14 +97,15 @@ setup(
       author="Chi Jun",
       packages=[
         'transconf',
-        'transconf.test',
+        'transconf.tests',
         'transconf.common',
         'transconf.server',
         'transconf.server.twisted',
+        'transconf.server.twisted.models',
         'transconf.msg',
         'transconf.msg.rabbit',
-        'transconf.models',
-        'transconf.models.heartbeat',
+        'transconf.backend',
+        'transconf.cmd',
       ],
       include_package_data=True
 )
