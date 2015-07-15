@@ -8,17 +8,16 @@ INSTALL_PATH = './etc'
 
 import os
 
-from transconf.server.twisted import internet
+from transconf.server import twisted
 from transconf.server.utils import as_config
 
 serve_conf = as_config(os.path.join(os.path.dirname(__file__), 
                                     '{0}/compute.ini'.format(INSTALL_PATH)))
 model_conf = as_config(os.path.join(os.path.dirname(__file__), 
                                     '{0}/compute_models.ini'.format(INSTALL_PATH)))
-internet.CONF = serve_conf
+twisted.CONF = serve_conf
 
 from transconf.server.twisted.internet import TranServer
-TranServer.CONF = serve_conf
 from transconf.server.twisted.netshell import ShellMiddleware
 from transconf.server.twisted.models import model_configure
 
