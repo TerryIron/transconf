@@ -42,7 +42,7 @@ class BaseMixin(object):
         return cls.id
 
     def update_from_dict(cls, dic_data):
-        return None if [setattr(cls, k, v) for k, v in dic_data.items() if getattr(cls, k, None) != v] else None
+        return None if [setattr(cls, k, v) for k, v in dic_data.items() if hasattr(cls, k) and getattr(cls, k, None) != v] else None
 
     def update(cls, table_obj):
         return cls.update_from_dict(table_obj.to_dict())
@@ -89,7 +89,6 @@ class BaseModelDriver(object):
     """
 
     def __init__(self, db_engine=None):
-        #super(BaseModelDriver, self).__init__()
         if db_engine:
             self.db_engine = create_engine(db_engine)
             self.metadata = MetaData(self.db_engine)
