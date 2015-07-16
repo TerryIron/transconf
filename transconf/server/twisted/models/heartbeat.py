@@ -154,6 +154,8 @@ def if_available(group_name, group_type):
 
 
 def configure_heartcondition():
+    BACKEND.create()
+    BACKEND.clear()
     CONF_BACKEND.create()
     CONF_BACKEND.clear()
     @from_config(sect='controller:heartbeat:listen')
@@ -163,5 +165,3 @@ def configure_heartcondition():
         if str(is_enabled) == 'True':
             d = dict(uuid=uuid)
             CONF_BACKEND.update(d)
-    BACKEND.create()
-    BACKEND.clear()

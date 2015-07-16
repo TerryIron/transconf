@@ -7,7 +7,7 @@ class InvalidData(Exception):
     """Raised when any data can not be found """
 
 
-class HeartBeatIsEnabled(BaseTable):
+class HeartBeatIsEnabled(declarative_base()):
     __tablename__ = 'enabled_heartbeat'
     uuid = StrColumn(36)
 
@@ -15,7 +15,7 @@ class HeartBeatIsEnabled(BaseTable):
         self.uuid = uuid
 
 
-class HeartBeatCollection(BaseTable):
+class HeartBeatCollection(declarative_base()):
     __tablename__ = 'heartbeat'
 
     group_name = StrColumn(30)

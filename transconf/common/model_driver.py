@@ -7,10 +7,11 @@ from sqlalchemy.exc import *
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import session as local_session
-from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.ext.declarative import declarative_base as local_declarative_base
 
 
-__all__ = ['BaseTable', 'BaseModelDriver', 'StrColumn', 'IntColumn', 'MapColumn']
+__all__ = ['declarative_base', 'BaseModelDriver', 'StrColumn', 'IntColumn', 'MapColumn']
 
 
 class IntColumn(Column):
@@ -52,7 +53,8 @@ class BaseMixin(object):
         return d
 
 
-BaseTable = declarative_base(cls=BaseMixin)
+def declarative_base(cls=BaseMixin):
+    return local_declarative_base(cls=cls)
 
 
 class BaseModelDriver(object):
@@ -128,17 +130,18 @@ class BaseModelDriver(object):
         if self.available:
             table = self.table(table_class.__tablename__)
             if not isinstance(table, Table):
-                BaseTable.metadata.create_all(self.db_engine)
+                table_class.metadata.create_all(self.db_engine)
 
     def undefine_table(self, table_class):
         if self.available:
             table = self.table(table_class.__tablename__)
             if isinstance(table, Table):
-                table.drop()
+                table_class.__table__.drop(self.db_engine)
 
     def clear_table(self, table_class):
         if self.available:
             table = self.table(table_class.__tablename__)
             if isinstance(table, Table):
-                table.delete()
+                table_class.__table__.drop(self.db_engine)
+                table_class.metadata.create_all(self.db_engine)
 
