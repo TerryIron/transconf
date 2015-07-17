@@ -57,7 +57,9 @@ class HeartBeatCollectionBackend(BaseModelDriver):
         target = self.session.query(HeartBeatCollection).filter_by(group_name=group_name,
                                                                    group_type=group_type,
                                                                    available=str(True)).first()
-        return True if target else False
+        if target and target.count > 0:
+            return True
+        return False
 
     def update(self, dic_data):
         target, record = self._ready_data(dic_data)
@@ -85,8 +87,8 @@ class HeartBeatIsEnabledBackend(HeartBeatCollectionBackend):
     def clear(self):
         self.clear_table(HeartBeatIsEnabled)
 
-    def has(self, group_uuid):
-        target = self.session.query(HeartBeatIsEnabled).filter_by(group_uuid=group_uuid).first()
+    def has(self, uuid):
+        target = self.session.query(HeartBeatIsEnabled).filter_by(uuid=uuid).first()
         return True if target else False
 
     def _ready_data(self, dic_data):

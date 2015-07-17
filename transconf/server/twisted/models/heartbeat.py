@@ -1,7 +1,7 @@
 __author__ = 'chijun'
 
+import time
 import functools
-
 from twisted.internet import task, reactor
 
 from transconf.common.reg import register_model, get_model
@@ -29,6 +29,7 @@ class HeartBeatNotFound(Exception):
 
 @register_model('heartbeat')                                                                                                                                                                    
 class HeartBeat(Model):
+    UNEXPECTED_OPTIONS = ['timeout']
     FORM = [{'node': 'heart',
              'public': ['beat', 'mod:heartbeat:heartbeat'],
              'public': ['dead', 'mod:heartbeat:stop'],
@@ -87,7 +88,7 @@ class HeartBeat(Model):
                       uuid=local_uuid,
                       available=str(False),
                       group_type=local_type)).to_dict()))) for g_name, 
-                 is_enabled in self._conf_group_names() if is_enabled and g_name != 'timeout']
+                 is_enabled in self._conf_group_names() if is_enabled and g_name not in self.UNEXPECTED_OPTIONS]
             
 
     def heartbeat(self, target_name):
@@ -105,12 +106,13 @@ class HeartBeat(Model):
                       uuid=local_uuid,
                       available=str(True),
                       group_type=local_type)).to_dict()))) for g_name, 
-                 is_enabled in self._conf_group_names() if is_enabled and g_name != 'timeout']
+                 is_enabled in self._conf_group_names() if is_enabled and g_name not in self.UNEXPECTED_OPTIONS]
             return d
 
 
 @register_model('heartcondition')                                                                                                                                                                    
 class HeartCondition(Model):
+    UNEXPECTED_OPTIONS = ['timeout']
     FORM = [{'node': 'heartcond',
              'public': ['has', 'mod:heartcondition:heartbeats'],
              'public': ['register', 'mod:heartcondition:register'],
@@ -121,12 +123,30 @@ class HeartCondition(Model):
         # Re-initialize sql table
         configure_heartcondition()
 
-    def register(self, context):
+    def _check_heart_health(self):
+        @from_config_option('timeout', 60, sect='controller:heartbeat:listen')
+        def get_timeout():
+            return SERVER_CONF
+        timeout = get_timeout()
+        if not hasattr(self, '_timestamp'):
+            setattr(self, '_timestamp', time.time())
+            return True
+        else:
+            cur_time = time.time()
+            if int(cur_time - self._timestamp) >= int(timeout):
+                self._timestamp = cur_time
+                return True
+        return False
+
+    def register(self, context, timeout=60):
         group_name = context.get('group_name', None)
         group_type = context.get('group_type', None)
         uuid = context.get('uuid', None)
         available = context.get('available', None) or False
-        if group_name and group_type and uuid:
+        if uuid and CONF_BACKEND.has(uuid):
+            if not self._check_heart_health():
+                return
+        if group_name and group_type:
             d = dict(group_name=group_name,
                      group_type=group_type,
                      uuid=uuid,
@@ -162,6 +182,6 @@ def configure_heartcondition():
     def get_heartbeat_members():
         return SERVER_CONF
     for uuid, is_enabled in get_heartbeat_members():
-        if str(is_enabled) == 'True':
+        if str(is_enabled) == 'True' and uuid not in HeartCondition().UNEXPECTED_OPTIONS:
             d = dict(uuid=uuid)
             CONF_BACKEND.update(d)

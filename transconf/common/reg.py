@@ -10,10 +10,12 @@ class Register(object):
         self.name = name
         self.reg = {}
 
-    def register(self, name, obj):
-        if name not in self.reg:
+    def register(self, name, obj, is_forced=False):
+        if is_forced:
             self.reg[name] = obj
-
+        else:
+            if name not in self.reg:
+                self.reg[name] = obj
 
     def get(self, name):
         return self.reg.get(name, None)
@@ -25,6 +27,7 @@ class Register(object):
 def get_reg_target(reg_type, name):
     if reg_type.startswith('dri'): return get_local_driver(name)
     elif reg_type.startswith('mod'): return get_model(name)
+    elif reg_type.startswith('cmd'): return get_local_cmd(name)
 
 
 LocalReg = Register('local')

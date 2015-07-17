@@ -15,17 +15,18 @@ __all__ = ['declarative_base', 'BaseModelDriver', 'StrColumn', 'IntColumn', 'Map
 
 
 class IntColumn(Column):
-    def __init__(self, primary_key=False):
+    def __init__(self, primary_key=False, **kwargs):
         super(IntColumn, self).__init__(Integer, primary_key=primary_key)
 
 
 class StrColumn(Column):
-    def __init__(self, length):
+    def __init__(self, length, **kwargs):
         super(StrColumn, self).__init__(String(length))
 
 
+# Don't use it in BaseMixin
 class MapColumn(Column):
-    def __init__(self, table_name, item_name):
+    def __init__(self, table_name, item_name, **kwargs):
         super(MapColumn, self).__init__(ForeignKey('.'.join([table_name, item_name])))
 
 
@@ -35,11 +36,9 @@ class BaseMixin(object):
     def __tablename__(cls): 
         return cls.__name__.lower()
 
-    @declared_attr 
-    def id(cls): 
-        if not hasattr(cls, 'id'):
-            setattr(cls, 'id', IntColumn(True))
-        return cls.id
+    __table_args__ = {'mysql_engine': 'InnoDB'}
+
+    id = IntColumn(primary_key=True)
 
     def update_from_dict(cls, dic_data):
         return None if [setattr(cls, k, v) for k, v in dic_data.items() if hasattr(cls, k) and getattr(cls, k, None) != v] else None
