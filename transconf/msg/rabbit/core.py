@@ -21,7 +21,6 @@ class RabbitAMQP(object):
         self.parms = None
         if not amqp_url:
             amqp_url = self.conf_amqp_url
-        print self.conf.sections()
         self.parms = pika.URLParameters(
             amqp_url +
             '?socket_timeout={0}&'
