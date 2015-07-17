@@ -1,9 +1,5 @@
 __author__ = 'chijun'
 
-import sys                                                                                                                                                                                                
-
-sys.path.insert(0, sys.path[0] + '/../../..')
-
 INSTALL_PATH = './etc'
 
 import os
