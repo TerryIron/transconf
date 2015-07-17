@@ -18,8 +18,10 @@ class RabbitAMQP(object):
         self.connection_class = self.CONNECTION_CLASS
         self.packer = JsonSerializionPacker()
         self.conf = self.DEFAULT_CONF if not self.CONF else self.CONF
+        self.parms = None
         if not amqp_url:
             amqp_url = self.conf_amqp_url
+        print self.conf.sections()
         self.parms = pika.URLParameters(
             amqp_url +
             '?socket_timeout={0}&'
@@ -42,7 +44,7 @@ class RabbitAMQP(object):
         return str(uuid.uuid4())
 
     @property
-    @from_config_option('rabbit_url', 'amqp://guest:guest@localhost:5672')
+    @from_config_option('amqp_url', 'amqp://guest:guest@localhost:5672')
     def conf_amqp_url(self):
         return self.conf
 

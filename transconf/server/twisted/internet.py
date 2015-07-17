@@ -65,11 +65,15 @@ class TranServer(AsyncServer):
 
 
 class RPCTranClient(RPCClient):
+    DEFAULT_CONF = get_service_conf()
+
     def config(self, group='', type=''):
         self.bind_rpc_queue = group + 'rpc'
 
 
 class TopicTranClient(TopicClient):
+    DEFAULT_CONF = get_service_conf()
+
     def init(self):
         super(TopicTranClient, self).init()
         self.routing_key = None
@@ -86,6 +90,8 @@ class TopicTranClient(TopicClient):
 
 
 class FanoutTranClient(FanoutClient):
+    DEFAULT_CONF = get_service_conf()
+
     def config(self, group='', type=''):
         self.bind_fanout_exchange = group + 'fanout'
 
@@ -98,7 +104,6 @@ client_list = [
 
 
 def get_client(group_name, group_type, type='topic', amqp_url=None):
-    global client_list
     c = _get_client(client_list, type, amqp_url)
     if not c: 
         return 

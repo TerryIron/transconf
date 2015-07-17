@@ -163,14 +163,12 @@ client_list = [
 
 
 def _get_client(client_list, type, amqp_url=None, exchange='', queue=''):
-    try:
-        c = [cls(amqp_url) for t, cls in client_list if t == type].pop(0)
-        c.config(exchange, queue)
-        return c
-    except IndexError:
-        pass
+    for t, cls in client_list:
+        if t == type:
+            c = cls(amqp_url)
+            c.config(exchange, queue)
+            return c
 
 
 def get_client(amqp_url=None, exchange=None, queue=None, type='topic'):
-    global client_list
     return _get_client(client_list, type, amqp_url, exchange, queue)
