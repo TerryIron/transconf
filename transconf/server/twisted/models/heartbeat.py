@@ -143,8 +143,9 @@ class HeartCondition(Model):
         group_type = context.get('group_type', None)
         uuid = context.get('uuid', None)
         available = context.get('available', None) or False
-        if uuid and CONF_BACKEND.has(uuid):
-            if not self._check_heart_health():
+        if not uuid \
+            or not self._check_heart_health() \
+            or not CONF_BACKEND.has(uuid):
                 return
         if group_name and group_type:
             d = dict(group_name=group_name,
