@@ -11,11 +11,14 @@ serve_conf = as_config(os.path.join(os.path.dirname(__file__),
                                     '{0}/compute.ini'.format(INSTALL_PATH)))
 model_conf = as_config(os.path.join(os.path.dirname(__file__), 
                                     '{0}/compute_models.ini'.format(INSTALL_PATH)))
+cmd_conf = as_config(os.path.join(os.path.dirname(__file__), 
+                                  '{0}/compute_cmds.ini'.format(INSTALL_PATH)))
 twisted.CONF = serve_conf
 
 from transconf.server.twisted.internet import TranServer
 from transconf.server.twisted.netshell import ShellMiddleware
 from transconf.server.twisted.models import model_configure
+from transconf.driver import command_configure
 
 
 class ServerMiddleware(ShellMiddleware):
@@ -24,6 +27,7 @@ class ServerMiddleware(ShellMiddleware):
 
 
 if __name__ == '__main__':
+    command_configure(cmd_conf)
     m = ServerMiddleware(model_configure(model_conf))
     serve = TranServer()
     serve.setup(m)

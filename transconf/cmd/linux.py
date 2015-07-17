@@ -1,7 +1,7 @@
 __author__ = 'chijun'
 
 from transconf.driver import Command
-from transconf.command.reg import register_local_cmd
+from transconf.common.reg import register_local_cmd
 
 
 @register_local_cmd('regular_file')

@@ -55,7 +55,7 @@ def command_configure(conf):
     Command.DEFAULT_CONF = conf
     for sect in conf.sections():
         @from_config_option('factory', None, sect=sect)
-        def conf_command_factory()
+        def conf_command_factory():
             return conf
         factory = conf_command_factory()
         if factory:
