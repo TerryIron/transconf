@@ -3,7 +3,7 @@ __author__ = 'chijun'
 from transconf.driver import Command
 
 class File(Command):
-    def init(self)
+    def init(self):
         self.enabled_method = [
             'new',
             'forced_remove',
@@ -11,7 +11,7 @@ class File(Command):
         ]
 
 class Directory(Command):
-    def init(self)
+    def init(self):
         self.enabled_method = [
             'new',
             'forced_remove',
