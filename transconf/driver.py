@@ -51,4 +51,16 @@ class Command(object):
             func = functools.partial(Command.translate, exp)
             return func
 
-
+def command_configure(conf):
+    Command.DEFAULT_CONF = conf
+    for sect in conf.sections():
+        @from_config_option('factory', None, sect=sect)
+        def conf_command_factory()
+            return conf
+        factory = conf_command_factory()
+        if factory:
+            factory = factory.split('.')
+            cls = __import__('.'.join(factory[0:-1]), fromlist=[factory[-1]])
+            mod = getattr(cls, factory[-1])
+            if mod and callable(mod):
+                mod(sect).setup()
