@@ -91,6 +91,9 @@ class HeartBeatIsEnabledBackend(HeartBeatCollectionBackend):
         target = self.session.query(HeartBeatIsEnabled).filter_by(uuid=uuid).first()
         return True if target else False
 
+    def uuids(self):
+        return [record.uuid for record in self.session.query(HeartBeatIsEnabled) if record]
+
     def _ready_data(self, dic_data):
         try:
             record = HeartBeatIsEnabled(**dic_data)
