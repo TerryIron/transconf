@@ -61,10 +61,10 @@ class HeartBeatCollectionBackend(BaseModelDriver):
             return True
         return False
 
-    def update(self, dic_data):
+    def update(self, dic_data, need_update_count=True):
         target, record = self._ready_data(dic_data)
         if target:
-            if hasattr(target, 'count'):
+            if need_update_count and hasattr(target, 'count'):
                 record.count = int(target.count) + 1
             target.update(record)
         else:

@@ -1,7 +1,6 @@
 __author__ = 'chijun'
 
 import time
-import functools
 from twisted.internet import task, reactor
 
 from transconf.common.reg import register_model, get_model
@@ -127,6 +126,9 @@ class HeartBeat(Model):
 class HeartCondition(Model):
     # Ver: (0, 1, 0) by chijun
     # 1 add outbound method 'has', 'register'
+    # Ver: (0, 1, 1) by chijun
+    # 1 add '_update_target', '_check_target', '_check_target_is_init'
+    # 2 add '_check_heart_still_alive', '_check_has_available_targets'
     UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heartcond',
              'public': ['has', 'mod:heartcondition:has_heartbeat'],
@@ -141,31 +143,22 @@ class HeartCondition(Model):
 
     def start(self, config=None):
         # Re-initialize sql table
+        self._target_init()
+        self._timestamp_init()
         configure_heartcondition()
         self.buf_available_uuid = CONF_BACKEND.uuids()
 
-    def _check_heart_alive(self, group_name, group_type, uuid):
-        if (not (hasattr(self, 'buf_group_name') and hasattr(self, 'buf_group_type'))) \
-            or (not (self.buf_group_name.get(group_name, None) and self.buf_group_type.get(group_type, None))) \
-            or (not hasattr(self, '_timestamp')) \
-            or (uuid not in self._timestamp):
-            return False
+    def _check_heart_still_alive(self, group_name, group_type, uuid):
         heartrate = self._conf_heartrate
         cur_time = time.time()
+        #Check this heartbeat was timeout?
         if int(cur_time - self._timestamp[uuid]) > int(heartrate):
             # Maybe heartbeat is lost?
-            d = dict(group_name=group_name,
-                     group_type=group_type,
-                     uuid=uuid,
-                     available=str(False))
-            BACKEND.update(d)
-            return False
-        return True
+            self._update_target(group_name, group_type, uuid, False, False)
+            self._check_has_available_targets(group_name, group_type)
 
     def _check_heart_health(self, group_name, group_type, uuid):
         heartrate = self._conf_heartrate
-        if not hasattr(self, '_timestamp'):
-            setattr(self, '_timestamp', {})
         if uuid not in self._timestamp:
             self._timestamp[uuid] = time.time()
             return True
@@ -174,6 +167,33 @@ class HeartCondition(Model):
             if int(cur_time - self._timestamp[uuid]) >= (int(heartrate) - 1):
                 return cur_time
         raise HeartBeatTimeoutErr(group_name, group_type)
+
+    def _target_init(self):
+        if not hasattr(self, 'buf_group_target'):
+            setattr(self, 'buf_group_target', {})
+
+    def _timestamp_init(self):
+        if not hasattr(self, '_timestamp'):
+            setattr(self, '_timestamp', {})
+
+    def _check_target(self, group_name, group_type):
+        if not self.buf_group_target.get(group_name + '_' + group_type, None):
+            return False
+        return True
+
+    def _update_target(self, group_name, group_type, uuid, available, need_count=True):
+        BACKEND.update(dict(group_name=group_name,
+                            group_type=group_type,
+                            uuid=uuid,
+                            available=str(available)),
+                       need_count)
+
+    def _check_has_available_targets(self, group_name, group_type):
+        #Check if it has available uuid of group target? 
+        if BACKEND.has(group_name, group_type):
+            self.buf_group_target[group_name + '_' + group_type] = True
+        else:
+            self.buf_group_target[group_name + '_' + group_type] = False
 
     def register(self, context, heartrate=60):
         group_name = context.get('group_name', None)
@@ -191,24 +211,16 @@ class HeartCondition(Model):
                 return 
             except:
                 return 
-            d = dict(group_name=group_name,
-                     group_type=group_type,
-                     uuid=uuid,
-                     available=str(available))
-            BACKEND.update(d)
-            if not (hasattr(self, 'buf_group_name') and hasattr(self, 'buf_group_type')):
-                setattr(self, 'buf_group_name', {})
-                setattr(self, 'buf_group_type', {})
-            if BACKEND.has(group_name, group_type):
-                self.buf_group_name[group_name] = True
-                self.buf_group_type[group_type] = True
+        self._update_target(group_name, group_type, uuid, available)
+        self._check_has_available_targets(group_name, group_type)
+        reactor.callLater((heartrate + (heartrate / 2)), 
+                          lambda:  self._check_heart_still_alive(group_name, group_type, uuid))
 
     def has_heartbeat(self, context):
         group_name = context.get('group_name', None)
         group_type = context.get('group_type', None)
-        uuid = context.get('uuid', None)
-        if not (group_name and group_type and uuid) \
-            or not self._check_heart_alive(group_name, group_type, uuid):
+        if not (group_name or group_type) \
+            or not self._check_target(group_name, group_type):
             return False
         return True
 
@@ -217,10 +229,8 @@ def if_available(group_name, group_type):
     def _if_available(func):
         def __if_available(*args, **kwargs):
             m = get_model('heartcondition')
-            if m and True in map(lambda uuid: m.has_heartbeat(dict(group_name=group_name, 
-                                                                   group_type=group_type, 
-                                                                   uuid=uuid)), 
-                                 m.buf_available_uuid):
+            if m and m.has_heartbeat(dict(group_name=group_name, 
+                                          group_type=group_type)):
                 return func(*args, **kwargs)
             else:
                 raise HeartBeatNotFound(group_name, group_type)
