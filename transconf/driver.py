@@ -3,7 +3,7 @@ __author__ = 'chijun'
 import os
 import functools
 
-from transconf.server.utils import from_config_option, as_config
+from transconf.server.utils import from_config_option, as_config, import_class
 
 
 class Command(object):
@@ -60,7 +60,6 @@ def command_configure(conf):
         factory = conf_command_factory()
         if factory:
             factory = factory.split('.')
-            cls = __import__('.'.join(factory[0:-1]), fromlist=[factory[-1]])
-            mod = getattr(cls, factory[-1])
-            if mod and callable(mod):
+            mod = import_class(factory)
+            if callable(mod):
                 mod(sect).setup()

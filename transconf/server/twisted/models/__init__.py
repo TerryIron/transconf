@@ -1,7 +1,7 @@
 __version__ = (0, 1, 0)
 
 from transconf.server.twisted.netshell import NetShell
-from transconf.server.utils import from_config_option
+from transconf.server.utils import from_config_option, import_class
 from transconf.common.reg import get_model
 
 
@@ -73,8 +73,6 @@ def model_configure(conf, sh=None):
         name = get_model_name()
         if class_name and name:
             class_name = class_name.split('.')
-            cls = __import__('.'.join(class_name[0:-1]), fromlist=[class_name[-1]])
-            mod = getattr(cls, class_name[-1])
-            if mod:
-                load_model(sh, name, mod, conf)
+            mod = import_class(class_name)
+            load_model(sh, name, mod, conf)
     return sh

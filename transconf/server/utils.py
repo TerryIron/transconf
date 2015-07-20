@@ -5,6 +5,12 @@ import ConfigParser
 
 from transconf.common.reg import get_model
 
+
+def import_class(class_name):
+    cls = __import__('.'.join(class_name[0:-1]), fromlist=[class_name[-1]])
+    return getattr(cls, class_name[-1])
+
+
 class JsonSerializionPacker(object):
     @staticmethod
     def pack(dict_data):
