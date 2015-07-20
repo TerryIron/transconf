@@ -195,7 +195,7 @@ class HeartCondition(Model):
         else:
             self.buf_group_target[group_name + '_' + group_type] = False
 
-    def register(self, context, heartrate=60):
+    def register(self, context, heartrate=60, timeout=5):
         group_name = context.get('group_name', None)
         group_type = context.get('group_type', None)
         uuid = context.get('uuid', None)
@@ -213,7 +213,7 @@ class HeartCondition(Model):
                 return 
         self._update_target(group_name, group_type, uuid, available)
         self._check_has_available_targets(group_name, group_type)
-        reactor.callLater((heartrate + (heartrate / 2)), 
+        reactor.callLater((heartrate + timeout), 
                           lambda:  self._check_heart_still_alive(group_name, group_type, uuid))
 
     def has_heartbeat(self, context):
