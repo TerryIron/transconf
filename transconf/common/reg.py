@@ -5,7 +5,7 @@ from transconf.common.utils import NameSpace
 
 
 @NameSpace
-class Register(object):
+class Registry(object):
     def __init__(self, name):
         self.name = name
         self.reg = {}
@@ -30,7 +30,7 @@ def get_reg_target(reg_type, name):
     elif reg_type.startswith('cmd'): return get_local_cmd(name)
 
 
-LocalReg = Register('local')
+LocalReg = Registry('local')
 
 def register_local_driver(name):
     def _register_local_driver(cls, *args, **kwargs):
@@ -46,7 +46,7 @@ def get_local_driver(name):
     return LocalReg.get('__is_driver__' + str(name))
 
 
-ModelReg = Register('model')
+ModelReg = Registry('model')
 
 def register_model(name):
     def _register_model(cls, *args, **kwargs):
@@ -62,7 +62,7 @@ def get_model(name):
     return ModelReg.get('__is_model__' + str(name)) 
 
 
-CmdReg = Register('cmd')
+CmdReg = Registry('cmd')
 
 def register_local_cmd(name):
     def _register_local_cmd(cls, *args, **kwargs):

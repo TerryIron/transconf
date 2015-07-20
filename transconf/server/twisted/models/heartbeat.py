@@ -33,6 +33,8 @@ class HeartRateErr(Exception):
 
 @register_model('heartbeat')                                                                                                                                                                    
 class HeartBeat(Model):
+    # Ver: (0, 1, 0) by chijun
+    # 1 add outbound method 'alive', 'dead'
     UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heart',
              'public': ['alive', 'mod:heartbeat:heartbeat'],
@@ -80,12 +82,13 @@ class HeartBeat(Model):
                     h.start(timeout)
 
     def stop(self, config=None):
+        # Stop all heartbeat event-loop.
         if self.heart:
             for h in self.heart:
                 h.stop()
         if self.is_start:
             self.is_start = False
-        name = self._get_target_name(config)
+        name = self._conf_target_name(config)
         if name:
             local_name = self._conf_group_name
             local_type = self._conf_group_type
@@ -101,6 +104,7 @@ class HeartBeat(Model):
                  is_enabled in self._conf_group_names if is_enabled and g_name not in self.UNEXPECTED_OPTIONS]
 
     def heartbeat(self, target_name):
+        # Check if has call heartbeat event-loop, don't call it again.
         if self.is_start:
             return True
         self.is_start = True
@@ -121,6 +125,8 @@ class HeartBeat(Model):
 
 @register_model('heartcondition')                                                                                                                                                                    
 class HeartCondition(Model):
+    # Ver: (0, 1, 0) by chijun
+    # 1 add outbound method 'has', 'register'
     UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heartcond',
              'public': ['has', 'mod:heartcondition:has_heartbeat'],
