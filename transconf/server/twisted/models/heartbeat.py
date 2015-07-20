@@ -26,14 +26,14 @@ class HeartBeatNotFound(Exception):
     def __str__(group_name, group_type):
         return 'Group name:{0}, Group type:{1} can not found.'.format(group_name, group_type)
 
-class HeartBeatTimeoutErr(Exception):
+class HeartRateErr(Exception):
     def __str__(group_name, group_type):
-        return 'Group name:{0}, Group type:{1} got a invalid timeout.'.format(group_name, group_type)
+        return 'Group name:{0}, Group type:{1} got a invalid heartrate.'.format(group_name, group_type)
 
 
 @register_model('heartbeat')                                                                                                                                                                    
 class HeartBeat(Model):
-    UNEXPECTED_OPTIONS = ['timeout']
+    UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heart',
              'public': ['alive', 'mod:heartbeat:heartbeat'],
              'public': ['dead', 'mod:heartbeat:stop'],
@@ -65,8 +65,8 @@ class HeartBeat(Model):
         return SERVER_CONF
 
     @property
-    @from_config_option('timeout', 60, sect='controller:heartbeat:fanout')
-    def _conf_timeout(self):
+    @from_config_option('heartrate', 60, sect='controller:heartbeat:fanout')
+    def _conf_heartrate(self):
         return SERVER_CONF
 
     def start(self, config=None):
@@ -75,7 +75,7 @@ class HeartBeat(Model):
         if name:
             self.heart = self.heartbeat(name)
             if self.heart:
-                timeout = int(self._conf_timeout)
+                timeout = int(self._conf_heartrate)
                 for h in self.heart:
                     h.start(timeout)
 
@@ -121,7 +121,7 @@ class HeartBeat(Model):
 
 @register_model('heartcondition')                                                                                                                                                                    
 class HeartCondition(Model):
-    UNEXPECTED_OPTIONS = ['timeout']
+    UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heartcond',
              'public': ['has', 'mod:heartcondition:has_heartbeat'],
              'public': ['register', 'mod:heartcondition:register'],
@@ -129,8 +129,8 @@ class HeartCondition(Model):
     ]
 
     @property
-    @from_config_option('timeout', 60, sect='controller:heartbeat:listen')
-    def _conf_timeout(self):
+    @from_config_option('heartrate', 60, sect='controller:heartbeat:listen')
+    def _conf_heartrate(self):
         return SERVER_CONF
 
     def start(self, config=None):
@@ -144,9 +144,9 @@ class HeartCondition(Model):
             or (not hasattr(self, '_timestamp')) \
             or (uuid not in self._timestamp):
             return False
-        timeout = self._conf_timeout
+        heartrate = self._conf_heartrate
         cur_time = time.time()
-        if int(cur_time - self._timestamp[uuid]) > int(timeout):
+        if int(cur_time - self._timestamp[uuid]) > int(heartrate):
             # Maybe heartbeat is lost?
             d = dict(group_name=group_name,
                      group_type=group_type,
@@ -157,7 +157,7 @@ class HeartCondition(Model):
         return True
 
     def _check_heart_health(self, group_name, group_type, uuid):
-        timeout = self._conf_timeout
+        heartrate = self._conf_heartrate
         if not hasattr(self, '_timestamp'):
             setattr(self, '_timestamp', {})
         if uuid not in self._timestamp:
@@ -165,22 +165,22 @@ class HeartCondition(Model):
             return True
         else:
             cur_time = time.time()
-            if int(cur_time - self._timestamp[uuid]) >= (int(timeout) - 1):
-                self._timestamp[uuid] = cur_time
-                return True
+            if int(cur_time - self._timestamp[uuid]) >= (int(heartrate) - 1):
+                return cur_time
         raise HeartBeatTimeoutErr(group_name, group_type)
 
-    def register(self, context, timeout=60):
+    def register(self, context, heartrate=60):
         group_name = context.get('group_name', None)
         group_type = context.get('group_type', None)
         uuid = context.get('uuid', None)
         available = context.get('available', None) or False
         if group_name and group_type and uuid:
             try:
-                self._check_heart_health(group_name, group_type, uuid)
+                cur_time = self._check_heart_health(group_name, group_type, uuid)
                 if uuid not in self.buf_available_uuid:
                     #Heartbeat is not in enabled range.
                     return 
+                self._timestamp[uuid] = cur_time
             except HeartBeatTimeoutErr:
                 return 
             except:
