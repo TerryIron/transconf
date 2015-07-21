@@ -34,6 +34,8 @@ class HeartRateErr(Exception):
 class HeartBeat(Model):
     # Ver: (0, 1, 0) by chijun
     # 1 add outbound method 'alive', 'dead'
+    # Ver: (0, 1, 1) by chijun
+    # 1 add get_fanout_members
     UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heart',
              'public': ['alive', 'mod:heartbeat:heartbeat'],
@@ -70,6 +72,10 @@ class HeartBeat(Model):
     def _conf_heartrate(self):
         return SERVER_CONF
 
+    def get_fanout_members(self):
+        return [(g_name, is_enabled) for g_name, is_enabled in self._conf_group_names 
+                if is_enabled and g_name not in self.UNEXPECTED_OPTIONS]
+
     def start(self, config=None):
         self.is_start = None
         name = self._conf_target_name(config)
@@ -100,7 +106,7 @@ class HeartBeat(Model):
                       uuid=local_uuid,
                       available=str(False),
                       group_type=local_type)).to_dict()))) for g_name, 
-                 is_enabled in self._conf_group_names if is_enabled and g_name not in self.UNEXPECTED_OPTIONS]
+                 is_enabled in self.get_fanout_members()]
 
     def heartbeat(self, target_name):
         # Check if has call heartbeat event-loop, don't call it again.
@@ -118,7 +124,7 @@ class HeartBeat(Model):
                       uuid=local_uuid,
                       available=str(True),
                       group_type=local_type)).to_dict()))) for g_name, 
-                 is_enabled in self._conf_group_names if is_enabled and g_name not in self.UNEXPECTED_OPTIONS]
+                 is_enabled in self.get_fanout_members()]
             return d
 
 
