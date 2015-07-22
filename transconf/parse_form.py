@@ -21,7 +21,12 @@ class FormParser(object):
 
     def _walk_form_unit_item(self, struct, form_unit):
         for unit_name, unit_var in form_unit.items(): 
-            yield struct.check_input(unit_name, unit_var)
+            if isinstance(unit_var[0], (list or tuple)):
+                for var in unit_var:
+                    if isinstance(var, (list or tuple)):
+                        yield struct.check_input(unit_name, var) 
+            else:
+                yield struct.check_input(unit_name, unit_var)
 
     def _walk_form_unit(self, form):
         for form_unit in form: 

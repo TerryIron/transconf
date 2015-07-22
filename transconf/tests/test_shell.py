@@ -22,7 +22,9 @@ class Ifconfig(Model):
     FORM = [{'node': 'if_name',
             'subs': [
                      {'node': 'ip_addr',
-                      'public': ['ip_addr', 'mod:ifdev:ip_addr'],
+                      'public': (['ip_addr_1', 'mod:ifdev:ip_addr'],
+                                 ['ip_addr_2', 'mod:ifdev:ip_addr'],
+                                ),
                       'subs': [
                                {'node': 'test_name',
                                 'private': ['owner_ip_addr', 'mod:ifdev:ip_addr'],
@@ -86,5 +88,5 @@ class Ifconfig(Model):
 if __name__ == '__main__':
     sh = ModelShell()
     sh.load_model('network', Ifconfig)
-    for i in range(10000):
+    for i in range(1):
         sh.run('network.if_name.ip_addr.test_name:test', 'owner_ip_addr', i)
