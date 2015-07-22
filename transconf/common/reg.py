@@ -25,25 +25,25 @@ class Registry(object):
             self.reg.pop(name)
 
 def get_reg_target(reg_type, name):
-    if reg_type.startswith('dri'): return get_local_driver(name)
+    if reg_type.startswith('lib'): return get_local_driver(name)
     elif reg_type.startswith('mod'): return get_model(name)
     elif reg_type.startswith('cmd'): return get_local_cmd(name)
 
 
-LocalReg = Registry('local')
+LibReg = Registry('lib')
 
-def register_local_driver(name):
-    def _register_local_driver(cls, *args, **kwargs):
-        def __register_local_driver(*_args, **_kwargs):
+def register_local_lib(name):
+    def _register_local_lib(cls, *args, **kwargs):
+        def __register_local_lib(*_args, **_kwargs):
             obj = cls(*_args, **_kwargs)
-            LocalReg.register('__is_driver__' + str(name), obj)
+            LibReg.register('__is_lib__' + str(name), obj)
             return obj
-        return __register_local_driver
-    return _register_local_driver
+        return __register_local_lib
+    return _register_local_lib
 
 
-def get_local_driver(name):
-    return LocalReg.get('__is_driver__' + str(name))
+def get_local_lib(name):
+    return LibReg.get('__is_lib__' + str(name))
 
 
 ModelReg = Registry('model')
