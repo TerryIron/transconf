@@ -28,6 +28,12 @@ class TranServer(AsyncServer):
     def _conf_get_type(self):
         return self.conf
 
+    def _get_uuid(self):
+        uuid = self._conf_get_uuid
+        if not uuid:
+            uuid = self.rand_corr_id
+        return uuid
+
     @property
     def conf_topic_exchange(self):
         return self._conf_get_name + 'topic'
@@ -42,14 +48,11 @@ class TranServer(AsyncServer):
 
     @property
     def conf_rpc_queue(self):
-        return self._conf_get_name + 'rpc'
+        return self._conf_get_name + self._get_uuid() + 'rpc'
 
     @property
     def conf_fanout_queue(self):
-        uuid = self._conf_get_uuid
-        if not uuid:
-            uuid = self.rand_corr_id
-        return self._conf_get_name + uuid
+        return self._conf_get_name + self._get_uuid()
 
     @property
     def conf_fanout_exchange(self):
@@ -67,8 +70,11 @@ class TranServer(AsyncServer):
 class RPCTranClient(RPCClient):
     DEFAULT_CONF = get_service_conf()
 
-    def config(self, group='', type=''):
-        self.bind_rpc_queue = group + 'rpc'
+    def config(self, group='', type='', uuid=None):
+        if uuid:
+            self.bind_rpc_queue = group + uuid + 'rpc'
+        else:
+            self.bind_rpc_queue = group + 'rpc'
 
 
 class TopicTranClient(TopicClient):
@@ -78,7 +84,7 @@ class TopicTranClient(TopicClient):
         super(TopicTranClient, self).init()
         self.routing_key = None
 
-    def config(self, group='', type=''):
+    def config(self, group='', type='', uuid=None):
         self.bind_topic_exchange = group + 'topic'
         self.bind_topic_queue = group
         self.routing_key = type
@@ -92,20 +98,20 @@ class TopicTranClient(TopicClient):
 class FanoutTranClient(FanoutClient):
     DEFAULT_CONF = get_service_conf()
 
-    def config(self, group='', type=''):
+    def config(self, group='', type='', uuid=None):
         self.bind_fanout_exchange = group + 'fanout'
 
 
 client_list = [
     ('topic', TopicTranClient),
     ('fanout', FanoutTranClient),
-    ('rpc', RPCTranClient),
+    ('rpc', RPCTranClient), #Point-to-point remote procedure call
 ]
 
 
-def get_client(group_name, group_type, type='topic', amqp_url=None):
+def get_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
     c = _get_client(client_list, type, amqp_url)
     if not c: 
         return 
-    c.config(group_name, group_type)
+    c.config(group_name, group_type, group_uuid)
     return c
