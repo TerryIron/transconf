@@ -87,12 +87,12 @@ class TopicTranClient(TopicClient):
     def config(self, group='', type='', uuid=None):
         self.bind_topic_exchange = group + 'topic'
         self.bind_topic_queue = group
-        self.routing_key = type
+        self.bind_routing_key = type
 
-    def _ready(self, context, routing_key):
+    def _ready(self, context, routing_key=None):
         if not routing_key:
-            routing_key = self.routing_key
-        super(TopicTranClient, self)._ready(context, routing_key)
+            routing_key = self.bind_routing_key
+        return super(TopicTranClient, self)._ready(context, routing_key)
 
 
 class FanoutTranClient(FanoutClient):

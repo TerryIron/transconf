@@ -96,8 +96,9 @@ class RPCTranServer(RabbitAMQP):
         body = self.packer.unpack(body)
         if body:
             body = self.process_request(body)
-            body.addCallback(lambda result: self.result_callback(ch, properties, exchange, result))
-            yield ch.basic_ack(delivery_tag=method.delivery_tag)
+            if body:
+                body.addCallback(lambda result: self.result_callback(ch, properties, exchange, result))
+                yield ch.basic_ack(delivery_tag=method.delivery_tag)
 
     @defer.inlineCallbacks
     def on_channel(self, channel, exchange, queue):

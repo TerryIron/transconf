@@ -25,26 +25,27 @@ class BaseClient(BaseSyncClient):
     def config(self):
         raise NotImplementedError()
 
-    def _on_connect(self, channel_callback, context, need_result=False, timeout=30):
+    def _on_connect(self, channel_callback, context, need_result=False, delivery_mode=2):
         cc = protocol.ClientCreator(reactor,
                                     self.connection_class,
                                     self.parms)
-        d = cc.connectTCP(self.parms.host, self.parms.port, timeout=timeout)
+        d = cc.connectTCP(self.parms.host, self.parms.port)
         d.addCallback(lambda procotol: procotol.ready)
-        d.addCallback(lambda con: channel_callback(con, context))
+        d.addCallback(lambda con: channel_callback(con, context, delivery_mode))
         if need_result:
             d.addCallback(lambda result: self.on_response(*result))
-            return d
+        return d
 
     def _ready(self, context, exchange, routing_key, corr_id):
         self.corr_id = corr_id
         return Content(context, exchange, routing_key)
 
     @defer.inlineCallbacks
-    def on_response(self, channel, reply_to):
+    def on_response(self, con, channel, reply_to):
         queue_object, consumer_tag = yield channel.basic_consume(queue=reply_to,
                                                                  no_ack=False)
         result = yield self.on_request(queue_object)
+        yield con.close()
         yield defer.returnValue(result)
 
     @defer.inlineCallbacks
@@ -54,10 +55,11 @@ class BaseClient(BaseSyncClient):
             if self.corr_id == properties.correlation_id:
                 body = yield self.packer.unpack(body)
                 result = yield body['result'] if body else None
+                yield ch.close()
                 yield defer.returnValue(result)
 
     @defer.inlineCallbacks
-    def on_channel(self, connection, context):
+    def on_channel(self, connection, context, delivery_mode):
         channel = yield connection.channel()
         if self.exchange_type:
             yield channel.exchange_declare(exchange=context.exchange,
@@ -69,16 +71,18 @@ class BaseClient(BaseSyncClient):
                                     properties=pika.BasicProperties(
                                         reply_to=reply_to,
                                         correlation_id=self.corr_id,
-                                        delivery_mode=2,
+                                        delivery_mode=delivery_mode,
                                     ),
                                     body=self.packer.pack(context.context))
-        yield defer.returnValue((channel, reply_to))
+        yield defer.returnValue((connection, channel, reply_to))
 
     def cast(self, context, routing_key=None):
-        self._on_connect(self.on_channel, self._ready(context, routing_key))
+        context = self._ready(context, routing_key)
+        self._on_connect(self.on_channel, context)
         
-    def call(self, context, routing_key=None, timeout=30):
-        return self._on_connect(self.on_channel, self._ready(context, routing_key), True, timeout)
+    def call(self, context, routing_key=None):
+        context = self._ready(context, routing_key)
+        return self._on_connect(self.on_channel, context, True)
 
 
 class RPCTranClient(BaseClient):

@@ -162,13 +162,16 @@ client_list = [
 ]
 
 
-def _get_client(client_list, type, amqp_url=None, exchange='', queue=''):
+def _get_client(client_list, type, amqp_url=None, exchange=None, queue=None):
     for t, cls in client_list:
         if t == type:
             c = cls(amqp_url)
-            c.config(exchange, queue)
             return c
 
 
 def get_client(amqp_url=None, exchange=None, queue=None, type='topic'):
-    return _get_client(client_list, type, amqp_url, exchange, queue)
+    c = _get_client(client_list, type, amqp_url, exchange, queue)
+    if not c: 
+        return 
+    c.config(exchange, queue)
+    return c

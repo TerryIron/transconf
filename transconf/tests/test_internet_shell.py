@@ -57,8 +57,8 @@ class Ifconfig(Model):
             print '[SHELL] get ip addr'
             def get_result(t):
                 print '[SHELL] get result:{0}'.format(t)
-            data = dict(shell_command=ShellRequest('network.if_name.hw_addr', 'hw_addr', ifname).to_dict())
-            c = get_client('default_local_worker_group', 'default_type', type='rpc')
+            data = ShellRequest('network.if_name.hw_addr', 'hw_addr', ifname).to_dict()
+            c = get_client('default_local_worker_group', 'default_type', type='topic')
             v = c.call(data)
             print '[SHELL] rpc call hw addr, client:{0}'.format(c)
             v.addCallback(get_result)
@@ -70,7 +70,7 @@ class Ifconfig(Model):
         def foo(r):
             print '[SHELL] get hw addr'
             return 'xx:xx:xx:xx:xx:xx'
-        d = deferToThread(lambda: sleeping(5))
+        d = deferToThread(lambda: sleeping(1))
         d.addCallback(foo)
         return d
 

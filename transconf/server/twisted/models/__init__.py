@@ -7,15 +7,19 @@ from transconf.common.reg import get_model
 
 class LostModel(Exception):
     def __str__(self, name, by_name):
-        return "We need model:{0}'s name and model class for {1}".format(name, by_name)
+        return "Model:{0} is depend on model:{1}.".format(by_name, name)
 
 class LostModelConfig(Exception):
     def __str__(self, name, by_name):
-        return "We need model:{0}'s name for {1}".format(name, by_name)
+        return "Model:{0} is depend on model:{1}'s defined name.".format(by_name, name)
 
 class ModelSectNameErr(Exception):
     def __str__(self, name):
-        return "We need model's reg_name as section name, not {0}".format(name)
+        return "Can not found model in registry by section name:{0}.".format(name)
+
+class ModelVersionErr(Exception):
+    def __str__(self, name):
+        return "Can not found model:{0} 's version.".format(name)
 
 def check_depends(conf, model_name, deps):
     deps = deps.split(',')
@@ -50,6 +54,9 @@ def model_configure(conf, sh=None):
         @from_config_option('name', None, sect=sect)
         def get_model_name():
             return conf
+        @from_config_option('ver', '0.1.0', sect=sect)
+        def get_model_ver():
+            return conf
         def load_model(self, name, model_class, config=None):
             if self.preload_model(name, model_class, config):
                 if not get_model(sect):
@@ -68,6 +75,8 @@ def model_configure(conf, sh=None):
                     if need:
                         check_needs(conf, sect, need)
                 model = self.get_namebus(name)
+                if '.'.join([str(i) for i in model.__version__]) != get_model_ver():
+                    raise ModelVersionErr(name)
                 model.start(config)
         class_name = get_model_class()
         name = get_model_name()

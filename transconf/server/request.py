@@ -1,6 +1,14 @@
 __author__ = 'chijun'
 
 
+class RequestTimeout(Exception):
+    """Raised when comming request is over-time."""
+
+
+class InvalidRequest(Exception):
+    """Raised when comming request is invalid."""
+
+
 class Request(object):
     """Pick parameters as a request."""
     def __init__(self, **kwargs):

@@ -18,6 +18,7 @@ class Model(BaseModel):
     IS_NODE_METHOD = IsNodeInterface
     IS_PRIVATE_METHOD = IsPrivateInterface
     IS_PUBLIC_METHOD = IsPublicInterface
+    __version__ = (0, 1, 0)
 
     def __init__(self):
         super(Model, self).__init__()
