@@ -29,17 +29,17 @@ class BaseClient(BaseSyncClient):
     def config(self):
         raise NotImplementedError()
 
-    def _on_connect(self, channel_callback, context, need_result=False, delivery_mode=2):
+    def _on_connect(self, context, result_mode=None, delivery_mode=2):
         cc = protocol.ClientCreator(reactor,
                                     self.connection_class,
                                     self.parms)
         d = cc.connectTCP(self.parms.host, self.parms.port)
         d.addCallback(lambda procotol: procotol.ready)
-        d.addCallback(lambda con: channel_callback(con, context, delivery_mode))
-        if need_result:
-            d.addCallback(lambda result: self.on_response(*result))
-        else:
+        d.addCallback(lambda con: self.on_channel(con, context, delivery_mode))
+        if not result_mode:
             d.addCallback(lambda result: self.none_response(*result))
+        else:
+            d.addCallback(lambda result: self.on_response(*result))
         return d
 
     def _ready(self, context, exchange, routing_key, corr_id):
@@ -51,7 +51,7 @@ class BaseClient(BaseSyncClient):
         yield con.close()
 
     @defer.inlineCallbacks
-    def on_response(self, con, channel, reply_to):
+    def sync_response(self, con, channel, reply_to):
         queue_object, consumer_tag = yield channel.basic_consume(queue=reply_to,
                                                                  no_ack=False)
         result = yield self.on_request(queue_object)
@@ -69,7 +69,6 @@ class BaseClient(BaseSyncClient):
 
     @defer.inlineCallbacks
     def on_channel(self, connection, context, delivery_mode):
-        cur_time = yield time.time()
         channel = yield connection.channel()
         if self.exchange_type:
             yield channel.exchange_declare(exchange=context.exchange,
@@ -84,17 +83,31 @@ class BaseClient(BaseSyncClient):
                                         delivery_mode=delivery_mode,
                                     ),
                                     body=self.packer.pack(context.context))
-        LOG.debug('Request has been published, cost time {0} (s)'.format(float(time.time()) - float(context.context['shell_env']['timestamp']) ))
         yield defer.returnValue((connection, channel, reply_to))
 
+    """
+        Publish an async message, return None
+        @request: request object
+        @routing_key: routing key
+    """
     def cast(self, request, routing_key=None):
-        context = self._ready(request.to_dict(), routing_key)
-        self._on_connect(self.on_channel, context)
+        self._on_connect(self._ready(request.to_dict(), routing_key), False)
         
-    def call(self, request, routing_key=None):
-        context = self._ready(request.to_dict(), routing_key)
-        return self._on_connect(self.on_channel, context, True)
+    """
+        Publish an async message, return a defer, do not support concurrency
+        @request: request object
+        @routing_key: routing key
+    """
+    def call_wait(self, request, routing_key=None):
+        return self._on_connect(self._ready(request.to_dict(), routing_key), True)
 
+    """
+        Publish an async message, return a defer, support concurrency
+        @request: request object
+        @routing_key: routing key
+    """
+    def call(self, request, routing_key=None):
+        return 
 
 class RPCTranClient(BaseClient):
     def config(self, exchange=None, queue=None):

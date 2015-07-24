@@ -118,7 +118,7 @@ class HeartBeat(Model):
         local_type = self._conf_group_type
         local_uuid = self._conf_group_uuid
         if local_name and local_type and local_uuid:
-            d = [task.LoopingCall(lambda: get_client(g_name, 'all_type', type='topic').cast(
+            d = [task.LoopingCall(lambda: get_client(g_name, 'all_type', type='topic').call_wait(
                  ShellRequest('{0}.heartcond'.format(target_name), 
                               'register', 
                               dict(group_name=local_name, 

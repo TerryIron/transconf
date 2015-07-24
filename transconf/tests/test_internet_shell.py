@@ -59,7 +59,7 @@ class Ifconfig(Model):
                 print '[SHELL] get result:{0}'.format(t)
             data = ShellRequest('network.if_name.hw_addr', 'hw_addr', ifname)
             c = get_client('default_local_worker_group', 'default_type', type='topic')
-            v = c.call(data)
+            v = c.call_wait(data)
             print '[SHELL] rpc call hw addr, client:{0}'.format(c)
             v.addCallback(get_result)
         d = deferToThread(lambda: sleeping(5))
