@@ -16,6 +16,9 @@ twisted.CONF = serve_conf
 from transconf.server.twisted.internet import TranServer
 from transconf.server.twisted.netshell import ShellMiddleware
 from transconf.server.twisted.models import model_configure
+from transconf.server.twisted.log import getLogger
+
+LOG  = getLogger(__name__)
 
 
 class ServerMiddleware(ShellMiddleware):

@@ -1,11 +1,15 @@
 __author__ = 'chijun'
 
+import time
 import pika
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol
 
 from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
 from transconf.server.utils import from_config_option
+from transconf.server.twisted.log import getLogger
+
+LOG  = getLogger(__name__)
 
 
 class Content(object):
@@ -34,11 +38,17 @@ class BaseClient(BaseSyncClient):
         d.addCallback(lambda con: channel_callback(con, context, delivery_mode))
         if need_result:
             d.addCallback(lambda result: self.on_response(*result))
+        else:
+            d.addCallback(lambda result: self.none_response(*result))
         return d
 
     def _ready(self, context, exchange, routing_key, corr_id):
         self.corr_id = corr_id
         return Content(context, exchange, routing_key)
+
+    @defer.inlineCallbacks
+    def none_response(self, con, channel, reply_to):
+        yield con.close()
 
     @defer.inlineCallbacks
     def on_response(self, con, channel, reply_to):
@@ -55,11 +65,11 @@ class BaseClient(BaseSyncClient):
             if self.corr_id == properties.correlation_id:
                 body = yield self.packer.unpack(body)
                 result = yield body['result'] if body else None
-                yield ch.close()
                 yield defer.returnValue(result)
 
     @defer.inlineCallbacks
     def on_channel(self, connection, context, delivery_mode):
+        cur_time = yield time.time()
         channel = yield connection.channel()
         if self.exchange_type:
             yield channel.exchange_declare(exchange=context.exchange,
@@ -74,14 +84,15 @@ class BaseClient(BaseSyncClient):
                                         delivery_mode=delivery_mode,
                                     ),
                                     body=self.packer.pack(context.context))
+        LOG.debug('Request has been published, cost time {0} (s)'.format(float(time.time()) - float(context.context['shell_env']['timestamp']) ))
         yield defer.returnValue((connection, channel, reply_to))
 
-    def cast(self, context, routing_key=None):
-        context = self._ready(context, routing_key)
+    def cast(self, request, routing_key=None):
+        context = self._ready(request.to_dict(), routing_key)
         self._on_connect(self.on_channel, context)
         
-    def call(self, context, routing_key=None):
-        context = self._ready(context, routing_key)
+    def call(self, request, routing_key=None):
+        context = self._ready(request.to_dict(), routing_key)
         return self._on_connect(self.on_channel, context, True)
 
 

@@ -100,13 +100,13 @@ class HeartBeat(Model):
             local_type = self._conf_group_type
             local_uuid = self._conf_group_uuid
             if local_name and local_type and local_uuid:
-                d = [reactor.callLater(0, lambda: get_client(g_name, '', type='fanout').call(
+                d = [reactor.callLater(0, lambda: get_client(g_name, '', type='fanout').cast(
                      ShellRequest('{0}.heartcond'.format(target_name), 
                                   'register', 
                                   dict(group_name=local_name, 
                                        uuid=local_uuid,
                                        available=str(False),
-                                       group_type=local_type)).to_dict()
+                                       group_type=local_type))
                      )) for g_name, is_enabled in self.get_fanout_members()]
 
     def heartbeat(self, target_name):
@@ -118,13 +118,13 @@ class HeartBeat(Model):
         local_type = self._conf_group_type
         local_uuid = self._conf_group_uuid
         if local_name and local_type and local_uuid:
-            d = [task.LoopingCall(lambda: get_client(g_name, '', type='fanout').call(
+            d = [task.LoopingCall(lambda: get_client(g_name, 'all_type', type='topic').cast(
                  ShellRequest('{0}.heartcond'.format(target_name), 
                               'register', 
                               dict(group_name=local_name, 
                                    uuid=local_uuid,
                                    available=str(True),
-                                   group_type=local_type)).to_dict()
+                                   group_type=local_type))
                  )) for g_name, is_enabled in self.get_fanout_members()]
             return d
 
