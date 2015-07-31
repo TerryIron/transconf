@@ -31,13 +31,10 @@ class ModelShell(NameBus):
         else:
             raise ShellTargetNotFound(target_name)
 
-    def init_models(self, config=None):
-        raise NotImplementedError()
-
     def set_env(self, key, value):
         raise NotImplementedError()
 
-    def get_env(self, key, value):
+    def get_env(self, key):
         raise NotImplementedError()
 
     def preload_model(self, name, model_class, config=None):
