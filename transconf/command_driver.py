@@ -3,7 +3,7 @@ __author__ = 'chijun'
 import os
 import functools
 
-from transconf.server.utils import from_config_option, as_config, import_class
+from transconf.server.utils import from_config, from_config_option, as_config, import_class
 
 
 class Command(object):
@@ -30,18 +30,31 @@ class Command(object):
         return str(expression).format(**kwargs)
 
     def setup(self):
+        if self.enabled_method:
+            self._default_setup()
+        else:
+            self._conf_setup()
+
+    def _default_setup(self):
         for em in self.enabled_method:
             if isinstance(em, list):
                 self._setup(*em)
             else:
                 self._setup(em)
 
+    def _conf_setup(self):
+        @from_config(sect=self.name)
+        def get_conf_methods():
+            return self.conf
+        for method_name, exp in get_conf_methods():
+            self.exp[method_name] = exp
+
     def _setup(self, method_name, exp=None):
         @from_config_option(method_name, None, sect=self.name)
-        def get_enabled_method(conf):
-            return conf
+        def get_enabled_method():
+            return self.conf
         if not exp:
-            exp = get_enabled_method(self.conf)
+            exp = get_enabled_method()
         if exp:
             self.exp[method_name] = exp
 
