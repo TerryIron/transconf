@@ -56,6 +56,29 @@ def from_model_option(opt, default_val, sect):
     return _from_model_option
 
 
+class Model(object):
+    pass
+
+
+def as_model_action(opt, sect='model_action'):
+    def _from_model_action(func):
+        def __from_model_action(self, *args, **kwargs):
+            config = func(self, *args, **kwargs)
+            assert isinstance(config, ConfigParser.ConfigParser)
+            if not hasattr(self, 'commands'):
+                setattr(self, 'commands', {})
+            if config.has_section(sect) and config.has_option(sect, opt):
+                ret = config.get(sect, opt).split('.')
+                self.commands[opt] = Model()
+                self.commands[opt].target = ret[0:-1]
+                self.commands[opt].action = ret[-1]
+                return True
+            else:
+                return False
+        return __from_model_action
+    return _from_model_action
+
+
 def as_config(config_file):
     config = ConfigParser.ConfigParser()  
     config.read(config_file)

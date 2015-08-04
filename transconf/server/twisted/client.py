@@ -51,7 +51,7 @@ class BaseClient(BaseSyncClient):
         yield con.close()
 
     @defer.inlineCallbacks
-    def sync_response(self, con, channel, reply_to):
+    def on_response(self, con, channel, reply_to):
         queue_object, consumer_tag = yield channel.basic_consume(queue=reply_to,
                                                                  no_ack=False)
         result = yield self.on_request(queue_object)

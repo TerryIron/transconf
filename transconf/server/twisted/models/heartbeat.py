@@ -8,7 +8,8 @@ from transconf.model import Model
 from transconf.server.twisted.internet import get_client
 from transconf.server.twisted import CONF as global_conf
 from transconf.server.twisted import get_sql_engine 
-from transconf.server.utils import from_config, from_config_option, from_model_option, as_config
+from transconf.server.utils import from_config, from_config_option, as_config
+from transconf.server.utils import from_model_option, as_model_action
 from transconf.server.twisted.netshell import ShellRequest
 from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
 
@@ -39,12 +40,11 @@ class HeartBeat(Model):
     UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heart',
              'public': ['alive', 'mod:heartbeat:heartbeat'],
-             'public': ['dead', 'mod:heartbeat:stop'],
             }
     ]
 
-    @from_model_option('name', None, sect='heartcondition')
-    def _conf_target_name(self, config):
+    @as_model_action('heartcondition_register')
+    def _action_heartcodition_register(self, config):
         return config
 
     @property
@@ -79,37 +79,14 @@ class HeartBeat(Model):
 
     def start(self, config=None):
         self.is_start = None
-        name = self._conf_target_name(config)
-        if name:
-            self.heart = self.heartbeat(name)
+        if self._action_heartcodition_register(config):
+            self.heart = self.heartbeat()
             if self.heart:
                 timeout = int(self._conf_heartrate)
                 for h in self.heart:
                     h.start(timeout)
 
-    def stop(self, config=None):
-        # Stop all heartbeat event-loop.
-        if self.heart:
-            for h in self.heart:
-                h.stop()
-        if self.is_start:
-            self.is_start = False
-        name = self._conf_target_name(config)
-        if name:
-            local_name = self._conf_group_name
-            local_type = self._conf_group_type
-            local_uuid = self._conf_group_uuid
-            if local_name and local_type and local_uuid:
-                d = [reactor.callLater(0, lambda: get_client(g_name, '', type='fanout').cast(
-                     ShellRequest('{0}.heartcond'.format(target_name), 
-                                  'register', 
-                                  dict(group_name=local_name, 
-                                       uuid=local_uuid,
-                                       available=str(False),
-                                       group_type=local_type))
-                     )) for g_name, is_enabled in self.get_fanout_members()]
-
-    def heartbeat(self, target_name):
+    def heartbeat(self):
         # Check if has call heartbeat event-loop, don't call it again.
         if self.is_start:
             return True
@@ -119,8 +96,8 @@ class HeartBeat(Model):
         local_uuid = self._conf_group_uuid
         if local_name and local_type and local_uuid:
             d = [task.LoopingCall(lambda: get_client(g_name, 'all_type', type='topic').call_wait(
-                 ShellRequest('{0}.heartcond'.format(target_name), 
-                              'register', 
+                 ShellRequest(self.commands['heartcondition_register'].target,
+                              self.commands['heartcondition_register'].action,
                               dict(group_name=local_name, 
                                    uuid=local_uuid,
                                    available=str(True),
@@ -138,8 +115,10 @@ class HeartCondition(Model):
     # 2 add '_check_heart_still_alive', '_check_has_available_targets'
     UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heartcond',
-             'public': ['has', 'mod:heartcondition:has_heartbeat'],
-             'public': ['register', 'mod:heartcondition:register'],
+             'public': [
+                        ['has', 'mod:heartcondition:has_heartbeat'],
+                        ['register', 'mod:heartcondition:register'],
+                       ]
             }
     ]
 
