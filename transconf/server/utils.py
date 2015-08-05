@@ -1,5 +1,6 @@
 __author__ = 'chijun'
 
+import re
 import json
 import ConfigParser
 
@@ -57,21 +58,28 @@ def from_model_option(opt, default_val, sect):
 
 
 class Model(object):
-    pass
+    RE = re.compile('(\S+)\.(\S+)')
+
+    def __init__(self, string):
+        ret = self.RE.match(string).groups()
+        if ret:
+            self.target = ret[0]
+            self.action = ret[1]
+        else:
+            self.target = None
+            self.action = None
 
 
-def as_model_action(opt, sect='model_action'):
+def as_model_action(command_name, opt, sect='model_action'):
     def _from_model_action(func):
         def __from_model_action(self, *args, **kwargs):
             config = func(self, *args, **kwargs)
             assert isinstance(config, ConfigParser.ConfigParser)
-            if not hasattr(self, 'commands'):
-                setattr(self, 'commands', {})
+            if not hasattr(self, command_name):
+                setattr(self, command_name, {})
             if config.has_section(sect) and config.has_option(sect, opt):
-                ret = config.get(sect, opt).split('.')
-                self.commands[opt] = Model()
-                self.commands[opt].target = ret[0:-1]
-                self.commands[opt].action = ret[-1]
+                d = getattr(self, command_name)
+                d[opt] = Model(config.get(sect, opt))
                 return True
             else:
                 return False

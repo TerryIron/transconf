@@ -13,6 +13,9 @@ from transconf.server.twisted.log import getLogger
 
 LOG  = getLogger(__name__)
 
+class BadShellRequest(Exception):
+    """Raised when it is a bad request """
+
 
 class ShellRequest(Request):
     def __init__(self, target_name, method_name, *args, **kwargs):
@@ -72,6 +75,8 @@ class ShellMiddleware(Middleware):
                     d = defer.fail({})
                     d.addErrback(lambda result: err_back(e))
                     return d
+            else:
+                raise BadShellRequest()
 
 
 class NetShell(ModelShell):

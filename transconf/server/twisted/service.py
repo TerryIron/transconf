@@ -83,7 +83,7 @@ class RPCTranServer(RabbitAMQP):
 
     @defer.inlineCallbacks
     def result_back(self, ch, properties, exchange, result):
-        result = {'result': result}
+        result = yield {'result': result}
         yield ch.basic_publish(exchange=exchange,
                                routing_key=properties.reply_to,
                                properties=pika.BasicProperties(
@@ -96,10 +96,10 @@ class RPCTranServer(RabbitAMQP):
         ch, method, properties, body = yield queue_object.get()
         body = self.packer.unpack(body)
         if body:
+            yield ch.basic_ack(delivery_tag=method.delivery_tag)
             body = self.process_request(body)
             if body:
                 body.addCallback(lambda result: self.result_back(ch, properties, exchange, result))
-                yield ch.basic_ack(delivery_tag=method.delivery_tag)
 
     @defer.inlineCallbacks
     def on_channel(self, channel, exchange, queue):

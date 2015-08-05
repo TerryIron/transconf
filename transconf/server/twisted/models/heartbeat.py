@@ -43,7 +43,7 @@ class HeartBeat(Model):
             }
     ]
 
-    @as_model_action('heartcondition_register')
+    @as_model_action('mycmd', 'heartcondition_register')
     def _action_heartcodition_register(self, config):
         return config
 
@@ -96,8 +96,8 @@ class HeartBeat(Model):
         local_uuid = self._conf_group_uuid
         if local_name and local_type and local_uuid:
             d = [task.LoopingCall(lambda: get_client(g_name, 'all_type', type='topic').call_wait(
-                 ShellRequest(self.commands['heartcondition_register'].target,
-                              self.commands['heartcondition_register'].action,
+                 ShellRequest(self.mycmd['heartcondition_register'].target,
+                              self.mycmd['heartcondition_register'].action,
                               dict(group_name=local_name, 
                                    uuid=local_uuid,
                                    available=str(True),
