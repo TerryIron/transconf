@@ -13,6 +13,7 @@ from transconf.server.twisted.log import getLogger
 
 LOG  = getLogger(__name__)
 
+
 class ShellRequest(Request):
     def __init__(self, target_name, method_name, *args, **kwargs):
         d = dict(target_name=target_name,
@@ -56,14 +57,14 @@ class ShellMiddleware(Middleware):
                     cost_time = float(time.time()) - float(timestamp)
                     LOG.debug('Get request [{0}.{1}] costs time {2} (s).'.format(target_name, method_name, cost_time))
                     if cost_time > float(timeout):
-                        raise RequestTimeout('Call {0}.{1} is timeout.'.format(target_name, method_name))
+                        raise RequestTimeout('Call {0}.{1} timeout.'.format(target_name, method_name))
                 try:
                     check_is_timeout(context)
                     args = shell_req.get('args', None)
                     kwargs = shell_req.get('kwargs', None)
                     cb = functools.partial(self.handler.run, 
-                                       target_name, 
-                                       method_name, *args, **kwargs)
+                                           target_name, 
+                                           method_name, *args, **kwargs)
                     return cb()
                 except Exception as e:
                     def err_back(err):

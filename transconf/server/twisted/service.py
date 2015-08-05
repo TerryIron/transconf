@@ -10,8 +10,9 @@ from transconf.server.utils import from_config_option
 
 
 class Middleware(object):
-    def __init__(self, handler):
+    def __init__(self, handler, middleware=None):
         self.handler = handler
+        self.middleware = middleware
 
     def process_request(self, context):
         from twisted.internet.defer import succeed
