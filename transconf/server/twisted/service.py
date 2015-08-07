@@ -10,9 +10,8 @@ from transconf.server.utils import from_config_option
 
 
 class Middleware(object):
-    def __init__(self, handler, middleware=None):
+    def __init__(self, handler):
         self.handler = handler
-        self.middleware = middleware
 
     def process_request(self, context):
         from twisted.internet.defer import succeed
@@ -94,17 +93,17 @@ class RPCTranServer(RabbitAMQP):
     @defer.inlineCallbacks
     def on_request(self, queue_object, exchange):
         ch, method, properties, body = yield queue_object.get()
-        body = self.packer.unpack(body)
+        body = yield self.packer.unpack(body)
         if body:
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
-            body = self.process_request(body)
+            body = yield self.process_request(body)
             if body:
                 body.addCallback(lambda result: self.result_back(ch, properties, exchange, result))
 
     @defer.inlineCallbacks
     def on_channel(self, channel, exchange, queue):
         queue_object, consumer_tag = yield channel.basic_consume(queue=queue, no_ack=False)
-        l = task.LoopingCall(lambda: self.on_request(queue_object, exchange))
+        l = yield task.LoopingCall(lambda: self.on_request(queue_object, exchange))
         l.start(0.001)
 
     @defer.inlineCallbacks

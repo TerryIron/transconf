@@ -31,14 +31,14 @@ class BaseClient(RabbitAMQP):
         self.connection = self.connection_class(self.parms)
         self.channel = self.connection.channel()
 
-    def _ready(self, context, exchange, routing_key, reply_to, corr_id):
+    def _ready(self, context, exchange, routing_key, reply_to, corr_id, delivery_mode=2):
         self.corr_id = corr_id
         self.channel.basic_publish(exchange=exchange,
                                    routing_key=routing_key,
                                    properties=pika.BasicProperties(
                                        reply_to=reply_to,
                                        correlation_id=corr_id,
-                                       delivery_mode=2,
+                                       delivery_mode=delivery_mode,
                                    ),
                                    body=self.packer.pack(context))
 
@@ -70,17 +70,18 @@ class RPCTranClient(BaseClient):
     def conf_rpc_queue(self):
         return self.conf
 
-    def cast(self, context, routing_key=None):
+    def cast(self, context, routing_key=None, delivery_mode=2):
         rpc_queue = self.bind_rpc_queue if not routing_key else routing_key
         self._ready(context, 
                     '', 
                     rpc_queue,
                     self.callback_queue, 
-                    self.rand_corr_id)
+                    self.rand_corr_id,
+                    delivery_mode)
         
     @hold_on
-    def call(self, context, routing_key=None):
-        self.cast(context, routing_key)
+    def call(self, context, routing_key=None, delivery_mode=2):
+        self.cast(context, routing_key, delivery_mode)
 
 
 class TopicTranClient(BaseClient):

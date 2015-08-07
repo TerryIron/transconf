@@ -90,7 +90,7 @@ class BaseClient(BaseSyncClient):
         @request: request object
         @routing_key: routing key
     """
-    def cast(self, request, routing_key=None):
+    def cast(self, request, routing_key=None, delivery_mode=2):
         self._on_connect(self._ready(request.to_dict(), routing_key), False)
         
     """
@@ -98,16 +98,9 @@ class BaseClient(BaseSyncClient):
         @request: request object
         @routing_key: routing key
     """
-    def call_wait(self, request, routing_key=None):
+    def call(self, request, routing_key=None, delivery_mode=2):
         return self._on_connect(self._ready(request.to_dict(), routing_key), True)
 
-    """
-        Publish an async message, return a defer, support concurrency
-        @request: request object
-        @routing_key: routing key
-    """
-    def call(self, request, routing_key=None):
-        return 
 
 class RPCTranClient(BaseClient):
     def config(self, exchange=None, queue=None):
