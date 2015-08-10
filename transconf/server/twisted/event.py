@@ -23,13 +23,15 @@ class Task(object):
 
 
 class EventRequest(Request):
-    def __init__(self, client, shell_request, is_cast=False, callback_request=None, errback_request=None, timeout=60):
+    def __init__(self, client, shell_request, callback_request=None, callback_client=None, 
+                 errback_request=None, errback_client=None, timeout=60):
         d = dict(timeout=timeout,
                  cli=client,
-                 cli_is_cast=is_cast,
-                 shell_rq=shell_request,
+                 shell_cli=shell_client,
                  cb_rq=callback_request,
-                 eb_rq=errback_request)
+                 cb_cli=callback_cient,
+                 eb_rq=errback_request,
+                 eb_cli=errback_client)
         return super(EventRequest, self).__init__(**d)       
 
     def to_dict(self, context=None, timeout=60):
@@ -40,35 +42,37 @@ class EventRequest(Request):
         if 'eventloop' not in context:
             context['eventloop'] = []
         d = {}
-        if self['cb_rq']:
+        if self['cb_rq'] and self['cb_cli']:
             d['success'] = self['cb_rq'].to_dict()
-        if self['errback_request']:
+            d['success_cli'] = dict(self['cb_cli'].__simple__)
+        if self['eb_rq'] and self['eb_cli']:
             d['failed'] = self['eb_rq'].to_dict()
+            d['failed_cli'] = dict(self['eb_cli'].__simple__)
         if len(d) > 0:
             d['timeout'] = self['timeout']
             d['cli'] = dict(self['cli'].__simple__)
-            d['cli_is_cast'] = dict(self['cli'].__simple__)
             context['eventloop'].append(d)
         return context
 
 
 class EventDispatcher(object):
-    def __init__(self, client, shell_request, is_cast=False, callback_request=None, errback_request=None, timeout=60, delivery_mode=1):
+    def __init__(self, client, shell_request, callback_request=None, callback_client=None, 
+                 errback_request=None, errback_client=None, timeout=60, delivery_mode=1):
         self.client = client
-        self.is_cast = is_cast
         self.delivery_mode = delivery_mode
         self.request = EventRequest(self.client, 
                                     shell_request, 
-                                    self.is_cast, 
                                     callback_request, 
+                                    callback_client, 
                                     errback_request, 
+                                    errback_client, 
                                     timeout)
 
     def start(self):
-        if not self.is_cast:
-            return self.client.call(self.request, delivery_mode=self.delivery_mode)
-        else:
-            self.client.cast(self.request, delivery_mode=self.delivery_mode)
+        self.client.cast(self.request, delivery_mode=self.delivery_mode)
+
+    def send(self):
+        return self.client.call(self.request, delivery_mode=self.delivery_mode)
     
 
 class EventsRequest(Request):
@@ -83,12 +87,15 @@ class EventsRequest(Request):
 
 
 class EventDeferDispatcher(object):
-    def __init__(self, delivery_mode=1):
+    def __init__(self, client, delivery_mode=1):
         self.queue = []
+        self.client = client
         self.delivery_mode=delivery_mode
 
-    def addNext(self, client, shell_request, callback_request=None, errback_request=None, timeout=60)
-        self.queue.append(EventDispatcher(client, shell_request, callback_request, errback_request, timeout))
+    def addNext(self, client, shell_request, callback_request=None, callback_client=None,
+                errback_client=None, errback_request=None, timeout=60)
+        self.queue.append(EventDispatcher(client, shell_request, callback_request, callback_client or self.client,
+                                          errback_request, errback_client or self.client, timeout))
 
     @staticmethod
     def get_first_client(requests):
@@ -103,53 +110,79 @@ class EventDeferDispatcher(object):
                             group_uuid=cli['uuid'],
                             type=cli['cls'])
         part['cli'] = None
-        is_cast = bool(part['cli_is_cast'])
-        part['cli_is_cast'] = None
-        return client, is_cast
+        return client
         
     def start(self):
         if self.queue:
             requests = EventsRequest(self.queue)
-            client, is_cast = EventDeferDispatcher.get_first_client(requests)
+            client = EventDeferDispatcher.get_first_client(requests)
             if not client:
                 return
-            if not is_cast:
-                return client.call(requests, delivery_mode=self.delivery_mode)
-            else:
-                client.cast(requests, delivery_mode=self.delivery_mode)
+            client.cast(requests, delivery_mode=self.delivery_mode)
 
 
 """
             context
-    ------------------    ----------------------
-    | shell_env      | -> | timestamp | timeout|
-    ------------------    ----------------------
+    ------------------    -----------------------
+    | shell_env      | -> | timestamp | timeout |
+    ------------------    -----------------------
     ------------------    ---------------------------------------------
     | shell_command  | -> | target_name | method_name | args | kwargs |
     ------------------    ---------------------------------------------
-    ------------------    --------------------------------------------------
-    | event_request  | -> | success | failed | timeout | cli | cli_is_cast |
-    ------------------    --------------------------------------------------
-    ------------------    --------------------------------      ------------------------------   -------------------------------------------------------
-    | eventloop      | -> | EVENT_REQ1 | EVENT_REQ2 |        -> | success | failed | timeout | + | success | failed | timeout | cli | cli_is_cast |
-    ------------------    --------------------------------      ------------------------------   -------------------------------------------------------
+    ------------------    ---------------------------------------------------------------
+    | event_request  | -> | success | success_cli | failed | failed_cli | timeout | cli | 
+    ------------------    ---------------------------------------------------------------
+    ------------------    --------------------------------  
+    | eventloop      | -> | EVENT_REQ1 | EVENT_REQ2 |       
+    ------------------    -------------------------------- 
 """
 
 class EventMiddleware(ShellMiddleware):
     def process_request(self, context)
         if 'eventloop' in context:
             eventloop = context.pop('eventloop')
-            def if_success():
-                pass
-            def if_failed():
-                pass
-            try:
+            if (isinstance(eventloop, list)) and \ 
+               (len(eventloop) > 0):
+                event_context = eventloop[0]
+                def if_success():
+                    cli = event_context.get('success_cli', None)
+                    text = event_context.get('success', None)
+                    if cli and text:
+                        client = get_client(cli['group'], cli['type'],
+                                            group_uuid=cli['uuid'],
+                                            type=cli['cls'])
+                        client.castBase(text)
+                def if_failed():
+                    cli = event_context.get('failed_cli', None)
+                    text = event_context.get('failed', None)
+                    if cli and text:
+                        client = get_client(cli['group'], cli['type'],
+                                            group_uuid=cli['uuid'],
+                                            type=cli['cls'])
+                        client.castBase(text)
+                def if_next():
+                    eventloop.pop(0)
+                    if eventloop:
+                        event_context = eventloop[0]
+                        cli = event_context.get('cli', None)
+                        if cli:
+                            event_context['cli'] = None
+                            client = get_client(cli['group'], cli['type'],
+                                                group_uuid=cli['uuid'],
+                                                type=cli['cls'])
+                            client.castBase(text)
+                try:
+                    defer = super(EventMiddleware, self).process_request(context)
+                    if_success()
+                    return defer
+                except e as Exception:
+                    if_failed()
+                    raise e
+                finally:
+                    if_next()
+            else:
                 defer = super(EventMiddleware, self).process_request(context)
-                if_success()
                 return defer
-            except e as Exception:
-                if_failed()
-                raise e
         else:
             defer = super(EventMiddleware, self).process_request(context)
             return defer

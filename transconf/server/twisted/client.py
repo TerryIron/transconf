@@ -90,6 +90,9 @@ class BaseClient(BaseSyncClient):
         @request: request object
         @routing_key: routing key
     """
+    def castBase(self, context, routing_key=None, delivery_mode=2):
+        self._on_connect(context, routing_key), False)
+
     def cast(self, request, routing_key=None, delivery_mode=2):
         self._on_connect(self._ready(request.to_dict(), routing_key), False)
         
@@ -98,6 +101,9 @@ class BaseClient(BaseSyncClient):
         @request: request object
         @routing_key: routing key
     """
+    def callBase(self, context, routing_key=None, delivery_mode=2):
+        return self._on_connect(context, routing_key), True)
+
     def call(self, request, routing_key=None, delivery_mode=2):
         return self._on_connect(self._ready(request.to_dict(), routing_key), True)
 
