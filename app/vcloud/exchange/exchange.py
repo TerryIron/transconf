@@ -14,14 +14,14 @@ model_conf = as_config(os.path.join(os.path.dirname(__file__),
 twisted.CONF = serve_conf
 
 from transconf.server.twisted.internet import TranServer
-from transconf.server.twisted.netshell import ShellMiddleware
+from transconf.server.twisted.utils import TranMiddleware
 from transconf.server.twisted.models import model_configure
 from transconf.server.twisted.log import getLogger
 
 LOG  = getLogger(__name__)
 
 
-class ServerMiddleware(ShellMiddleware):
+class ServerMiddleware(TranMiddleware):
     def process_request(self, context):
         print context
         return super(ServerMiddleware, self).process_request(context)
