@@ -2,6 +2,12 @@ __author__ = 'chijun'
 
 
 from transconf.server.request import Request
+from transconf.server.twisted.event import EventMiddleware
+
+
+class TranMiddleware(EventMiddleware):
+    def process_request(self, context):
+        return super(TranMiddleware, self).process_request(context)
 
 
 class PeerRequest(Request):

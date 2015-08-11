@@ -14,7 +14,7 @@ from transconf.server.twisted.log import getLogger
 LOG  = getLogger(__name__)
 
 class BadShellRequest(Exception):
-    """Raised when it is a bad request """
+    """Raised when request comming with invalid data """
 
 
 class ShellRequest(Request):

@@ -113,16 +113,17 @@ class FanoutTranClient(FanoutClient):
                                type=type,
                                uuid=uuid)
 
-
-client_list = [
-    ('topic', TopicTranClient),
-    ('fanout', FanoutTranClient),
-    ('rpc', RPCTranClient), #Point-to-point remote procedure call
-]
+def get_client_list():
+    client_list = [
+        ('topic', TopicTranClient),
+        ('fanout', FanoutTranClient),
+        ('rpc', RPCTranClient), #Point-to-point remote procedure call
+    ]
+    return client_list
 
 
 def get_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
-    c = _get_client(client_list, type, amqp_url)
+    c = _get_client(get_client_list(), type, amqp_url)
     if not c: 
         return 
     c.config(group_name, group_type, group_uuid)

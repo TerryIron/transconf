@@ -1,13 +1,13 @@
 __author__ = 'chijun'
 
+import time
 import pickle
 import functools
-import twisted
-from twisted.internet import task
+from twisted.internet import task, reactor
 
 from transconf.server.twisted.internet import get_client
 from transconf.server.twisted.netshell import ShellMiddleware
-from transconf.server.request import Request, Response, RequestTimeout, InvalidRequest
+from transconf.server.request import Request, RequestTimeout, InvalidRequest
 
 
 class Task(object):
@@ -15,11 +15,15 @@ class Task(object):
         self.f = functools.partial(f, *args, **kwargs)
 
     def CallLater(self, seconds):
-        reactor.callLater(self.seconds, self.f())
+        reactor.callLater(seconds, self.f)
 
     def LoopingCall(self, seconds):
-        d = task.LoopingCall(self.f())
+        d = task.LoopingCall(self.f)
         d.start(seconds)
+
+
+class EventRequestTimeout(Exception):
+    """ Raised when request comming out of time"""
 
 
 class EventRequest(Request):
@@ -27,9 +31,9 @@ class EventRequest(Request):
                  errback_request=None, errback_client=None, timeout=60):
         d = dict(timeout=timeout,
                  cli=client,
-                 shell_cli=shell_client,
+                 shell_rq=shell_request,
                  cb_rq=callback_request,
-                 cb_cli=callback_cient,
+                 cb_cli=callback_client,
                  eb_rq=errback_request,
                  eb_cli=errback_client)
         return super(EventRequest, self).__init__(**d)       
@@ -38,7 +42,7 @@ class EventRequest(Request):
         if not context:
             context = {}
         # Call ShellReqeust's to_dict()
-        self['shell_rq'].to_dict(context)
+        context = self['shell_rq'].to_dict(context)
         if 'eventloop' not in context:
             context['eventloop'] = []
         d = {}
@@ -50,6 +54,7 @@ class EventRequest(Request):
             d['failed_cli'] = dict(self['eb_cli'].__simple__)
         if len(d) > 0:
             d['timeout'] = self['timeout']
+            d['timestamp'] = time.time()
             d['cli'] = dict(self['cli'].__simple__)
             context['eventloop'].append(d)
         return context
@@ -93,14 +98,13 @@ class EventDeferDispatcher(object):
         self.delivery_mode=delivery_mode
 
     def addNext(self, client, shell_request, callback_request=None, callback_client=None,
-                errback_client=None, errback_request=None, timeout=60)
+                errback_client=None, errback_request=None, timeout=60):
         self.queue.append(EventDispatcher(client, shell_request, callback_request, callback_client or self.client,
-                                          errback_request, errback_client or self.client, timeout))
+                                          errback_request, errback_client or self.client, timeout, self.delivery_mode))
 
     @staticmethod
     def get_first_client(requests):
-        if (not isinstance(requests['requests'], list)) or \ 
-           (len(requests['requests']) <= 0):
+        if (not isinstance(requests['requests'], list)) or (len(requests['requests']) <= 0):
             return
         part = requests['requests'][0]
         if not isinstance(part, EventRequest):
@@ -138,28 +142,33 @@ class EventDeferDispatcher(object):
 """
 
 class EventMiddleware(ShellMiddleware):
-    def process_request(self, context)
+    def process_request(self, context):
         if 'eventloop' in context:
             eventloop = context.pop('eventloop')
-            if (isinstance(eventloop, list)) and \ 
-               (len(eventloop) > 0):
+            if (isinstance(eventloop, list)) and (len(eventloop) > 0):
                 event_context = eventloop[0]
+                timeout = event_context.get('timeout', None)
+                timestamp = event_context.get('timestamp', None)
+                if not (timestamp and timeout):
+                    raise InvalidRequest('Invalid request for {0}.'.format(eventloop))
+                cost_time = float(time.time()) - float(timestamp)
+                if cost_time > float(timeout):
+                    raise RequestTimeout('Call {0} timeout.'.format(eventloop))
+                def cast(cli, text):
+                    client = get_client(cli['group'], cli['type'],
+                                        group_uuid=cli['uuid'],
+                                        type=cli['cls'])
+                    client.castBase(text)
                 def if_success():
                     cli = event_context.get('success_cli', None)
                     text = event_context.get('success', None)
                     if cli and text:
-                        client = get_client(cli['group'], cli['type'],
-                                            group_uuid=cli['uuid'],
-                                            type=cli['cls'])
-                        client.castBase(text)
+                        cast(cli, text)
                 def if_failed():
                     cli = event_context.get('failed_cli', None)
                     text = event_context.get('failed', None)
                     if cli and text:
-                        client = get_client(cli['group'], cli['type'],
-                                            group_uuid=cli['uuid'],
-                                            type=cli['cls'])
-                        client.castBase(text)
+                        cast(cli, text)
                 def if_next():
                     eventloop.pop(0)
                     if eventloop:
@@ -167,10 +176,7 @@ class EventMiddleware(ShellMiddleware):
                         cli = event_context.get('cli', None)
                         if cli:
                             event_context['cli'] = None
-                            client = get_client(cli['group'], cli['type'],
-                                                group_uuid=cli['uuid'],
-                                                type=cli['cls'])
-                            client.castBase(text)
+                            cast(cli, eventloop)
                 try:
                     defer = super(EventMiddleware, self).process_request(context)
                     if_success()

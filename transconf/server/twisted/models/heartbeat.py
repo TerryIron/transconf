@@ -6,6 +6,7 @@ from twisted.internet import task, reactor
 from transconf.common.reg import register_model, get_model
 from transconf.model import Model
 from transconf.server.twisted.internet import get_client
+from transconf.server.twisted.event import Task, EventDispatcher
 from transconf.server.twisted import CONF as global_conf
 from transconf.server.twisted import get_sql_engine 
 from transconf.server.utils import from_config, from_config_option, as_config
@@ -80,13 +81,9 @@ class HeartBeat(Model):
     def start(self, config=None):
         self.is_start = None
         if self._action_heartcodition_register(config):
-            self.heart = self.heartbeat()
-            if self.heart:
-                timeout = int(self._conf_heartrate)
-                for h in self.heart:
-                    h.start(timeout)
+            self.heartbeat(int(self._conf_heartrate))
 
-    def heartbeat(self):
+    def heartbeat(self, timeout):
         # Check if has call heartbeat event-loop, don't call it again.
         if self.is_start:
             return True
@@ -95,15 +92,17 @@ class HeartBeat(Model):
         local_type = self._conf_group_type
         local_uuid = self._conf_group_uuid
         if local_name and local_type and local_uuid:
-            d = [task.LoopingCall(lambda: get_client(g_name, 'all_type', type='topic').call(
-                 ShellRequest(self.mycmd['heartcondition_register'].target,
-                              self.mycmd['heartcondition_register'].action,
-                              dict(group_name=local_name, 
-                                   uuid=local_uuid,
-                                   available=str(True),
-                                   group_type=local_type))
-                 )) for g_name, is_enabled in self.get_fanout_members()]
-            return d
+            for g_name, is_enabled in self.get_fanout_members():
+                client = get_client(g_name, 'all_type', type='fanout')
+                shell_req = ShellRequest(self.mycmd['heartcondition_register'].target,
+                                         self.mycmd['heartcondition_register'].action,
+                                         dict(group_name=local_name, 
+                                              uuid=local_uuid,
+                                              available=str(True),
+                                              group_type=local_type))
+                event = EventDispatcher(client, shell_req)
+                t = Task(lambda: event.start())
+                t.LoopingCall(timeout)
 
 
 @register_model('heartcondition')                                                                                                                                                                    
@@ -199,8 +198,8 @@ class HeartCondition(Model):
                 return 
         self._update_target(group_name, group_type, uuid, available)
         self._check_has_available_targets(group_name, group_type)
-        reactor.callLater((heartrate + timeout), 
-                          lambda:  self._check_heart_still_alive(group_name, group_type, uuid))
+        t = Task(lambda:  self._check_heart_still_alive(group_name, group_type, uuid))
+        t.CallLater(heartrate + timeout)
 
     def has_heartbeat(self, context):
         group_name = context.get('group_name', None)
