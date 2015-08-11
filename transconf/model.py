@@ -75,6 +75,8 @@ class Model(BaseModel):
             return False
         m_inst = self.get_namebus(real_name)
         if isinstance(m_inst, dict):
+            if method_name not in m_inst.keys():
+                return False
             _type, meth = m_inst.get(method_name)
             if isinstance(_type, typ):
                 if callable(meth):
