@@ -4,7 +4,7 @@ from transconf.shell import ModelShell, ShellTargetNotFound
 
 
 class CodeShell(ModelShell):
-    TARGET_NAME = 'vcloud.vcloud' 
+    TARGET_NAME = 'vcloud.code' 
 
     def run(self, method_name, *args, **kwargs):
         model_name = self.TARGET_NAME
@@ -20,3 +20,20 @@ class CodeShell(ModelShell):
             return d
         else:
             raise ShellTargetNotFound(method_name)
+
+    def load_model(self, model_class, config=None):
+        name = self.TARGET_NAME.split(self.split)[0]
+        if self.preload_model(name, model_class, config):
+            model = self.get_namebus(name)
+            model.start(config)
+
+    """
+        Remove pointed model and finally call the stop-code.
+    """
+    def remove_model(self):
+        name = self.TARGET_NAME.split(self.split)[0]
+        model = self.get_namebus(name)
+        model.stop()
+        self.remove_namebus(name)
+
+
