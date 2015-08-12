@@ -14,7 +14,7 @@ class RabbitAMQP(object):
     DEFAULT_CONF = as_config(os.path.join(os.path.dirname(__file__), 'default.ini'))
     CONF = None
 
-    def __init__(self, amqp_url=None, timeout=5):
+    def __init__(self, amqp_url=None, con_timeout=5, con_attempts=3):
         self.connection_class = self.CONNECTION_CLASS
         self.packer = JsonSerializionPacker()
         self.conf = self.DEFAULT_CONF if not self.CONF else self.CONF
@@ -24,8 +24,8 @@ class RabbitAMQP(object):
         self.parms = pika.URLParameters(
             amqp_url +
             '?socket_timeout={0}&'
-            'connection_attempts={1}'.format(timeout,
-                                             self.CONNECTION_ATTEMPTS)
+            'connection_attempts={1}'.format(con_timeout,
+                                             con_attempts or self.CONNECTION_ATTEMPTS)
         )
         self.bind_rpc_queue = None
         self.bind_topic_exchange = None

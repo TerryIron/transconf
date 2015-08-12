@@ -87,6 +87,13 @@ class BaseModelDriver(object):
              | Table C -> nodeC API control            | NodeC
     """
 
+    """
+        db_engine format:
+        SQLITE:
+            sqlite:///:memory: (or, sqlite://)
+            sqlite:///relative/path/to/file.db
+            sqlite:////absolute/path/to/file.db
+    """
     def __init__(self, db_engine=None):
         if db_engine:
             self.db_engine = create_engine(db_engine)
