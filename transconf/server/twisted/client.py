@@ -95,13 +95,11 @@ class BaseClient(BaseSyncClient):
         @request: request object
         @routing_key: routing key
     """
-    def castBase(self, context, routing_key=None, delivery_mode=2, need_close=True):
+    def castBase(self, context, routing_key=None, delivery_mode=2):
         self._on_connect(self._ready(context, routing_key), None, delivery_mode)
-        if need_close:
-            self.close()
 
-    def cast(self, request, routing_key=None, delivery_mode=2, need_close=True):
-        self.castBase(request.to_dict(), routing_key, delivery_mode, need_close)
+    def cast(self, request, routing_key=None, delivery_mode=2):
+        self.castBase(request.to_dict(), routing_key, delivery_mode)
 
         
     """
@@ -109,14 +107,12 @@ class BaseClient(BaseSyncClient):
         @request: request object
         @routing_key: routing key
     """
-    def callBase(self, context, routing_key=None, delivery_mode=2, need_close=True):
+    def callBase(self, context, routing_key=None, delivery_mode=2):
         val = self._on_connect(self._ready(context, routing_key), self.on_response, delivery_mode)
-        if need_close:
-            self.close()
         return val
 
-    def call(self, request, routing_key=None, delivery_mode=2, need_close=True):
-        return self.callBase(request.to_dict(), routing_key, delivery_mode, need_close)
+    def call(self, request, routing_key=None, delivery_mode=2):
+        return self.callBase(request.to_dict(), routing_key, delivery_mode)
 
 
 class RPCTranClient(BaseClient):
