@@ -18,7 +18,7 @@ twisted.CONF = serve_conf
 from transconf.server.twisted.internet import TranServer
 from transconf.server.twisted.utils import TranMiddleware
 from transconf.server.twisted.models import model_configure
-from transconf.driver import command_configure
+from transconf.command_driver import command_configure
 
 
 class ServerMiddleware(TranMiddleware):

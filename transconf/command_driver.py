@@ -4,6 +4,7 @@ import os
 import functools
 
 from transconf.server.utils import from_config, from_config_option, as_config, import_class
+from transconf.common.reg import get_local_cmd
 
 
 class Command(object):
@@ -64,6 +65,7 @@ class Command(object):
             func = functools.partial(Command.translate, exp)
             return func
 
+
 def command_configure(conf):
     Command.DEFAULT_CONF = conf
     for sect in conf.sections():
@@ -76,3 +78,22 @@ def command_configure(conf):
             mod = import_class(factory)
             if callable(mod):
                 mod(sect).setup()
+
+
+class CommandNotRegister(Exception):
+    """Raised when command name cat not be found in registry"""
+
+
+class CommandNotFound(Exception):
+    """Raised when method cat not be found in command target"""
+
+
+def command(target_name, method_name, **kwargs):
+    target = get_local_cmd(target_name)
+    if not target:
+        raise CommandNotRegister(target_name)
+    meth = target[method_name]
+    if callable(meth):
+        return meth(**kwargs)
+    else:
+        raise CommandNotFound(method_name)
