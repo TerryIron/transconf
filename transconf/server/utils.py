@@ -2,12 +2,18 @@ __author__ = 'chijun'
 
 import re
 import json
-import ConfigParser
+import ConfigParser, NoOptionError, NoSectionError
 
 from transconf.common.reg import get_model
 
+__all__ = ['JsonSerializionPacker', 'import_class', 
+           'as_config', 'from_config', 'from_config_option',
+           'as_model_action', 'from_model_option',
+          ]
+
 
 def import_class(class_name):
+    class_name = str(class_name).split('.')
     cls = __import__('.'.join(class_name[0:-1]), fromlist=[class_name[-1]])
     return getattr(cls, class_name[-1])
 
@@ -22,26 +28,20 @@ class JsonSerializionPacker(object):
         return json.loads(json_data)
 
 
-def from_config_option(opt, default_val, sect=None):
-    def _from_config_option(func):
-        def __from_config_option(*args, **kwargs):
-            config = func(*args, **kwargs)
-            assert isinstance(config, ConfigParser.ConfigParser)
-            if not sect:
-                default_sect = config._defaults
-                if default_sect:
-                    val = default_sect.get(opt, None)
-                    return val if val else default_val
-                else:
-                    return default_val
-            else:
-                if config.has_section(sect) and config.has_option(sect, opt):
-                    return config.get(sect, opt)
-                else:
-                    return default_val
-        return __from_config_option
-    return _from_config_option
-
+def _get_val(conf, sect, opt, default_val):
+    if not sect:
+        default_sect = conf._defaults
+        if default_sect:
+            val = default_sect.get(opt, None)
+            return val if val else default_val
+        else:
+            return default_val
+    else:
+        try:
+            return conf.get(sect, opt)
+        except (NoOptionError, NoSectionError):
+            return default_val
+        
 
 def from_model_option(opt, default_val, sect):
     def _from_model_option(func):
@@ -51,15 +51,12 @@ def from_model_option(opt, default_val, sect):
             target = get_model(sect)
             if not target:
                 return default_val
-            if config.has_section(sect) and config.has_option(sect, opt):
-                return config.get(sect, opt)
-            else:
-                return default_val
+            return _get_val(config, sect, opt, default_val)
         return __from_model_option
     return _from_model_option
 
 
-class Model(object):
+class SimpleModel(object):
     RE = re.compile('(\S+)\.(\S+)')
 
     def __init__(self, string):
@@ -81,7 +78,7 @@ def as_model_action(command_name, opt, sect='model_action'):
                 setattr(self, command_name, {})
             if config.has_section(sect) and config.has_option(sect, opt):
                 d = getattr(self, command_name)
-                d[opt] = Model(config.get(sect, opt))
+                d[opt] = SimpleModel(config.get(sect, opt))
                 return True
             else:
                 return False
@@ -110,3 +107,13 @@ def from_config(sect=None):
                     return d
         return __from_config
     return _from_config
+
+
+def from_config_option(opt, default_val, sect=None):
+    def _from_config_option(func):
+        def __from_config_option(*args, **kwargs):
+            config = func(*args, **kwargs)
+            assert isinstance(config, ConfigParser.ConfigParser)
+            return _get_val(config, sect, opt, default_val)
+        return __from_config_option
+    return _from_config_option

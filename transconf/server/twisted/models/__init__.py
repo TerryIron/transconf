@@ -81,7 +81,6 @@ def model_configure(conf, sh=None):
         class_name = get_model_class()
         name = get_model_name()
         if class_name and name:
-            class_name = class_name.split('.')
             mod = import_class(class_name)
             load_model(sh, name, mod, conf)
     return sh

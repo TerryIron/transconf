@@ -11,7 +11,7 @@ from transconf.server.twisted import CONF as global_conf
 from transconf.server.twisted import get_sql_engine 
 from transconf.server.utils import from_config, from_config_option, as_config
 from transconf.server.utils import from_model_option, as_model_action
-from transconf.server.twisted.netshell import ShellRequest
+from transconf.server.twisted.netshell import ActionRequest
 from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
 
 SERVER_CONF = global_conf
@@ -45,7 +45,7 @@ class HeartBeat(Model):
     ]
 
     @as_model_action('mycmd', 'heartcondition_register')
-    def _action_heartcodition_register(self, config):
+    def _register_actions(self, config):
         return config
 
     @property
@@ -80,7 +80,7 @@ class HeartBeat(Model):
 
     def start(self, config=None):
         self.is_start = None
-        if self._action_heartcodition_register(config):
+        if self._register_actions(config):
             self.heartbeat(int(self._conf_heartrate))
 
     def heartbeat(self, timeout):
@@ -94,8 +94,7 @@ class HeartBeat(Model):
         if local_name and local_type and local_uuid:
             for g_name, is_enabled in self.get_fanout_members():
                 client = get_client(g_name, 'all_type', type='fanout')
-                shell_req = ShellRequest(self.mycmd['heartcondition_register'].target,
-                                         self.mycmd['heartcondition_register'].action,
+                shell_req = ActionRequest(self.mycmd['heartcondition_register'],
                                          dict(group_name=local_name, 
                                               uuid=local_uuid,
                                               available=str(True),

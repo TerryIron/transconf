@@ -9,6 +9,7 @@ from transconf.shell import ModelShell, ShellTargetNotFound
 from transconf.model import Model
 from transconf.server.twisted.service import Middleware
 from transconf.server.request import Request, Response, RequestTimeout, InvalidRequest
+from transconf.server.utils import SimpleModel
 from transconf.server.twisted.log import getLogger
 
 LOG  = getLogger(__name__)
@@ -39,6 +40,15 @@ class ShellRequest(Request):
             kwargs=self['kwargs'],
         )
         return context
+
+
+class ActionRequest(ShellRequest):
+    def __init__(self, target, *args, **kwargs):
+        assert isinstance(target, SimpleModel) 
+        return super(ActionRequest, self).__init__(target.target,
+                                                   target.action,
+                                                   *args,
+                                                   **kwargs)
 
 
 class ShellMiddleware(Middleware):

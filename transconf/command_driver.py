@@ -74,7 +74,6 @@ def command_configure(conf):
             return conf
         factory = conf_command_factory()
         if factory:
-            factory = factory.split('.')
             mod = import_class(factory)
             if callable(mod):
                 mod(sect).setup()
