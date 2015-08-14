@@ -94,13 +94,13 @@ class HeartBeat(Model):
         if local_name and local_type and local_uuid:
             for g_name, is_enabled in self.get_fanout_members():
                 client = get_client(g_name, 'all_type', type='fanout')
-                shell_req = ActionRequest(self.mycmd['heartcondition_register'],
-                                         dict(group_name=local_name, 
-                                              uuid=local_uuid,
-                                              available=str(True),
-                                              group_type=local_type))
-                event = EventDispatcher(client, shell_req)
-                t = Task(lambda: event.start())
+                req = ActionRequest(self.mycmd['heartcondition_register'],
+                                    dict(group_name=local_name, 
+                                         uuid=local_uuid,
+                                         available=str(True),
+                                         group_type=local_type))
+                event = EventDispatcher(client, req)
+                t = Task(lambda: event.startWithoutResult())
                 t.LoopingCall(timeout)
 
 

@@ -3,7 +3,7 @@ __author__ = 'chijun'
 import time
 import pickle
 import functools
-from twisted.internet import task, reactor
+from twisted.internet import task, reactor, defer
 
 from transconf.server.twisted.internet import get_client
 from transconf.server.twisted.netshell import ShellMiddleware
@@ -55,74 +55,59 @@ class EventRequest(Request):
         if len(d) > 0:
             d['timeout'] = self['timeout']
             d['timestamp'] = time.time()
-            d['cli'] = dict(self['cli'].__simple__)
             context['eventloop'].append(d)
         return context
 
 
 class EventDispatcher(object):
-    def __init__(self, client, shell_request, callback_request=None, callback_client=None, 
-                 errback_request=None, errback_client=None, timeout=60, delivery_mode=1):
+    def __init__(self, client, request, callback_request=None, callback_client=None, 
+                 errback_request=None, errback_client=None, timeout=60, delivery_mode=1, need_result=True):
         self.client = client
+        self.need_result = need_result
         self.delivery_mode = delivery_mode
         self.request = EventRequest(self.client, 
-                                    shell_request, 
+                                    request, 
                                     callback_request, 
                                     callback_client, 
                                     errback_request, 
                                     errback_client, 
                                     timeout)
 
-    def start(self):
+    def startWithoutResult(self):
         self.client.cast(self.request, delivery_mode=self.delivery_mode)
 
-    def send(self):
+    def startWithResult(self):
         return self.client.call(self.request, delivery_mode=self.delivery_mode)
+
+    def start(self):
+        if self.need_result: 
+            return self.startWithResult()
+        else:
+            self.startWithoutResult()
     
 
-class EventsRequest(Request):
-    def __init__(self, event_requests):
-        d = dict(requests=event_requests)
-        return super(EventsRequest, self).__init__(**d)       
-
-    def to_dict(self, context=None):
-        for event_rq in self['requests']:
-            context = event_rq.to_dict(context)
-        return context
-
-
 class EventDeferDispatcher(object):
+    # Make sure that client is one of pointed sub-services not a worker.
     def __init__(self, client, delivery_mode=1):
         self.queue = []
         self.client = client
         self.delivery_mode=delivery_mode
 
     def addNext(self, client, shell_request, callback_request=None, callback_client=None,
-                errback_client=None, errback_request=None, timeout=60):
+                errback_client=None, errback_request=None, timeout=60, need_result=True):
         self.queue.append(EventDispatcher(client, shell_request, callback_request, callback_client or self.client,
-                                          errback_request, errback_client or self.client, timeout, self.delivery_mode))
+                                          errback_request, errback_client or self.client, 
+                                          timeout, self.delivery_mode, need_result))
 
-    @staticmethod
-    def get_first_client(requests):
-        if (not isinstance(requests['requests'], list)) or (len(requests['requests']) <= 0):
-            return
-        part = requests['requests'][0]
-        if not isinstance(part, EventRequest):
-            return
-        cli = part['cli']
-        client = get_client(cli['group'], cli['type'],
-                            group_uuid=cli['uuid'],
-                            type=cli['cls'])
-        part['cli'] = None
-        return client
-        
+    def add(self, dispatcher):
+        assert isinstance(dispatcher, EventDispatcher)
+        self.queue.append(dispatcher)
+
     def start(self):
-        if self.queue:
-            requests = EventsRequest(self.queue)
-            client = EventDeferDispatcher.get_first_client(requests)
-            if not client:
-                return
-            client.cast(requests, delivery_mode=self.delivery_mode)
+        d = defer.Deferred({})
+        for disp in self.queue:
+            d.addBoth(lambda: disp.start())
+        return d
 
 
 """
@@ -143,6 +128,7 @@ class EventDeferDispatcher(object):
 
 class EventMiddleware(ShellMiddleware):
     def process_request(self, context):
+        defer = super(EventMiddleware, self).process_request(context)
         if 'eventloop' in context:
             eventloop = context.pop('eventloop')
             if (isinstance(eventloop, list)) and (len(eventloop) > 0):
@@ -154,41 +140,22 @@ class EventMiddleware(ShellMiddleware):
                 cost_time = float(time.time()) - float(timestamp)
                 if cost_time > float(timeout):
                     raise RequestTimeout('Call {0} timeout.'.format(eventloop))
-                def cast(cli, text):
+                def call(cli, text, ret):
                     client = get_client(cli['group'], cli['type'],
                                         group_uuid=cli['uuid'],
                                         type=cli['cls'])
-                    client.castBase(text)
-                def if_success():
+                    text['result'] = ret
+                    client.callBase(text)
+                def if_success(ret):
                     cli = event_context.get('success_cli', None)
                     text = event_context.get('success', None)
                     if cli and text:
-                        cast(cli, text)
-                def if_failed():
+                        return call(cli, text, ret)
+                def if_failed(ret):
                     cli = event_context.get('failed_cli', None)
                     text = event_context.get('failed', None)
                     if cli and text:
-                        cast(cli, text)
-                def if_next():
-                    eventloop.pop(0)
-                    if eventloop:
-                        event_context = eventloop[0]
-                        cli = event_context.get('cli', None)
-                        if cli:
-                            event_context['cli'] = None
-                            cast(cli, eventloop)
-                try:
-                    defer = super(EventMiddleware, self).process_request(context)
-                    if_success()
-                    return defer
-                except e as Exception:
-                    if_failed()
-                    raise e
-                finally:
-                    if_next()
-            else:
-                defer = super(EventMiddleware, self).process_request(context)
-                return defer
-        else:
-            defer = super(EventMiddleware, self).process_request(context)
-            return defer
+                        return call(cli, text, ret)
+                defer.addCallbacks(lambda ret: if_success(ret),  
+                                   errback=lambda ret: if_failed(ret))
+        return defer
