@@ -1,7 +1,6 @@
 __author__ = 'chijun'
 
 import time
-from twisted.internet import task, reactor
 
 from transconf.common.reg import register_model, get_model
 from transconf.model import Model
