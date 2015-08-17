@@ -74,9 +74,9 @@ class HeartBeat(Model):
 
     def get_fanout_members(self):
         for g_option, is_enabled in self._conf_group_names:
-            g_n, g_t = g_option.split(':')
-            if (g_n and g_t) and ((is_enabled and g_option) not in self.UNEXPECTED_OPTIONS):
-                yield (g_n, g_t, is_enabled)  
+            g = g_option.split('.')
+            if (len(g) > 1) and ((is_enabled and g_option) not in self.UNEXPECTED_OPTIONS):
+                yield (g[0], g[1], is_enabled)  
 
     def start(self, config=None):
         self.is_start = None
