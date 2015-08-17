@@ -73,9 +73,10 @@ class HeartBeat(Model):
         return SERVER_CONF
 
     def get_fanout_members(self):
-        for g_name, is_enabled in self._conf_group_names:
-            if (is_enabled and g_name) not in self.UNEXPECTED_OPTIONS:
-                yield (g_name, is_enabled)  
+        for g_option, is_enabled in self._conf_group_names:
+            g_n, g_t = g_option.split(':')
+            if (g_n and g_t) and ((is_enabled and g_option) not in self.UNEXPECTED_OPTIONS):
+                yield (g_n, g_t, is_enabled)  
 
     def start(self, config=None):
         self.is_start = None
@@ -91,8 +92,8 @@ class HeartBeat(Model):
         local_type = self._conf_group_type
         local_uuid = self._conf_group_uuid
         if local_name and local_type and local_uuid:
-            for g_name, is_enabled in self.get_fanout_members():
-                client = get_client(g_name, 'all_type', type='fanout')
+            for g_name, typ, is_enabled in self.get_fanout_members():
+                client = get_client(g_name, typ, type='fanout')
                 req = ActionRequest(self.mycmd['heartcondition_register'],
                                     dict(group_name=local_name, 
                                          uuid=local_uuid,
