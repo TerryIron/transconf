@@ -71,19 +71,12 @@ class Model(BaseModel):
     def run(self, target_name, method_name, *args, **kwargs):
         # Check node instance is available ?
         real_name, typ = self._build_nodename(target_name)
-        if not (real_name and typ):
-            return False
-        m_inst = self.get_namebus(real_name)
-        if isinstance(m_inst, dict):
-            if method_name not in m_inst.keys():
-                return False
-            _type, meth = m_inst.get(method_name)
-            if isinstance(_type, typ):
-                if callable(meth):
-                    return meth(*args, **kwargs)
-                else:
-                    return meth
+        m_inst = self.get_namebus(real_name) or {}
+        _type, meth = m_inst.get(method_name)
+        if meth and isinstance(_type, typ)
+            if callable(meth):
+                return meth(*args, **kwargs)
             else:
-                return False
+                return meth
         else:
-            raise ModelInternalStuctErr('Can not loading method name:{0} of {1}'.format(method_name, real_name))
+            raise ModelInternalStuctErr('Can not loading method name:{0} of {1}'.format(method_name, target_name))
