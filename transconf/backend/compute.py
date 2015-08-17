@@ -50,7 +50,7 @@ class ComputeVMStatus(declarative_base()):
         self.event_stat = event_stat
 
 
-class ComputeResourceBackend(BaseModelDriver):
+class ComputeResource(BaseModelDriver):
     def create(self):
         self.define_table(ComputeResource)
 
@@ -61,18 +61,18 @@ class ComputeResourceBackend(BaseModelDriver):
         self.clear_table(ComputeResource)
 
 
-class ComputeVMConfBackend(BaseModelDriver):
+class ComputeVM(BaseModelDriver):
     def create(self):
-        self.define_table(ComputeVMConf)
+        self.define_table(ComputeVM)
 
     def delete(self):
-        self.undefine_table(ComputeVMConf)
+        self.undefine_table(ComputeVM)
 
     def clear(self):
-        self.clear_table(ComputeVMConf)
+        self.clear_table(ComputeVM)
 
 
-class ComputeVMStatusBackend(BaseModelDriver):
+class ComputeVMStatus(BaseModelDriver):
     def create(self):
         self.define_table(ComputeVMStatus)
 
