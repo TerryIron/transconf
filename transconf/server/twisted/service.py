@@ -7,6 +7,7 @@ from twisted.internet import defer, reactor, protocol, task
 
 from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.utils import from_config_option
+from transconf.server.request import Response
 
 
 class Middleware(object):
@@ -66,6 +67,7 @@ class RPCTranServer(RabbitAMQP):
 
     def process_request(self, body):
         return self.middleware.process_request(body)
+            
 
     def _connect(self):
         cc = protocol.ClientCreator(reactor, 
@@ -81,15 +83,22 @@ class RPCTranServer(RabbitAMQP):
         d.addCallback(callback)
 
     @defer.inlineCallbacks
-    def result_back(self, ch, properties, exchange, result):
-        result = yield {'result': result}
+    def result_back(self, result):
         yield ch.basic_publish(exchange=exchange,
                                routing_key=properties.reply_to,
                                properties=pika.BasicProperties(
                                    correlation_id=properties.correlation_id
                                ),
-                               body=self.packer.pack(result))
+                               body=self.packer.pack(result.as_dict()))
         
+    @defer.inlineCallbacks
+    def success(self, ch, properties, exchange, result):
+        yield defer.returnValue(Response.success(result))
+
+    @defer.inlineCallbacks
+    def failed(self, ch, properties, exchange, err):
+        yield defer.returnValue(Response.failed(err))
+
     @defer.inlineCallbacks
     def on_request(self, queue_object, exchange):
         ch, method, properties, body = yield queue_object.get()
@@ -98,7 +107,9 @@ class RPCTranServer(RabbitAMQP):
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
             body = yield self.process_request(body)
             if body:
-                body.addCallback(lambda result: self.result_back(ch, properties, exchange, result))
+                body.addCallbacks(lambda result: self.success(ch, properties, exchange, result),
+                                  errback=lambda err: self.failed(ch, properties, exchange, err))
+                body.addBoth(lambda ret: self.result_back(ret))
 
     @defer.inlineCallbacks
     def on_channel(self, channel, exchange, queue):
