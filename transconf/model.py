@@ -47,9 +47,9 @@ class Model(BaseModel):
             name_meth = self.node_rules.get(p, None)
             if callable(name_meth):
                 if name_meth(s):
-                    return p, self.is_pri_rule
+                    return p, s, self.is_pri_rule
         else:
-            return name, self.is_pub_rule
+            return name, None, self.is_pub_rule
 
     def _is_private_mode(self, name):
         l = name.split(self.member_split)        
@@ -70,12 +70,15 @@ class Model(BaseModel):
 
     def run(self, target_name, method_name, *args, **kwargs):
         # Check node instance is available ?
-        real_name, typ = self._build_nodename(target_name)
+        real_name, inst_name, typ = self._build_nodename(target_name)
         m_inst = self.get_namebus(real_name) or {}
         _type, meth = m_inst.get(method_name)
-        if meth and isinstance(_type, typ)
+        if meth and isinstance(_type, typ):
             if callable(meth):
-                return meth(*args, **kwargs)
+                if not inst_name:
+                    return meth(*args, **kwargs)
+                else:
+                    return meth(inst_name, *args, **kwargs)
             else:
                 return meth
         else:
