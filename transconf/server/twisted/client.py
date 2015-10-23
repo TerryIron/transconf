@@ -97,6 +97,9 @@ class BaseClient(BaseSyncClient):
     """
     def castBase(self, context, routing_key=None, delivery_mode=2):
         self._on_connect(self._ready(context, routing_key), None, delivery_mode)
+        #LOG.debug('Context:{0}, routing_key:{1}, delivery:{2}'.format(context, 
+        #                                                              routing_key,
+        #                                                              delivery_mode))
 
     def cast(self, request, routing_key=None, delivery_mode=2):
         self.castBase(request.to_dict(), routing_key, delivery_mode)
@@ -109,6 +112,10 @@ class BaseClient(BaseSyncClient):
     """
     def callBase(self, context, routing_key=None, delivery_mode=2):
         val = self._on_connect(self._ready(context, routing_key), self.on_response, delivery_mode)
+        #LOG.debug('Context:{0}, routing_key:{1}, delivery:{2}, value:{3}'.format(context, 
+        #                                                                         routing_key,
+        #                                                                         delivery_mode,
+        #                                                                         val))
         return val
 
     def call(self, request, routing_key=None, delivery_mode=2):

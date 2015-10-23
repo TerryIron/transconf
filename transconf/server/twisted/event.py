@@ -8,6 +8,9 @@ from twisted.internet import task, reactor, defer
 from transconf.server.twisted.internet import get_client
 from transconf.server.twisted.netshell import ShellMiddleware
 from transconf.server.request import Request, RequestTimeout, InvalidRequest
+from transconf.server.twisted.log import getLogger
+
+LOG  = getLogger(__name__)
 
 
 class Task(object):
@@ -74,9 +77,11 @@ class EventDispatcher(object):
                                     timeout)
 
     def startWithoutResult(self):
+        #LOG.debug('Event StartWithoutResult, req:{0}, delivery:{1}'.format(self.request, self.delivery_mode))
         self.client.cast(self.request, delivery_mode=self.delivery_mode)
 
     def startWithResult(self):
+        #LOG.debug('Event StartWithResult, req:{0}, delivery:{1}'.format(self.request, self.delivery_mode))
         return self.client.call(self.request, delivery_mode=self.delivery_mode)
 
     def start(self):

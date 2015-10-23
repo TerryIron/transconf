@@ -3,6 +3,9 @@ __version__ = (0, 1, 0)
 from transconf.server.twisted.netshell import NetShell
 from transconf.server.utils import from_config_option, import_class
 from transconf.common.reg import get_model
+from transconf.server.twisted.log import getLogger
+
+LOG  = getLogger(__name__)
 
 
 class LostModel(Exception):
@@ -59,6 +62,7 @@ def model_configure(conf, sh=None):
             return conf
         def load_model(self, name, model_class, config=None):
             if self.preload_model(name, model_class, config):
+                LOG.info('Load model:{0}, class:{1} successfully'.format(name, model_class))
                 if not get_model(sect):
                     raise ModelSectNameErr(sect)
                 @from_config_option('depend', None, sect=sect)

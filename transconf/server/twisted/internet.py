@@ -8,6 +8,9 @@ from transconf.server.twisted.client import TopicTranClient as TopicClient
 from transconf.server.twisted.client import FanoutTranClient as FanoutClient
 from transconf.server.utils import from_config_option
 from transconf.msg.rabbit.client import _get_client
+from transconf.server.twisted.log import getLogger
+
+LOG  = getLogger(__name__)
 
 
 class TranServer(AsyncServer):
@@ -65,6 +68,18 @@ class TranServer(AsyncServer):
         self.bind_topic_routing_key = self.conf_topic_routing_key
         self.bind_fanout_exchange = self.conf_fanout_exchange
         self.bind_fanout_queue = self.conf_fanout_queue
+        LOG.info(''''
+                      Listen default PRC queue:{0};
+                      Listen TOPIC exchange:{1};
+                      Listen TOPIC queue:{2};
+                      Listen TOPIC routing_key:{3};
+                      Listen FANOUT exchange:{4};
+                      Listen FANOUT queue:{5}'''.format(self.bind_rpc_queue,
+                                                           self.bind_topic_exchange,
+                                                           self.bind_topic_queue,
+                                                           self.bind_topic_routing_key,
+                                                           self.bind_fanout_exchange,
+                                                           self.bind_fanout_queue))
 
 
 class RPCTranClient(RPCClient):
@@ -127,4 +142,8 @@ def get_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=N
     if not c: 
         return 
     c.config(group_name, group_type, group_uuid)
+    LOG.debug('Get client:{0}, groupname:{1}, grouptype:{2}, groupuuid:{3}'.format(c,
+                                                                                   group_name,
+                                                                                   group_type,
+                                                                                   group_uuid))
     return c
