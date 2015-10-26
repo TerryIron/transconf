@@ -1,6 +1,7 @@
 __author__ = 'chijun'
 
 import pika
+import functools
 
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
@@ -8,6 +9,18 @@ from twisted.internet import defer, reactor, protocol, task
 from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.utils import from_config_option
 from transconf.server.request import Response
+
+SERVER = []
+
+
+def serve_register(func, *args, **kwargs):
+    SERVER.append(functools.partial(func, *args, **kwargs))
+
+
+def serve_forever():
+    for func in SERVER:
+        func()
+    reactor.run()
 
 
 class Middleware(object):
@@ -23,43 +36,10 @@ class RPCTranServer(RabbitAMQP):
     CONNECTION_CLASS = twisted_connection.TwistedProtocolConnection
     TIMEOUT = 30
 
-    @property
-    @from_config_option('topic_binding_exchange', 'default_topic_exchange')
-    def conf_topic_exchange(self):
-        return self.conf
-
-    @property
-    @from_config_option('topic_binding_queue', 'default_topic_queue')
-    def conf_topic_queue(self):
-        return self.conf
-
-    @property
-    @from_config_option('topic_routing_key', 'default_topic_routing_key')
-    def conf_topic_routing_key(self):
-        return self.conf
-
-    @property
-    @from_config_option('rpc_binding_queue', 'default_rpc_queue')
-    def conf_rpc_queue(self):
-        return self.conf
-
-    @property
-    @from_config_option('fanout_binding_queue', 'default_fanout_queue')
-    def conf_fanout_queue(self):
-        return self.conf
-
-    @property
-    @from_config_option('fanout_binding_exchange', 'default_fanout_exchange')
-    def conf_fanout_exchange(self):
-        return self.conf
-
     def init(self):
-        self.bind_rpc_queue = self.conf_rpc_queue
-        self.bind_topic_exchange = self.conf_topic_exchange
-        self.bind_topic_queue = self.conf_topic_queue
-        self.bind_topic_routing_key = self.conf_topic_routing_key
-        self.bind_fanout_exchange = self.conf_fanout_exchange
-        self.bind_fanout_queue = str(self.conf_fanout_queue) + self.rand_corr_id
+        self.bind_exchange = ''
+        self.bind_queue = None
+        self.bind_routing_key = None
 
     def setup(self, middleware):
         assert isinstance(middleware, Middleware)
@@ -83,8 +63,8 @@ class RPCTranServer(RabbitAMQP):
         d.addCallback(callback)
 
     @defer.inlineCallbacks
-    def result_back(self, result):
-        yield ch.basic_publish(exchange=exchange,
+    def result_back(self, properties, result):
+        yield ch.basic_publish(exchange=self.bind_exchange,
                                routing_key=properties.reply_to,
                                properties=pika.BasicProperties(
                                    correlation_id=properties.correlation_id
@@ -92,59 +72,37 @@ class RPCTranServer(RabbitAMQP):
                                body=self.packer.pack(result.as_dict()))
         
     @defer.inlineCallbacks
-    def success(self, ch, properties, exchange, result):
+    def success(self, result):
         yield defer.returnValue(Response.success(result))
 
     @defer.inlineCallbacks
-    def failed(self, ch, properties, exchange, err):
+    def failed(self, err):
         yield defer.returnValue(Response.failed(err))
 
     @defer.inlineCallbacks
-    def on_request(self, queue_object, exchange):
+    def on_request(self, queue_object):
         ch, method, properties, body = yield queue_object.get()
         body = yield self.packer.unpack(body)
         if body:
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
             body = yield self.process_request(body)
             if body:
-                body.addCallbacks(lambda result: self.success(ch, properties, exchange, result),
-                                  errback=lambda err: self.failed(ch, properties, exchange, err))
-                body.addBoth(lambda ret: self.result_back(ret))
+                body.addCallbacks(lambda result: self.success(result),
+                                  errback=lambda err: self.failed(err))
+                body.addBoth(lambda ret: self.result_back(properties, ret))
+        yield queue_object.close(None)
 
     @defer.inlineCallbacks
-    def on_channel(self, channel, exchange, queue):
-        queue_object, consumer_tag = yield channel.basic_consume(queue=queue, no_ack=False)
-        l = yield task.LoopingCall(lambda: self.on_request(queue_object, exchange))
+    def on_channel(self, channel):
+        queue_object, consumer_tag = yield channel.basic_consume(queue=self.bind_queue, no_ack=False)
+        l = yield task.LoopingCall(lambda: self.on_request(queue_object))
         l.start(0.001)
 
     @defer.inlineCallbacks
-    def on_rpc_mode(self, connection):
-        channel = yield connection.channel()
-        yield channel.queue_declare(queue=self.bind_rpc_queue)
-        yield channel.basic_qos(prefetch_count=1)
-        yield self.on_channel(channel, '', self.bind_rpc_queue)
+    def on_connect(self):
+        raise NotImplementedError()
 
-    @defer.inlineCallbacks
-    def on_topic_mode(self, connection):
-        channel = yield connection.channel()
-        yield channel.exchange_declare(exchange=self.bind_topic_exchange, type='topic')
-        yield channel.queue_declare(queue=self.bind_topic_queue, auto_delete=False, exclusive=False)
-        yield channel.queue_bind(exchange=self.bind_topic_exchange,
-                                 queue=self.bind_topic_queue,
-                                 routing_key='.'.join([self.bind_topic_queue, self.bind_topic_routing_key]))
-        yield channel.basic_qos(prefetch_count=1)
-        yield self.on_channel(channel, '', self.bind_topic_queue)
+    def register(self):
+        #self.connect(self.on_connect)
+        serve_register(self.connect, self.on_connect)
 
-    @defer.inlineCallbacks
-    def on_fanout_mode(self, connection):
-        channel = yield connection.channel()
-        yield channel.exchange_declare(exchange=self.bind_fanout_exchange, type='fanout')
-        yield channel.queue_declare(queue=self.bind_fanout_queue, auto_delete=True)
-        yield channel.queue_bind(exchange=self.bind_fanout_exchange, queue=self.bind_fanout_queue)
-        yield self.on_channel(channel, '', self.bind_fanout_queue)
-
-    def serve_forever(self):
-        self.connect(self.on_fanout_mode)
-        self.connect(self.on_topic_mode)
-        self.connect(self.on_rpc_mode)
-        reactor.run()

@@ -1,8 +1,10 @@
 __author__ = 'chijun'
 
+import functools
+from twisted.internet import defer
 
 from transconf.server.twisted import get_service_conf
-from transconf.server.twisted.service import RPCTranServer as AsyncServer
+from transconf.server.twisted.service import serve_forever, RPCTranServer as AsyncServer
 from transconf.server.twisted.client import RPCTranClient as RPCClient
 from transconf.server.twisted.client import TopicTranClient as TopicClient
 from transconf.server.twisted.client import FanoutTranClient as FanoutClient
@@ -37,49 +39,90 @@ class TranServer(AsyncServer):
             uuid = self.rand_corr_id
         return uuid
 
-    @property
-    def conf_topic_exchange(self):
-        return self._conf_get_name + 'topic'
 
-    @property
-    def conf_topic_queue(self):
-        return self._conf_get_name
-
-    @property
-    def conf_topic_routing_key(self):
-        return self._conf_get_type
-
-    @property
+class RPCTranServer(TranServer):
+    @from_config_option('rpc_binding_queue', 'default_rpc_queue')
     def conf_rpc_queue(self):
-        return self._conf_get_name + self._get_uuid() + 'rpc'
-
-    @property
-    def conf_fanout_queue(self):
-        return self._conf_get_name + self._get_uuid()
-
-    @property
-    def conf_fanout_exchange(self):
-        return self._conf_get_name + 'fanout'
+        return self.conf
 
     def init(self):
-        self.bind_rpc_queue = self.conf_rpc_queue
-        self.bind_topic_exchange = self.conf_topic_exchange
-        self.bind_topic_queue = self.conf_topic_queue
-        self.bind_topic_routing_key = self.conf_topic_routing_key
-        self.bind_fanout_exchange = self.conf_fanout_exchange
-        self.bind_fanout_queue = self.conf_fanout_queue
-        LOG.info(''''
-                      Listen default PRC queue:{0};
-                      Listen TOPIC exchange:{1};
-                      Listen TOPIC queue:{2};
-                      Listen TOPIC routing_key:{3};
-                      Listen FANOUT exchange:{4};
-                      Listen FANOUT queue:{5}'''.format(self.bind_rpc_queue,
-                                                           self.bind_topic_exchange,
-                                                           self.bind_topic_queue,
-                                                           self.bind_topic_routing_key,
-                                                           self.bind_fanout_exchange,
-                                                           self.bind_fanout_queue))
+        self.bind_queue = self.conf_queue if not 'default_rpc_queue' else self._conf_get_name + self._get_uuid() + 'rpc'
+        LOG.info('''' Message Server is starting, Mode:RPC;
+                      Listen PRC queue:{0};'''.format(self.bind_queue))
+
+    @defer.inlineCallbacks
+    def on_connect(self, connection):
+        channel = yield connection.channel()
+        yield channel.queue_declare(queue=self.bind_queue)
+        yield channel.basic_qos(prefetch_count=1)
+        yield self.on_channel(channel)
+
+
+class TopicTranServer(TranServer):
+    @property
+    @from_config_option('topic_binding_exchange', 'default_topic_exchange')
+    def conf_topic_exchange(self):
+        return self.conf
+
+    @property
+    @from_config_option('topic_binding_queue', 'default_topic_queue')
+    def conf_topic_queue(self):
+        return self.conf
+
+    @property
+    @from_config_option('topic_routing_key', 'default_topic_routing_key')
+    def conf_topic_routing_key(self):
+        return self.conf
+
+    def init(self):
+        self.bind_exchange = self.conf_topic_exchange if not 'default_topic_exchange' else self._conf_get_name + 'topic'
+        self.bind_queue = self.conf_topic_queue if not 'default_topic_queue' else self._conf_get_name
+        self.bind_routing_key = self.conf_topic_routing_key if not 'default_topic_routing_key' else self._conf_get_type
+        LOG.info('''' Message Server is starting, Mode:TOPIC;
+                      Listen TOPIC exchange:{0};
+                      Listen TOPIC queue:{1};
+                      Listen TOPIC routing_key:{2};'''.format(self.bind_exchange,
+                                                              self.bind_queue,
+                                                              self.bind_routing_key))
+
+    @defer.inlineCallbacks
+    def on_connect(self, connection):
+        channel = yield connection.channel()
+        yield channel.exchange_declare(exchange=self.bind_exchange, type='topic')
+        yield channel.queue_declare(queue=self.bind_queue, auto_delete=False, exclusive=False)
+        yield channel.queue_bind(exchange=self.bind_exchange,
+                                 queue=self.bind_queue,
+                                 routing_key='.'.join([self.bind_queue, self.bind_routing_key]))
+        yield channel.basic_qos(prefetch_count=1)
+        yield self.on_channel(channel)
+
+
+class FanoutTranServer(TranServer):
+    @property
+    @from_config_option('fanout_binding_queue', 'default_fanout_queue')
+    def conf_fanout_queue(self):
+        return self.conf
+
+    @property
+    @from_config_option('fanout_binding_exchange', 'default_fanout_exchange')
+    def conf_fanout_exchange(self):
+        return self.conf
+
+    def init(self):
+        self.bind_exchange = self.conf_fanout_exchange if not 'default_fanout_exchange' else self._conf_get_name + 'fanout'
+        self.bind_queue = self.conf_fanout_queue if not 'default_fanout_exchange' else self._conf_get_name + self._get_uuid()
+        LOG.info('''' Message Server is starting, Mode:FANOUT;
+                      Listen FANOUT exchange:{0};
+                      Listen FANOUT queue:{1}'''.format(self.bind_exchange,
+                                                        self.bind_queue))
+
+    @defer.inlineCallbacks
+    def on_connect(self, connection):
+        channel = yield connection.channel()
+        yield channel.exchange_declare(exchange=self.bind_exchange, type='fanout')
+        yield channel.queue_declare(queue=self.bind_queue, auto_delete=True)
+        yield channel.queue_bind(exchange=self.bind_exchange, queue=self.bind_queue)
+        yield self.on_channel(channel)
 
 
 class RPCTranClient(RPCClient):
