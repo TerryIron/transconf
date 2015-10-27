@@ -9,6 +9,10 @@ from twisted.internet import defer, reactor, protocol, task
 from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.utils import from_config_option
 from transconf.server.request import Response
+from transconf.server.twisted.log import getLogger
+
+LOG  = getLogger(__name__)
+
 
 SERVER = []
 
@@ -41,10 +45,16 @@ class RPCTranServer(RabbitAMQP):
         self.bind_queue = None
         self.bind_routing_key = None
 
+    """
+        Setup Middleware
+    """
     def setup(self, middleware):
         assert isinstance(middleware, Middleware)
         self.middleware = middleware
 
+    """
+        Process request by Customer Middleware 
+    """
     def process_request(self, body):
         return self.middleware.process_request(body)
             
@@ -63,7 +73,7 @@ class RPCTranServer(RabbitAMQP):
         d.addCallback(callback)
 
     @defer.inlineCallbacks
-    def result_back(self, properties, result):
+    def _result_back(self, ch, properties, result):
         yield ch.basic_publish(exchange=self.bind_exchange,
                                routing_key=properties.reply_to,
                                properties=pika.BasicProperties(
@@ -82,6 +92,7 @@ class RPCTranServer(RabbitAMQP):
     @defer.inlineCallbacks
     def on_request(self, queue_object):
         ch, method, properties, body = yield queue_object.get()
+        LOG.debug('CH:{0}, METHOD:{1}, PROPERITES:{2}'.format(ch, method, properties))
         body = yield self.packer.unpack(body)
         if body:
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -89,8 +100,13 @@ class RPCTranServer(RabbitAMQP):
             if body:
                 body.addCallbacks(lambda result: self.success(result),
                                   errback=lambda err: self.failed(err))
-                body.addBoth(lambda ret: self.result_back(properties, ret))
+                body.addBoth(lambda ret: self._result_back(ch, properties, ret))
+        #LOG.debug('CH:{0},{1}'.format(ch, dir(ch)))
+        #LOG.debug('CH connection:{0}, {1}'.format(ch.connection, dir(ch.connection)))
+        #LOG.debug('CH Properties:{0}, {1}'.format(properties, dir(properties)))
+        #LOG.debug('CH queue_object:{0}, {1}'.format(queue_object, dir(queue_object)))
         yield queue_object.close(None)
+        yield ch.queue_delete()
 
     @defer.inlineCallbacks
     def on_channel(self, channel):

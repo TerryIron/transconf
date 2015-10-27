@@ -19,6 +19,7 @@ class BaseClient(BaseSyncClient):
         self.config()
         self.exchange_type = None
         self.connection = None
+        self.reply_to = None
 
     def config(self):
         raise NotImplementedError()
@@ -38,15 +39,15 @@ class BaseClient(BaseSyncClient):
             d.addCallback(lambda con: self.on_channel(con, context[1]))
         d.addCallback(lambda ch: self.publish(ch, context))
         if result_callback:
-            d.addCallback(lambda result: result_callback(*result))
+            d.addCallback(lambda ch: result_callback(ch))
         return d
 
     def _ready(self, context, exchange, routing_key):
         return [context, exchange, routing_key]
 
     @defer.inlineCallbacks
-    def on_response(self, channel, reply_to):
-        queue_object, consumer_tag = yield channel.basic_consume(queue=reply_to,
+    def on_response(self, channel):
+        queue_object, consumer_tag = yield channel.basic_consume(queue=self.reply_to,
                                                                  no_ack=False)
         result = yield self.on_request(queue_object)
         yield defer.returnValue(result)
@@ -72,23 +73,24 @@ class BaseClient(BaseSyncClient):
 
     @defer.inlineCallbacks
     def publish(self, channel, context):
-        result = yield channel.queue_declare(exclusive=True, auto_delete=True)
-        reply_to = yield result.method.queue
+        if not self.reply_to: 
+            result = yield channel.queue_declare(exclusive=True, auto_delete=True)
+            self.reply_to = result.method.queue
         yield channel.basic_publish(exchange=context[1],
                                     routing_key=context[2],
                                     properties=pika.BasicProperties(
-                                        reply_to=reply_to,
+                                        reply_to=self.reply_to,
                                         correlation_id=self.corr_id,
                                         delivery_mode=self.delivery_mode,
                                     ),
                                     body=self.packer.pack(context[0]))
-        yield defer.returnValue((channel, reply_to))
+        yield defer.returnValue((channel))
 
     @defer.inlineCallbacks
     def close(self):
         if self.connection:
             yield self.connection.close()
-            self.connection = yield None
+            self.connection = None
 
     """
         Publish an async message, return None
@@ -111,12 +113,12 @@ class BaseClient(BaseSyncClient):
         @routing_key: routing key
     """
     def callBase(self, context, routing_key=None, delivery_mode=2):
-        val = self._on_connect(self._ready(context, routing_key), self.on_response, delivery_mode)
+        d = self._on_connect(self._ready(context, routing_key), self.on_response, delivery_mode)
         #LOG.debug('Context:{0}, routing_key:{1}, delivery:{2}, value:{3}'.format(context, 
         #                                                                         routing_key,
         #                                                                         delivery_mode,
         #                                                                         val))
-        return val
+        return d
 
     def call(self, request, routing_key=None, delivery_mode=2):
         return self.callBase(request.to_dict(), routing_key, delivery_mode)
