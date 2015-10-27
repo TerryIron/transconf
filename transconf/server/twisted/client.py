@@ -19,12 +19,13 @@ class BaseClient(BaseSyncClient):
         self.config()
         self.exchange_type = None
         self.connection = None
+        self.channel = None
         self.reply_to = None
 
     def config(self):
         raise NotImplementedError()
 
-    def _on_connect(self, context, result_callback=None, delivery_mode=2):
+    def _on_connect(self, context, result_back=None, delivery_mode=2):
         self.corr_id = self.rand_corr_id
         self.delivery_mode = delivery_mode
         if self.connection:
@@ -37,18 +38,18 @@ class BaseClient(BaseSyncClient):
             d = cc.connectTCP(self.parms.host, self.parms.port)
             d.addCallback(lambda procotol: procotol.ready)
             d.addCallback(lambda con: self.on_channel(con, context[1]))
-        d.addCallback(lambda ch: self.publish(ch, context))
-        if result_callback:
-            d.addCallback(lambda ch: result_callback(ch))
+        d.addCallback(lambda ret: self.publish(context))
+        if result_back:
+            d.addCallback(lambda ret: result_back())
         return d
 
     def _ready(self, context, exchange, routing_key):
         return [context, exchange, routing_key]
 
     @defer.inlineCallbacks
-    def on_response(self, channel):
-        queue_object, consumer_tag = yield channel.basic_consume(queue=self.reply_to,
-                                                                 no_ack=False)
+    def on_response(self):
+        queue_object, consumer_tag = yield self.channel.basic_consume(queue=self.reply_to,
+                                                                      no_ack=False)
         result = yield self.on_request(queue_object)
         yield defer.returnValue(result)
 
@@ -65,18 +66,18 @@ class BaseClient(BaseSyncClient):
     def on_channel(self, connection, exchange):
         if not self.connection:
             self.connection = yield connection
-        channel = yield self.connection.channel()
-        if self.exchange_type:
-            yield channel.exchange_declare(exchange=exchange,
+            self.channel = yield self.connection.channel()
+            if self.exchange_type:
+                yield self.channel.exchange_declare(exchange=exchange,
                                            type=self.exchange_type)
-        yield defer.returnValue(channel)
 
     @defer.inlineCallbacks
-    def publish(self, channel, context):
+    def publish(self, context):
+        LOG.debug('Publish channel:{0}'.format(self.channel))
         if not self.reply_to: 
-            result = yield channel.queue_declare(exclusive=True, auto_delete=True)
+            result = yield self.channel.queue_declare(exclusive=True, auto_delete=True)
             self.reply_to = result.method.queue
-        yield channel.basic_publish(exchange=context[1],
+        yield self.channel.basic_publish(exchange=context[1],
                                     routing_key=context[2],
                                     properties=pika.BasicProperties(
                                         reply_to=self.reply_to,
@@ -84,7 +85,6 @@ class BaseClient(BaseSyncClient):
                                         delivery_mode=self.delivery_mode,
                                     ),
                                     body=self.packer.pack(context[0]))
-        yield defer.returnValue((channel))
 
     @defer.inlineCallbacks
     def close(self):

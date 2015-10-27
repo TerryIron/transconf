@@ -106,7 +106,6 @@ class RPCTranServer(RabbitAMQP):
         #LOG.debug('CH Properties:{0}, {1}'.format(properties, dir(properties)))
         #LOG.debug('CH queue_object:{0}, {1}'.format(queue_object, dir(queue_object)))
         yield queue_object.close(None)
-        yield ch.queue_delete()
 
     @defer.inlineCallbacks
     def on_channel(self, channel):
