@@ -115,6 +115,8 @@ class HeartCondition(Model):
     FORM = [{'node': 'heartcond',
              'public': [
                         ['has', 'mod:heartcondition:has_heartbeat'],
+                        ['add', 'mod:heartcondition:add_heartbeat'],
+                        ['remove', 'mod:heartcondition:remove_register'],
                         ['register', 'mod:heartcondition:register'],
                        ]
             }
@@ -207,6 +209,18 @@ class HeartCondition(Model):
             or not self._check_target(group_name, group_type):
             return False
         return True
+
+    def add_heartbeat(self, context):
+        uuid = context.get('uuid', None)
+        if uuid not in CONF_BACKEND.uuids():
+            CONF_BACKEND.update(dict(uuid=uuid))
+            self.buf_available_uuid = CONF_BACKEND.uuids()
+
+    def remove_heartbeat(self, context):
+        uuid = context.get('uuid', None)
+        if uuid in CONF_BACKEND.uuids():
+            CONF_BACKEND.delete(dict(uuid=uuid))
+            self.buf_available_uuid = CONF_BACKEND.uuids()
 
 
 def if_available(group_name, group_type):

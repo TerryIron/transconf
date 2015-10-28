@@ -171,6 +171,10 @@ class FanoutTranClient(FanoutClient):
                                type=type,
                                uuid=uuid)
 
+
+CLIENT_POOL = {}
+
+
 def get_client_list():
     client_list = [
         ('topic', TopicTranClient),
@@ -181,12 +185,15 @@ def get_client_list():
 
 
 def get_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
-    c = _get_client(get_client_list(), type, amqp_url)
-    if not c: 
-        return 
-    c.config(group_name, group_type, group_uuid)
-    LOG.debug('Get client:{0}, groupname:{1}, grouptype:{2}, groupuuid:{3}'.format(c,
+    name = group_name + group_type + str(group_uuid) + type
+    if name not in CLIENT_POOL:
+        c = _get_client(get_client_list(), type, amqp_url)
+        if not c: 
+            return 
+        c.config(group_name, group_type, group_uuid)
+        CLIENT_POOL[name] = c
+    LOG.debug('Get client:{0}, groupname:{1}, grouptype:{2}, groupuuid:{3}'.format(CLIENT_POOL[name],
                                                                                    group_name,
                                                                                    group_type,
                                                                                    group_uuid))
-    return c
+    return CLIENT_POOL[name]

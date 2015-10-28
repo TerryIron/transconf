@@ -73,7 +73,7 @@ class BaseClient(BaseSyncClient):
 
     @defer.inlineCallbacks
     def publish(self, context):
-        LOG.debug('Publish channel:{0}'.format(self.channel))
+        #LOG.debug('Publish channel:{0}'.format(self.channel))
         if not self.reply_to: 
             result = yield self.channel.queue_declare(exclusive=True, auto_delete=True)
             self.reply_to = result.method.queue
