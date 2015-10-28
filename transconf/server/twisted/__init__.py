@@ -1,6 +1,6 @@
 import os
 
-from transconf.server.utils import from_config_option, as_config
+from transconf.utils import from_config_option, as_config
 
 CONF = as_config(os.path.join(os.path.dirname(__file__), 'default.ini'))
 

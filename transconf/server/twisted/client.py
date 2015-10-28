@@ -6,7 +6,7 @@ from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol
 
 from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
-from transconf.server.utils import from_config_option
+from transconf.utils import from_config_option
 from transconf.server.twisted.log import getLogger
 
 LOG  = getLogger(__name__)

@@ -3,7 +3,7 @@ __author__ = 'chijun'
 import pika
 
 from transconf.msg.rabbit.core import RabbitAMQP
-from transconf.server.utils import from_config_option
+from transconf.utils import from_config_option
 
 
 # It is a static method for sync-call, don's use it outside.

@@ -8,7 +8,7 @@ from transconf.server.twisted.service import serve_forever, RPCTranServer as Asy
 from transconf.server.twisted.client import RPCTranClient as RPCClient
 from transconf.server.twisted.client import TopicTranClient as TopicClient
 from transconf.server.twisted.client import FanoutTranClient as FanoutClient
-from transconf.server.utils import from_config_option
+from transconf.utils import from_config_option
 from transconf.msg.rabbit.client import _get_client
 from transconf.server.twisted.log import getLogger
 

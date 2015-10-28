@@ -8,8 +8,8 @@ from transconf.server.twisted.internet import get_client
 from transconf.server.twisted.event import Task, EventDispatcher
 from transconf.server.twisted import CONF as global_conf
 from transconf.server.twisted import get_sql_engine 
-from transconf.server.utils import from_config, from_config_option, as_config
-from transconf.server.utils import from_model_option, as_model_action
+from transconf.utils import from_config, from_config_option, as_config
+from transconf.utils import from_model_option, as_model_action
 from transconf.server.twisted.netshell import ActionRequest
 from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
 

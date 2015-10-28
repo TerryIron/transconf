@@ -5,7 +5,7 @@ INSTALL_PATH = './etc'
 import os
 
 from transconf.server import twisted
-from transconf.server.utils import as_config
+from transconf.utils import as_config
 
 serve_conf = as_config(os.path.join(os.path.dirname(__file__), 
                                     '{0}/network_agent.ini'.format(INSTALL_PATH)))

@@ -5,7 +5,7 @@ from transconf.common.namebus import NameBus
 from transconf.common.basetype import BaseType
 from transconf.mystruct import NodeStructV1
 from transconf.mystructtypes import *
-from transconf.server.utils import as_config
+from transconf.utils import as_config
 
 
 class ModelInternalStuctErr(Exception):

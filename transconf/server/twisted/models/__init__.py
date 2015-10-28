@@ -1,7 +1,7 @@
 __version__ = (0, 1, 0)
 
 from transconf.server.twisted.netshell import NetShell
-from transconf.server.utils import from_config_option, import_class
+from transconf.utils import from_config_option, import_class
 from transconf.common.reg import get_model
 from transconf.server.twisted.log import getLogger
 
@@ -81,6 +81,7 @@ def model_configure(conf, sh=None):
                 model = self.get_namebus(name)
                 if '.'.join([str(i) for i in model.__version__]) != get_model_ver():
                     raise ModelVersionErr(name)
+                model.init()
                 model.start(config)
         class_name = get_model_class()
         name = get_model_name()

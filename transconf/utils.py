@@ -1,13 +1,11 @@
 __author__ = 'chijun'
 
 import re
-import json
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
 from transconf.common.reg import get_model
 
-__all__ = ['JsonSerializionPacker', 'import_class', 
-           'as_config', 'from_config', 'from_config_option',
+__all__ = ['as_config', 'from_config', 'from_config_option',
            'as_model_action', 'from_model_option',
           ]
 
@@ -17,16 +15,6 @@ def import_class(class_name):
         class_name = str(class_name).split('.')
         cls = __import__('.'.join(class_name[0:-1]), fromlist=[class_name[-1]])
         return getattr(cls, class_name[-1])
-
-
-class JsonSerializionPacker(object):
-    @staticmethod
-    def pack(dict_data):
-        return json.dumps(dict_data)
-
-    @staticmethod
-    def unpack(json_data):
-        return json.loads(json_data)
 
 
 def _get_val(conf, sect, opt, default_val):

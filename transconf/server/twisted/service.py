@@ -7,7 +7,7 @@ from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 
 from transconf.msg.rabbit.core import RabbitAMQP
-from transconf.server.utils import from_config_option
+from transconf.utils import from_config_option
 from transconf.server.request import Response
 from transconf.server.twisted.log import getLogger
 

@@ -4,8 +4,8 @@ import os
 import uuid
 import pika
 
-from transconf.server.utils import JsonSerializionPacker
-from transconf.server.utils import from_config_option, as_config
+from transconf.packer import JsonSerializionPacker
+from transconf.utils import from_config_option, as_config
 
 
 class RabbitAMQP(object):
