@@ -33,16 +33,16 @@ class ConfigureGroup(BaseConfigure):
         pass
 
     def del_property(self, name):
-        self.__delattr__(name):
+        self.__delattr__(name)
 
 
 class Configure(BaseConfigure):
     def add_group(self, name, sect=None):
-        self.__setattr__(name, ConfigureGroup(config, sect)
-        return __getattr__(name)
+        self.__setattr__(name, ConfigureGroup(config, sect))
+        return self.__getattr__(name)
 
     def del_group(self, name):
-        self.__delattr__(name):
+        self.__delattr__(name)
 
     def _process_options(self, output, option_regex=None, avoid_options=None, avoid_option_regex=None):
         option_re = None
@@ -67,4 +67,4 @@ class Configure(BaseConfigure):
                 self.__setattr__(name, val)
 
     def del_members(self, name):
-        self.__delattr__(name):
+        self.__delattr__(name)
