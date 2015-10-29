@@ -116,7 +116,7 @@ class HeartCondition(Model):
              'public': [
                         ['has', 'mod:heartcondition:has_heartbeat'],
                         ['add', 'mod:heartcondition:add_heartbeat'],
-                        ['remove', 'mod:heartcondition:remove_register'],
+                        ['remove', 'mod:heartcondition:remove_heartbeat'],
                         ['register', 'mod:heartcondition:register'],
                        ]
             }

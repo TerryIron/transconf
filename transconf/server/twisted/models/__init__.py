@@ -49,7 +49,7 @@ def check_needs(conf, model_name, needs):
 
 def model_configure(conf, sh=None):
     if not sh:
-        sh = NetShell()
+        sh = NetShell(LOG)
     for sect in conf.sections():
         @from_config_option('model', None, sect=sect)
         def get_model_class():
@@ -62,7 +62,7 @@ def model_configure(conf, sh=None):
             return conf
         def load_model(self, name, model_class, config=None):
             if self.preload_model(name, model_class, config):
-                LOG.info('Load model:{0}, class:{1} successfully'.format(name, model_class))
+                LOG.info('Load model:{0}, class:{1} successfully'.format(name, model_class.__name__))
                 if not get_model(sect):
                     raise ModelSectNameErr(sect)
                 @from_config_option('depend', None, sect=sect)
@@ -81,7 +81,6 @@ def model_configure(conf, sh=None):
                 model = self.get_namebus(name)
                 if '.'.join([str(i) for i in model.__version__]) != get_model_ver():
                     raise ModelVersionErr(name)
-                model.init()
                 model.start(config)
         class_name = get_model_class()
         name = get_model_name()

@@ -92,7 +92,7 @@ class RPCTranServer(RabbitAMQP):
     @defer.inlineCallbacks
     def on_request(self, queue_object):
         ch, method, properties, body = yield queue_object.get()
-        LOG.debug('CH:{0}, METHOD:{1}, PROPERITES:{2}'.format(ch, method, properties))
+        #LOG.debug('CH:{0}, METHOD:{1}, PROPERITES:{2}'.format(ch, method, properties))
         body = yield self.packer.unpack(body)
         if body:
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -101,10 +101,6 @@ class RPCTranServer(RabbitAMQP):
                 body.addCallbacks(lambda result: self.success(result),
                                   errback=lambda err: self.failed(err))
                 body.addBoth(lambda ret: self._result_back(ch, properties, ret))
-        #LOG.debug('CH:{0},{1}'.format(ch, dir(ch)))
-        #LOG.debug('CH connection:{0}, {1}'.format(ch.connection, dir(ch.connection)))
-        #LOG.debug('CH Properties:{0}, {1}'.format(properties, dir(properties)))
-        #LOG.debug('CH queue_object:{0}, {1}'.format(queue_object, dir(queue_object)))
         yield queue_object.close(None)
 
     @defer.inlineCallbacks

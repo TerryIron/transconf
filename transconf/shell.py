@@ -13,11 +13,11 @@ class ShellTargetNotFound(Exception):
 class ModelShell(NameBus):
     SPLIT_DOT = '.'
 
-    def __init__(self):
+    def __init__(self, log=None):
         super(ModelShell, self).__init__()
         self.split = self.SPLIT_DOT
         self.environ = {}
-        self.parser = FormParser()
+        self.parser = FormParser(log)
 
     def run(self, target_name, method_name, *args, **kwargs):
         name_lst = str(target_name).split(self.split)

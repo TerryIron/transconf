@@ -10,8 +10,9 @@ class FormParser(object):
       Parse form data to a parser object.
     """
 
-    def __init__(self):
+    def __init__(self, log=None):
         self.ext_struct = set()
+        self.log = log
 
     def _reset(self):
         self.ext_struct = set()
@@ -70,6 +71,7 @@ class FormParser(object):
         buf = new_buf()
         for n, f, k, typ, v in self._parse_form(form):
             if n != v:
+                self.log.debug('Parse node:{0}, father:{1}, method:{2}, bond_method:{3}'.format(n, f, k, v))
                 if not buf['node_name']:
                     buf['node_name'] = n
                 if not buf['father']:
