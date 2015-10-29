@@ -113,7 +113,7 @@ class FanoutTranServer(TranServer):
         self.bind_queue = self.conf_fanout_queue if not 'default_fanout_exchange' else self._conf_get_name + self._get_uuid()
         LOG.info('''' Message Service is starting, Mode:FANOUT;
                       Listen FANOUT exchange:{0};
-                      Listen FANOUT queue:{1}'''.format(self.bind_exchange,
+                      Listen FANOUT queue:{1};'''.format(self.bind_exchange,
                                                         self.bind_queue))
 
     @defer.inlineCallbacks
@@ -184,7 +184,7 @@ def get_client_list():
     return client_list
 
 
-def get_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
+def get_public_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
     name = group_name + group_type + str(group_uuid) + type
     if name not in CLIENT_POOL:
         c = _get_client(get_client_list(), type, amqp_url)
@@ -197,3 +197,15 @@ def get_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=N
                                                                                    group_type,
                                                                                    group_uuid))
     return CLIENT_POOL[name]
+
+
+def get_private_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
+    c = _get_client(get_client_list(), type, amqp_url)
+    if not c: 
+        return 
+    c.config(group_name, group_type, group_uuid)
+    LOG.debug('Get client:{0}, groupname:{1}, grouptype:{2}, groupuuid:{3}'.format(c,
+                                                                                   group_name,
+                                                                                   group_type,
+                                                                                   group_uuid))
+    return c

@@ -70,6 +70,13 @@ class RPCTranClient(BaseClient):
     def conf_rpc_queue(self):
         return self.conf
 
+    """
+        Send a message without result
+        @context: message context
+        @routing_key: routing key of exchange
+        @delivery_mode: 2 to set queue message been persistence, 
+                        1 to set queue message been short-lived.
+    """
     def cast(self, context, routing_key=None, delivery_mode=2):
         rpc_queue = self.bind_rpc_queue if not routing_key else routing_key
         self._ready(context, 
@@ -79,6 +86,13 @@ class RPCTranClient(BaseClient):
                     self.rand_corr_id,
                     delivery_mode)
         
+    """
+        Send a message without result
+        @context: message context
+        @routing_key: routing key of exchange
+        @delivery_mode: 2 to set queue message been persistence, 
+                        1 to set queue message been short-lived.
+    """
     @hold_on
     def call(self, context, routing_key=None, delivery_mode=2):
         self.cast(context, routing_key, delivery_mode)

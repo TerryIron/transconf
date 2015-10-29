@@ -11,10 +11,10 @@ def getLogger(name=None):
     @from_config_option('log_path', None)
     def conf_log_path():
         return CONF
-    @from_config_option('log_normal_formatter', '[%(asctime)s %(levelname)s] %(message)s')
+    @from_config_option('log_normal_formatter', '[%(asctime)s [%(levelname)s]] %(message)s')
     def conf_log_formatter():
         return CONF
-    @from_config_option('log_debug_formatter', '[%(asctime)s %(levelname)s %(module)s %(funcName)s] %(message)s')
+    @from_config_option('log_debug_formatter', '[%(asctime)s [%(levelname)s] <%(module)s.py>%(funcName)s] %(message)s')
     def conf_log_debug_formatter():
         return CONF
     @from_config_option('log_debug', 'false')

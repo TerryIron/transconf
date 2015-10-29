@@ -4,7 +4,7 @@ import time
 
 from transconf.common.reg import register_model, get_model
 from transconf.model import Model
-from transconf.server.twisted.internet import get_client
+from transconf.server.twisted.internet import get_public_client
 from transconf.server.twisted.event import Task, EventDispatcher
 from transconf.server.twisted import CONF as global_conf
 from transconf.server.twisted import get_sql_engine 
@@ -93,13 +93,13 @@ class HeartBeat(Model):
         local_uuid = self._conf_group_uuid
         if local_name and local_type and local_uuid:
             for g_name, typ, is_enabled in self.get_fanout_members():
-                client = get_client(g_name, typ, type='fanout')
+                client = get_public_client(g_name, typ, type='fanout')
                 req = ActionRequest(self.mycmd['heartcondition_register'],
                                     dict(group_name=local_name, 
                                          uuid=local_uuid,
                                          available=str(True),
                                          group_type=local_type))
-                event = EventDispatcher(client, req)
+                event = EventDispatcher(client, req, need_close=False)
                 t = Task(lambda: event.startWithoutResult())
                 t.LoopingCall(timeout)
 

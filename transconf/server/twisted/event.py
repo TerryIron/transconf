@@ -5,7 +5,7 @@ import pickle
 import functools
 from twisted.internet import task, reactor, defer
 
-from transconf.server.twisted.internet import get_client
+from transconf.server.twisted.internet import get_private_client
 from transconf.server.twisted.netshell import ShellMiddleware
 from transconf.server.request import Request, RequestTimeout, InvalidRequest
 from transconf.server.twisted.log import getLogger
@@ -14,6 +14,13 @@ LOG  = getLogger(__name__)
 
 
 class Task(object):
+    """
+        Task Object
+
+        @f: input function 
+        @args: input args
+        @kwargs: input kwargs
+    """
     def __init__(self, f, *args, **kwargs):
         self.f = functools.partial(f, *args, **kwargs)
 
@@ -30,6 +37,17 @@ class EventRequestTimeout(Exception):
 
 
 class EventRequest(Request):
+    """
+        Event Request
+
+        @client: local client target
+        @shell_request: local request target
+        @callback_request: request target for callback
+        @callback_client: client target for callback
+        @errback_request: request target for errback
+        @errback_client: client target for errback
+        @timeout: timeout
+    """
     def __init__(self, client, shell_request, callback_request=None, callback_client=None, 
                  errback_request=None, errback_client=None, timeout=60):
         d = dict(timeout=timeout,
@@ -63,9 +81,26 @@ class EventRequest(Request):
 
 
 class EventDispatcher(object):
+    """
+        Event Dispatcher
+
+        @client: local client target
+        @request: local request target
+        @callback_request: request target for callback
+        @callback_client: client target for callback
+        @errback_request: request target for errback
+        @errback_client: client target for errback
+        @timeout: timeout
+        @delivery_mode: 2 to set queue message been persistence, 
+                        1 to set queue message been short-lived.
+        @need_result: if True return result defer
+        @need_close: if True close client after sending message(Only for Method Cast)
+    """
     def __init__(self, client, request, callback_request=None, callback_client=None, 
-                 errback_request=None, errback_client=None, timeout=60, delivery_mode=1, need_result=True):
+                 errback_request=None, errback_client=None, timeout=60, delivery_mode=2, 
+                 need_result=True, need_close=True):
         self.client = client
+        self.need_close = need_close
         self.need_result = need_result
         self.delivery_mode = delivery_mode
         self.request = EventRequest(self.client, 
@@ -77,11 +112,11 @@ class EventDispatcher(object):
                                     timeout)
 
     def startWithoutResult(self):
-        #LOG.debug('Event StartWithoutResult, req:{0}, delivery:{1}'.format(self.request, self.delivery_mode))
         self.client.cast(self.request, delivery_mode=self.delivery_mode)
+        if self.need_close:
+            self.client.close()
 
     def startWithResult(self):
-        #LOG.debug('Event StartWithResult, req:{0}, delivery:{1}'.format(self.request, self.delivery_mode))
         return self.client.call(self.request, delivery_mode=self.delivery_mode)
 
     def start(self):
@@ -93,18 +128,41 @@ class EventDispatcher(object):
 
 class EventDeferDispatcher(object):
     # Make sure that client is one of pointed sub-services not a worker.
-    def __init__(self, client, delivery_mode=1):
+    """
+        Event Dispatcher Defer Queue
+
+        @delivery_mode: 2 to set queue message been persistence, 
+                        1 to set queue message been short-lived.
+    """
+    def __init__(self, delivery_mode=2):
         self.queue = []
-        self.client = client
         self.delivery_mode=delivery_mode
 
-    def addNext(self, client, shell_request, callback_request=None, callback_client=None,
-                errback_client=None, errback_request=None, timeout=60, need_result=True):
+    """
+        Add a new event dispatcher inited by input arguments
+
+        @client: local client target
+        @request: local request target
+        @callback_request: request target for callback
+        @callback_client: client target for callback
+        @errback_request: request target for errback
+        @errback_client: client target for errback
+        @timeout: timeout
+        @delivery_mode: 2 to set queue message been persistence, 
+                        1 to set queue message been short-lived.
+        @need_result: if True return result defer
+        @need_close: if True close client after sending message(Only for Method Cast)
+    """
+    def addNextReq(self, client, shell_request, callback_request=None, callback_client=None,
+                   errback_client=None, errback_request=None, timeout=60, need_result=True, need_close=True):
         self.queue.append(EventDispatcher(client, shell_request, callback_request, callback_client or self.client,
                                           errback_request, errback_client or self.client, 
                                           timeout, self.delivery_mode, need_result))
 
-    def add(self, dispatcher):
+    """
+        Add a new event dispatcher
+    """
+    def addNext(self, dispatcher):
         assert isinstance(dispatcher, EventDispatcher)
         self.queue.append(dispatcher)
 
@@ -132,6 +190,9 @@ class EventDeferDispatcher(object):
 """
 
 class EventMiddleware(ShellMiddleware):
+    """
+        Process Event Request
+    """
     def process_request(self, context):
         defer = super(EventMiddleware, self).process_request(context)
         if 'eventloop' in context:
@@ -146,9 +207,9 @@ class EventMiddleware(ShellMiddleware):
                 if cost_time > float(timeout):
                     raise RequestTimeout('Call {0} timeout.'.format(eventloop))
                 def call(cli, text, ret):
-                    client = get_client(cli['group'], cli['type'],
-                                        group_uuid=cli['uuid'],
-                                        type=cli['cls'])
+                    client = get_private_client(cli['group'], cli['type'],
+                                                group_uuid=cli['uuid'],
+                                                type=cli['cls'])
                     text['result'] = ret
                     client.callBase(text)
                 def if_success(ret):
