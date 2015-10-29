@@ -44,7 +44,9 @@ class ShellRequest(Request):
 
 class ActionRequest(ShellRequest):
     def __init__(self, target, *args, **kwargs):
-        assert isinstance(target, SimpleModel) 
+        if not isinstance(target, SimpleModel):
+            print target
+            target = SimpleModel(target)
         LOG.debug('Action req, target:{0}, action:{1}, args:{2}, kwargs:{3}'.format(target.target,
                                                                                     target.action,
                                                                                     args,

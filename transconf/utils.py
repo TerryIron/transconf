@@ -76,6 +76,8 @@ def as_model_action(command_name, opt, sect='model_action'):
 
 
 def as_config(config_file):
+    if isinstance(config_file, ConfigParser):
+        return config_file
     config = ConfigParser()  
     config.read(config_file)
     return config
