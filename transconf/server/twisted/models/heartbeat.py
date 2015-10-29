@@ -9,8 +9,6 @@ from transconf.server.twisted.internet import get_public_client
 from transconf.server.twisted.event import Task, EventDispatcher
 from transconf.server.twisted import CONF as global_conf
 from transconf.server.twisted import get_sql_engine 
-from transconf.utils import from_config, from_config_option, as_config
-from transconf.utils import from_model_option, as_model_action
 from transconf.server.twisted.netshell import ActionRequest
 from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
 
@@ -57,35 +55,6 @@ class HeartBeat(Model):
             }
     ]
 
-    #@as_model_action('mycmd', 'heartcondition_register')
-    #def _register_actions(self, config):
-    #    return config
-
-    #@property
-    #@from_config(sect='controller:heartbeat:fanout')
-    #def _conf_group_names(self):
-    #    return SERVER_CONF
-
-    #@property
-    #@from_config_option('local_group_name', None)
-    #def _conf_group_name(self):
-    #    return SERVER_CONF
-
-    #@property
-    #@from_config_option('local_group_type', None)
-    #def _conf_group_type(self):
-    #    return SERVER_CONF
-
-    #@property
-    #@from_config_option('local_group_uuid', None)
-    #def _conf_group_uuid(self):
-    #    return SERVER_CONF
-
-    #@property
-    #@from_config_option('heartrate', 60, sect='controller:heartbeat:fanout')
-    #def _conf_heartrate(self):
-    #    return SERVER_CONF
-
     def get_fanout_members(self):
         #for g_option, is_enabled in self._conf_group_names:
         for g_option, is_enabled in CONFIG.heartbeartcenters:
@@ -100,8 +69,6 @@ class HeartBeat(Model):
         
     def start(self, config=None):
         self.is_start = None
-        #if self._register_actions(config):
-            #self.heartbeat(int(self._conf_heartrate))
         self.heartbeat(int(CONFIG.slaver.heartrate))
 
     def heartbeat(self, timeout):
@@ -109,9 +76,6 @@ class HeartBeat(Model):
         if self.is_start:
             return True
         self.is_start = True
-        #local_name = self._conf_group_name
-        #local_type = self._conf_group_type
-        #local_uuid = self._conf_group_uuid
         local_name = CONFIG.manage.group_name
         local_type = CONFIG.manage.group_type
         local_uuid = CONFIG.manage.group_uuid
@@ -119,7 +83,6 @@ class HeartBeat(Model):
             for g_name, typ, is_enabled in self.get_fanout_members():
                 client = get_public_client(g_name, typ, type='fanout')
                 req = ActionRequest(self.CONFIG.command_group.heartbeat,
-                #req = ActionRequest(self.mycmd['heartcondition_register'],
                                     dict(group_name=local_name, 
                                          uuid=local_uuid,
                                          available=str(True),
@@ -146,11 +109,6 @@ class HeartCondition(Model):
                        ]
             }
     ]
-
-    #@property
-    #@from_config_option('heartrate', 60, sect='controller:heartbeat:listen')
-    #def _conf_heartrate(self):
-    #    return SERVER_CONF
 
     def start(self, config=None):
         # Re-initialize sql table
@@ -268,11 +226,6 @@ def configure_heartcondition():
     CONF_BACKEND.clear()
     BACKEND.create()
     BACKEND.clear()
-    #@from_config(sect='controller:heartbeat:listen')
-    #def get_heartbeat_members():
-    #    return SERVER_CONF
-    #for uuid, is_enabled in get_heartbeat_members():
     for uuid, is_enabled in CONFIG.heartbeats:
-        #if str(is_enabled).lower() == 'true' and uuid not in HeartCondition().UNEXPECTED_OPTIONS:
         if str(is_enabled).lower() == 'true':
             CONF_BACKEND.update(dict(uuid=uuid))
