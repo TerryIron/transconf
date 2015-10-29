@@ -45,15 +45,17 @@ class Configure(BaseConfigure):
         self.__delattr__(name)
 
     def _process_options(self, output, option_regex=None, avoid_options=None, avoid_option_regex=None):
-        option_re = None
-        avoid_re = None
-        new = set()
+        option_re, avoid_re, avoid_options, new  = re.compile('.*') if not option_regex else re.compile(option_regex), \
+                                                   re.compile('^$') if not avoid_regex else re.compile(avoid_option_regex), \
+                                                   tuple() if not avoid_options else avoid_options, \
+                                                   set()
         for out in output:
             if not isinstance(out, list or tuple):
                 continue
-            if out[0] in avoid_options:
+            if out[0] in avoid_options or out[0].search(avoid_re):
                 continue
-            new.add(tuple(out[0], out[1]))
+            if out[0].search(option_re):
+                new.add(tuple(out[0], out[1]))
             
     def add_members(self, name, sect=None, default_val=None, option_regex=None, 
                     avoid_options=None, avoid_option_regex=None, help=None):

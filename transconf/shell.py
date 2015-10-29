@@ -17,6 +17,7 @@ class ModelShell(NameBus):
         super(ModelShell, self).__init__()
         self.split = self.SPLIT_DOT
         self.environ = {}
+        self.log = log
         self.parser = FormParser(log)
 
     def run(self, target_name, method_name, *args, **kwargs):
@@ -42,6 +43,7 @@ class ModelShell(NameBus):
             model = model_class()
             model.init(config)
             self.parser.translate(model)
+            self.log.debug('Load model:{0}, class:{1} successfully'.format(name, model))
             return model
         return self.set_namebus(name, translate, False)
 

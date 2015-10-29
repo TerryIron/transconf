@@ -47,7 +47,7 @@ class RPCTranServer(TranServer):
 
     def init(self):
         self.bind_queue = self.conf_queue if not 'default_rpc_queue' else self._conf_get_name + self._get_uuid() + 'rpc'
-        LOG.info('''' Message Server is starting, Mode:RPC;
+        LOG.info('''' Message Service is starting, Mode:RPC;
                       Listen PRC queue:{0};'''.format(self.bind_queue))
 
     @defer.inlineCallbacks
@@ -78,7 +78,7 @@ class TopicTranServer(TranServer):
         self.bind_exchange = self.conf_topic_exchange if not 'default_topic_exchange' else self._conf_get_name + 'topic'
         self.bind_queue = self.conf_topic_queue if not 'default_topic_queue' else self._conf_get_name
         self.bind_routing_key = self.conf_topic_routing_key if not 'default_topic_routing_key' else self._conf_get_type
-        LOG.info('''' Message Server is starting, Mode:TOPIC;
+        LOG.info('''' Message Service is starting, Mode:TOPIC;
                       Listen TOPIC exchange:{0};
                       Listen TOPIC queue:{1};
                       Listen TOPIC routing_key:{2};'''.format(self.bind_exchange,
@@ -111,7 +111,7 @@ class FanoutTranServer(TranServer):
     def init(self):
         self.bind_exchange = self.conf_fanout_exchange if not 'default_fanout_exchange' else self._conf_get_name + 'fanout'
         self.bind_queue = self.conf_fanout_queue if not 'default_fanout_exchange' else self._conf_get_name + self._get_uuid()
-        LOG.info('''' Message Server is starting, Mode:FANOUT;
+        LOG.info('''' Message Service is starting, Mode:FANOUT;
                       Listen FANOUT exchange:{0};
                       Listen FANOUT queue:{1}'''.format(self.bind_exchange,
                                                         self.bind_queue))
