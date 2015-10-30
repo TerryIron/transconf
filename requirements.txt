@@ -1,3 +1,4 @@
 twisted>=14.0
 pika>=0.9.14
 SQLAlchemy>=0.7.8,!=0.9.5,<=0.9.99
+PasteDeploy==1.5.2
