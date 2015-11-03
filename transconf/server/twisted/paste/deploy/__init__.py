@@ -1,62 +1,96 @@
 __author__ = 'chijun'
 
-from paste.deploy.loadwsgi import *
+import os.path
+
+from paste.deploy.compat import unquote
 
 ############################################################                                                                                                                                              
 ## Object types
 ############################################################
-from paste.deploy.loadwsgi import _PipeLine, _FilterApp
-from paste.deploy.loadwsgi import ConfigLoader
+from paste.deploy.loadwsgi import _ObjectType, _PipeLine, _FilterApp, _App
+from paste.deploy.loadwsgi import ConfigLoader, LoaderContext
+from paste.deploy.loadwsgi import loadcontext, loadobj
+from paste.deploy.loadwsgi import FILTER
 
 ############################################################                                                                                                                                              
 ## Loaders
 ############################################################
 from paste.deploy.loadwsgi import _loaders
 
+from paste.deploy.loadwsgi import *
 
 __all__ = ['loadapp', 'loadserver', 'loadfilter', 'appconfig']
 
 
-class _ModelAPP(_PipeLine):
-    name = 'model_application'
-    config_prefixes = [['mod-app', 'model-app']]
 
-MODELAPP = _ModelAPP()
-        
-
-class _Model(_FilterApp):
-    name = 'model'
-    config_prefixes = ['model']
-
-MODEL = _Model()
-
-
-class _CommandPack(_PipeLine):
-    name = 'command_package'
-    config_prefixes = [['cmd-pack', 'command-pack']]
-
-COMMANDPACK = _CommandPack()
-
-
-class _Command(_FilterApp):
-    name = 'command'
-    config_prefixes = ['command']
-
-COMMAND = _Command()
-
-
-class _PlatformPack(_PipeLine):
-    name = 'platform_package'
-    config_prefixes = [['pf-pack', 'platform-pack']]
-
-PLATFORMPACK = _PlatformPack()
+#class _ModelPack(_PipeLine):
+#    name = 'model_package'
+#    config_prefixes = [['mod-pack', 'model-pack']]
+#
+#MODELPACK = _ModelPack()
+#        
+#
+#class _Model(_FilterApp):
+#    name = 'model'
+#    config_prefixes = [['model', 'mod']]
+#    egg_protocols = ['paste.model_factory', 'paste.mod_factory']
+#
+#
+#MODEL = _Model()
+#
+#
+#class _CommandPack(_PipeLine):
+#    name = 'command_package'
+#    config_prefixes = [['cmd-pack', 'command-pack']]
+#
+#COMMANDPACK = _CommandPack()
+#
+#
+#class _Command(_FilterApp):
+#    name = 'command'
+#    config_prefixes = [['command', 'cmd']]
+#    egg_protocols = ['paste.command_factory', 'paste.cmd_factory']
+#
+#COMMAND = _Command()
 
 
-class _Platform(_FilterApp):
+class _APP(_App):
+    egg_protocols = ['paste.app_factory', 
+                     'paste.composite_factory',
+                     'paste.platform_factory',
+                     'paste.composit_factory']
+    config_prefixes = [['app', 'application'], 
+                       ['platform', 'pf'],
+                       ['composite', 'composit'], 'pipeline', 'filter-app']
+
+    def invoke(self, context):
+        if context.protocol == 'paste.platform_factory':
+            return fix_call(context.object,
+                            context.loader, context.global_conf,
+                            1**context.local_conf)
+        return super(_APP, self).invoke(context)
+
+APP = _APP()
+
+
+class _Platform(_ObjectType):
     name = 'platform'
-    config_prefixes = ['platform']
+    config_prefixes = [['platform', 'pf']]
+    egg_protocols = ['paste.platform_factory']
+
+    def invoke(self, context): 
+        app = context.app_context.create()
+        filters = [c.create() for c in context.filter_contexts]
+        filters.reverse()
+        for filter in filters:
+            if filter: app = filter(app)
+        return app
 
 PLATFORM = _Platform()
+
+
+def loadapp(uri, name=None, **kw):
+    return loadobj(APP, uri, name=name, **kw) 
 
 
 class _ConfigLoader(ConfigLoader):
@@ -64,10 +98,10 @@ class _ConfigLoader(ConfigLoader):
         ('filter-app:', '_filter_app_context'),
         ('pipeline:', '_pipeline_app_context'),
         ('platform:', '_platform_app_context'),
-        ('model:', '_model_app_context'),
-        ('model-app:', '_model_pack_context'),
-        ('command:', '_command_app_context'),
-        ('command-pack:', '_command_pack_context'),
+        #('model:', '_model_app_context'),
+        #('model-pack:', '_model_pack_context'),
+        #('command:', '_command_app_context'),
+        #('command-pack:', '_command_pack_context'),
     ]
 
     def get_context(self, object_type, name=None, global_conf=None):
@@ -165,59 +199,72 @@ class _ConfigLoader(ConfigLoader):
                 section)
         return context
 
-    def _model_app_context(self, object_type, section, name,                                                                                                                                             
-                           global_conf, local_conf, global_additions):
-        return self._common_app_context(object_type, section, name,                                                                                                                                             
-                                        global_conf, local_conf, global_additions,
-                                        APP, MODEL)
-
-    def _model_pack_context(self, object_type, section, name,                                                                                                                                             
-                            global_conf, local_conf, global_additions):
-        if 'model_pack' not in local_conf:
+    def _platform_app_context(self, object_type, section, name,                                                                                                                                             
+                              global_conf, local_conf, global_additions):
+        if 'platform' not in local_conf:
             raise LookupError(
-                "The [%s] section in %s is missing a 'model_pack' setting"
+                "The [%s] section in %s is missing a 'platform' setting"
                 % (section, self.filename))
-        model_pack = local_conf.pop('model_pack').split()
-
-    def _command_app_context(self, object_type, section, name,                                                                                                                                             
-                             global_conf, local_conf, global_additions):
-        if 'next' not in local_conf:
+        platform = local_conf.pop('platform').split()
+        if local_conf:
             raise LookupError(
-                "The [%s] section in %s is missing a 'next' setting"
-                % (section, self.filename))
-        next_name = local_conf.pop('next')
-        context = LoaderContext(None, MODEL, None, global_conf,
+                "The [%s] pipeline section in %s has extra "
+                "(disallowed) settings: %s"
+                % (', '.join(local_conf.keys())))
+        context = LoaderContext(None, PLATFORM, None, global_conf,
                                 local_conf, self)
-        context.next_context = self.get_context(
-            APP, next_name, global_conf)
-        if 'use' in local_conf:
-            context.filter_context = self._context_from_use(
-                FILTER, local_conf, global_conf, global_additions,
-                section)
-        else:
-            context.filter_context = self._context_from_explicit(
-                FILTER, local_conf, global_conf, global_additions,
-                section)
+        context.app_context = self.get_context(APP, platform[-1], global_conf)
+        context.filter_contexts = [
+            self.get_context(APP, name, global_conf)
+            for name in platform[:-1]]
         return context
 
-    def _command_pack_context(self, object_type, section, name,                                                                                                                                             
-                              global_conf, local_conf, global_additions):
-        if 'command_pack' not in local_conf:
-            raise LookupError(
-                "The [%s] section in %s is missing a 'command_pack' setting"
-                % (section, self.filename))
-        cmd_pack = local_conf.pop('command_pack').split()
+    #def _model_app_context(self, object_type, section, name,                                                                                                                                             
+    #                       global_conf, local_conf, global_additions):
+    #    pass
 
-    def _flatform_app_context(self, object_type, section, name,                                                                                                                                             
-                              global_conf, local_conf, global_additions):
-        pass
+    #def _model_pack_context(self, object_type, section, name,                                                                                                                                             
+    #                        global_conf, local_conf, global_additions):
+    #    if 'model_pack' not in local_conf:
+    #        raise LookupError(
+    #            "The [%s] section in %s is missing a 'model_pack' setting"
+    #            % (section, self.filename))
+    #    model_pack = local_conf.pop('model_pack').split()
 
-    def _flatform_pack_context(self, object_type, section, name,                                                                                                                                             
-                               global_conf, local_conf, global_additions):
-        if 'platform_pack' not in local_conf:
-            raise LookupError(
-                "The [%s] section in %s is missing a 'platform_pack' setting"
-                % (section, self.filename))
-        pf_pack = local_conf.pop('platform_pack').split()
+    #def _command_app_context(self, object_type, section, name,                                                                                                                                             
+    #                         global_conf, local_conf, global_additions):
+    #    pass
 
-ConfigLoader = _ConfigLoader
+    #def _command_pack_context(self, object_type, section, name,                                                                                                                                             
+    #                          global_conf, local_conf, global_additions):
+    #    if 'command_pack' not in local_conf:
+    #        raise LookupError(
+    #            "The [%s] section in %s is missing a 'command_pack' setting"
+    #            % (section, self.filename))
+    #    cmd_pack = local_conf.pop('command_pack').split()
+
+
+def _loadconfig(object_type, uri, path, name, relative_to,
+                global_conf):                                                                                                                              
+    isabs = os.path.isabs(path)
+    # De-Windowsify the paths:
+    path = path.replace('\\', '/')
+    if not isabs:
+        if not relative_to:
+            raise ValueError(
+                "Cannot resolve relative uri %r; no relative_to keyword "
+                "argument given" % uri)
+        relative_to = relative_to.replace('\\', '/')
+        if relative_to.endswith('/'):
+            path = relative_to + path
+        else:
+            path = relative_to + '/' + path
+    if path.startswith('///'):
+        path = path[2:]
+    path = unquote(path)
+    loader = _ConfigLoader(path)
+    if global_conf:
+        loader.update_defaults(global_conf, overwrite=False)
+    return loader.get_context(object_type, name, global_conf)
+
+_loaders['config'] = _loadconfig

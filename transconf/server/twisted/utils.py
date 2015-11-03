@@ -2,12 +2,6 @@ __author__ = 'chijun'
 
 
 from transconf.server.request import Request
-from transconf.server.twisted.event import EventMiddleware
-
-
-class TranMiddleware(EventMiddleware):
-    def process_request(self, context):
-        return super(TranMiddleware, self).process_request(context)
 
 
 class PeerRequest(Request):
@@ -22,6 +16,7 @@ class PeerRequest(Request):
             return True
         else:
             return False
+
 
 '''
     Here instance 'found_var_name' is only support normal object and dict.

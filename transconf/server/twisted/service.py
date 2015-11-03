@@ -8,7 +8,7 @@ from twisted.internet import defer, reactor, protocol, task
 
 from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.utils import from_config_option
-from transconf.server.request import Response
+from transconf.server.response import Response
 from transconf.server.twisted.log import getLogger
 
 LOG  = getLogger(__name__)

@@ -8,7 +8,8 @@ from twisted.internet import defer
 from transconf.shell import ModelShell, ShellTargetNotFound
 from transconf.model import Model
 from transconf.server.twisted.service import Middleware
-from transconf.server.request import Request, Response, RequestTimeout, InvalidRequest
+from transconf.server.request import Request, RequestTimeout, InvalidRequest
+from transconf.server.response import Response
 from transconf.utils import SimpleModel
 from transconf.server.twisted.log import getLogger
 
