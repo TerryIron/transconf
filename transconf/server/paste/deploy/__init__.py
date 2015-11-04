@@ -1,12 +1,12 @@
 __author__ = 'chijun'
 
 import os.path
-
 from paste.deploy.compat import unquote
 
 ############################################################                                                                                                                                              
 ## Object types
 ############################################################
+import paste.deploy.loadwsgi
 from paste.deploy.loadwsgi import _ObjectType, _PipeLine, _FilterApp, _App
 from paste.deploy.loadwsgi import ConfigLoader, LoaderContext
 from paste.deploy.loadwsgi import loadcontext, loadobj
@@ -71,6 +71,7 @@ class _APP(_App):
         return super(_APP, self).invoke(context)
 
 APP = _APP()
+paste.deploy.loadwsgi.APP = APP
 
 
 class _Platform(_ObjectType):
@@ -89,8 +90,10 @@ class _Platform(_ObjectType):
 PLATFORM = _Platform()
 
 
-def loadapp(uri, name=None, **kw):
-    return loadobj(APP, uri, name=name, **kw) 
+def app_context(self, name=None, global_conf=None):
+    print 'name:{0}'.format(name)
+    print 'global:{0}'.format(global_conf)
+    return self.get_context(APP, name=name, global_conf=global_conf)
 
 
 class _ConfigLoader(ConfigLoader):

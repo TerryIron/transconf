@@ -9,12 +9,12 @@ here = os.path.dirname(os.path.abspath(__file__))
 
 from transconf.server.twisted.wsgi import TranMiddleware
 
-def HeartHandler(TranMiddleware):
+class HeartHandler(TranMiddleware):
     def __call__(self, req):
         return super(HeartHandler, self).__call__(req)
 
 if __name__ == '__main__':
-    from transconf.server.twisted.paste.deploy import loadapp
+    from transconf.server.paste.deploy import loadapp
 
     app = loadapp('config:test.ini', 
                   'main',
