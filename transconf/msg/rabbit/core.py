@@ -19,6 +19,8 @@ class RabbitAMQP(object):
         self.connection_class = self.CONNECTION_CLASS
         self.packer = self.PACKER if not packer else packer
         self.conf = self.DEFAULT_CONF if not self.CONF else self.CONF
+        if callable(self.conf):
+            self.conf = self.conf()
         self.parms = None
         if not amqp_url:
             amqp_url = self.conf_amqp_url

@@ -12,7 +12,9 @@ try:
 except ImportError:
     from collections import MutableMapping as DictMixin
 
+from transconf.utils import as_config
 import transconf.server.paste.rpcexceptions as rpcexceptions
+
 
 
 def rpcmap_factory(loader, global_conf, **local_conf):
@@ -94,6 +96,10 @@ class RPCMap(DictMixin):
         _rpc = pickle.loads(rpc)
         assert isinstance(_rpc, dict), 'RPC request format error.'
         return rpc
+
+    def keys(self):
+        return [app_rpcline for app_rpcline, app in self.applications]
+
         
     def __call__(self, environ, start_response):
         environ['shell_command'] = environ.get('shell_command', None)

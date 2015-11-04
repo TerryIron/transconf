@@ -16,7 +16,7 @@ LOG  = getLogger(__name__)
 
 
 class TranServer(AsyncServer):
-    DEFAULT_CONF = get_service_conf()
+    DEFAULT_CONF = get_service_conf
 
     @property
     @from_config_option('local_group_uuid', None)

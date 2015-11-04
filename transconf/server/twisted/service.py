@@ -1,5 +1,12 @@
 __author__ = 'chijun'
 
+try:
+    from twisted.internet import epollreactor
+    epollreactor.install()
+except:
+    from twisted.internet import selectreactor
+    selectreactor.install()
+
 import pika
 import functools
 
@@ -21,9 +28,10 @@ def serve_register(func, *args, **kwargs):
     SERVER.append(functools.partial(func, *args, **kwargs))
 
 
-def serve_forever():
+def serve_forever(pool_size=1000):
     for func in SERVER:
         func()
+    reactor.suggestThreadPoolSize(pool_size)
     reactor.run()
 
 
@@ -49,7 +57,7 @@ class RPCTranServer(RabbitAMQP):
         Setup Middleware
     """
     def setup(self, middleware):
-        assert isinstance(middleware, Middleware)
+        #assert isinstance(middleware, Middleware)
         self.middleware = middleware
 
     """
