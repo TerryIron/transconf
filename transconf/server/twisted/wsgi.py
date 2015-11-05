@@ -33,8 +33,13 @@ class TranMiddleware(EventMiddleware):
 
 class TranWSGIServer(object):
     def process_request(self, request):
-        d = self.middleware(request).process_request(request)
+        print 'middleware: {0}'.format(self.middleware)
+        d = self.middleware(request)
         print 'defer: {0}'.format(d)
+        d = d.process_request(request)
+        #print 'defer: {0}'.format(d)
+        #print 'defer type: {0}'.format(type(d))
+        #print 'defer dir: {0}'.format(dir(d))
         return d
 
     def process_response(self, response):

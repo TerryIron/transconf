@@ -91,7 +91,7 @@ class RPCTranServer(RabbitAMQP):
                                properties=pika.BasicProperties(
                                    correlation_id=properties.correlation_id
                                ),
-                               body=self.packer.pack(result.as_dict()))
+                               body=self.packer.pack(result))
         
     @defer.inlineCallbacks
     def success(self, result):
@@ -107,7 +107,7 @@ class RPCTranServer(RabbitAMQP):
         body = yield self.packer.unpack(body)
         if body:
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
-            body = yield self.process_request(body)
+            body = self.process_request(body)
             if body:
                 body.addCallbacks(lambda result: self.success(result),
                                   errback=lambda err: self.failed(err))

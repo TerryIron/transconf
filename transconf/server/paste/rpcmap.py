@@ -111,6 +111,7 @@ class RPCMap(DictMixin):
                     app_is_found = False
                     break
             if app_is_found:
+                print 'found app: {0}'.format(app)
                 return app(environ, start_response)
         environ['paste.rpcmap_object'] = self
         return self.not_found_application(environ, start_response)
