@@ -18,6 +18,7 @@ from transconf.utils import from_config_option
 from transconf.server.response import Response
 from transconf.server.twisted.log import getLogger
 
+
 LOG  = getLogger(__name__)
 
 
@@ -33,6 +34,10 @@ def serve_forever(pool_size=1000):
         func()
     reactor.suggestThreadPoolSize(pool_size)
     reactor.run()
+
+
+def serve_stop():
+    reactor.stop()
 
 
 class Middleware(object):
@@ -57,7 +62,6 @@ class RPCTranServer(RabbitAMQP):
         Setup Middleware
     """
     def setup(self, middleware):
-        #assert isinstance(middleware, Middleware)
         self.middleware = middleware
 
     """
@@ -100,7 +104,6 @@ class RPCTranServer(RabbitAMQP):
     @defer.inlineCallbacks
     def on_request(self, queue_object):
         ch, method, properties, body = yield queue_object.get()
-        #LOG.debug('CH:{0}, METHOD:{1}, PROPERITES:{2}'.format(ch, method, properties))
         body = yield self.packer.unpack(body)
         if body:
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -122,6 +125,5 @@ class RPCTranServer(RabbitAMQP):
         raise NotImplementedError()
 
     def register(self):
-        #self.connect(self.on_connect)
         serve_register(self.connect, self.on_connect)
 

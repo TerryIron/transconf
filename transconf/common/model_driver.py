@@ -1,6 +1,9 @@
 __author_ = 'chijun'
 
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 from sqlalchemy import *
 from sqlalchemy.exc import *

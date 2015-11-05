@@ -4,7 +4,8 @@ import functools
 from twisted.internet import defer
 
 from transconf.server.twisted import get_service_conf
-from transconf.server.twisted.service import serve_forever, RPCTranServer as AsyncServer
+from transconf.server.twisted.service import serve_forever, serve_stop
+from transconf.server.twisted.service import RPCTranServer as AsyncServer
 from transconf.server.twisted.client import RPCTranClient as RPCClient
 from transconf.server.twisted.client import TopicTranClient as TopicClient
 from transconf.server.twisted.client import FanoutTranClient as FanoutClient

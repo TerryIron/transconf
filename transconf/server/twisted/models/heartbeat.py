@@ -55,8 +55,9 @@ class HeartBeat(Model):
             }
     ]
 
+    __version__ = (0, 1, 1)
+
     def get_fanout_members(self):
-        #for g_option, is_enabled in self._conf_group_names:
         for g_option, is_enabled in CONFIG.heartbeartcenters:
             g = g_option.split('.')
             if (len(g) > 1) and ((is_enabled and g_option) not in self.UNEXPECTED_OPTIONS):
@@ -110,6 +111,8 @@ class HeartCondition(Model):
             }
     ]
 
+    __version__ = (0, 1, 1)
+
     def start(self, config=None):
         # Re-initialize sql table
         self._target_init()
@@ -118,7 +121,6 @@ class HeartCondition(Model):
         self.buf_available_uuid = CONF_BACKEND.uuids()
 
     def _check_heart_still_alive(self, group_name, group_type, uuid):
-        #heartrate = self._conf_heartrate
         heartrate = CONFIG.master.heartrate
         cur_time = time.time()
         #Check this heartbeat was timeout?
@@ -128,7 +130,6 @@ class HeartCondition(Model):
             self._check_has_available_targets(group_name, group_type)
 
     def _check_heart_health(self, group_name, group_type, uuid):
-        #heartrate = self._conf_heartrate
         heartrate = CONFIG.master.heartrate
         if uuid not in self._timestamp:
             self._timestamp[uuid] = time.time()

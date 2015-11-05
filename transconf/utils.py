@@ -49,7 +49,12 @@ class SimpleModel(object):
     RE = re.compile('(\S+)\.(\S+)')
 
     def __init__(self, string):
-        ret = self.RE.match(string).groups()
+        string = string.split(':', 1)
+        if len(string) > 1:
+            self.version = string[1]
+        else:
+            self.version = '0.1.0'
+        ret = self.RE.match(string[0]).groups()
         if ret:
             self.target = ret[0]
             self.action = ret[1]

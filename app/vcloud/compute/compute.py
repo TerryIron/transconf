@@ -16,7 +16,7 @@ cmd_conf = as_config(os.path.join(os.path.dirname(__file__),
 twisted.CONF = serve_conf
 
 from transconf.server.twisted.internet import serve_forever, RPCTranServer, TopicTranServer, FanoutTranServer
-from transconf.server.twisted.utils import TranMiddleware
+from transconf.server.twisted.wsgi import TranMiddleware
 from transconf.server.twisted.models import model_configure
 from transconf.command_driver import command_configure
 

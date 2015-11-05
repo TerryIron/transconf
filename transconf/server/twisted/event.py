@@ -1,7 +1,6 @@
 __author__ = 'chijun'
 
 import time
-import pickle
 import functools
 from twisted.internet import task, reactor, defer
 

@@ -19,6 +19,6 @@ if __name__ == '__main__':
     app = loadapp('config:test.ini', 
                   'main',
                   relative_to=here)
-    server = TranServer('compute', app)
+    server = TranServer(app)
     server.start()
 

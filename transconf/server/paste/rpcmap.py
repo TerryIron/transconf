@@ -43,7 +43,7 @@ class RPCMap(DictMixin):
 	    not_found_app = self.not_found_app
 	self.not_found_application = not_found_app
 
-    def not_found_app(self, environ, start_response):
+    def not_found_app(self, environ, start_response=None):
         mapper = environ.get('paste.rpcmap_object')
         if mapper:
             matches = [p for p, a in mapper.applications]
@@ -101,7 +101,7 @@ class RPCMap(DictMixin):
         return [app_rpcline for app_rpcline, app in self.applications]
 
         
-    def __call__(self, environ, start_response):
+    def __call__(self, environ, start_response=None):
         environ['shell_command'] = environ.get('shell_command', None)
         for app_rpc, app in self.applications:
             app_rpc_dict = pickle.loads(app_rpc)

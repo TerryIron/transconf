@@ -63,10 +63,11 @@ class RPCException(Exception):
         Exception.__init__(self,"%s %s\n%s\n%s\n" % (
             self.code, self.title, self.explanation, self.detail))
 
-    def wsgi_application(self, environ, start_response, exc_info=None):
-        start_response('%s %s' % (self.code, self.title),
-                       environ,
-                       exc_info)
+    def wsgi_application(self, environ, start_response=None, exc_info=None):
+        if callable(start_response):
+            start_response('%s %s' % (self.code, self.title),
+                           environ,
+                           exc_info)
         return [environ]
 
     __call__ = wsgi_application

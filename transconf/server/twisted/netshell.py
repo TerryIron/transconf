@@ -20,9 +20,11 @@ class BadShellRequest(Exception):
 
 
 class ShellRequest(Request):
-    def __init__(self, target_name, method_name, *args, **kwargs):
+
+    def __init__(self, target_name, method_name, version, *args, **kwargs):
         d = dict(target_name=target_name,
                  method_name=method_name,
+                 version=version,
                  args=args,
                  kwargs=kwargs)
         return super(ShellRequest, self).__init__(**d)
@@ -37,6 +39,7 @@ class ShellRequest(Request):
         context['shell_command'] = dict(
             target_name=self['target_name'],
             method_name=self['method_name'],
+            version=self['version'],
             args=self['args'],
             kwargs=self['kwargs'],
         )
@@ -44,9 +47,10 @@ class ShellRequest(Request):
 
 
 class ActionRequest(ShellRequest):
+    __version__ = (0, 1, 0)
+
     def __init__(self, target, *args, **kwargs):
         if not isinstance(target, SimpleModel):
-            print target
             target = SimpleModel(target)
         LOG.debug('Action req, target:{0}, action:{1}, args:{2}, kwargs:{3}'.format(target.target,
                                                                                     target.action,
@@ -54,8 +58,14 @@ class ActionRequest(ShellRequest):
                                                                                     kwargs))
         return super(ActionRequest, self).__init__(target.target,
                                                    target.action,
+                                                   target.version,
                                                    *args,
                                                    **kwargs)
+
+    def to_dict(self, context=None, timeout=60):
+        context = super(ActionRequest, self).to_dict(context, timeout)
+        context['ver'] = 'v' + str(int(''.join([str(i) for i in self.__version__ if i != 0])))
+        return context
 
 
 class ShellMiddleware(Middleware):
