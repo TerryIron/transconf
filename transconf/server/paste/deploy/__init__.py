@@ -1,5 +1,6 @@
 __author__ = 'chijun'
 
+import pkg_resources
 import os.path
 from paste.deploy.compat import unquote
 
@@ -91,8 +92,6 @@ PLATFORM = _Platform()
 
 
 def app_context(self, name=None, global_conf=None):
-    print 'name:{0}'.format(name)
-    print 'global:{0}'.format(global_conf)
     return self.get_context(APP, name=name, global_conf=global_conf)
 
 

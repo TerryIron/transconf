@@ -88,20 +88,14 @@ class ShellMiddleware(Middleware):
                     LOG.debug('Get request [{0}.{1}] costs time {2} (s).'.format(target_name, method_name, cost_time))
                     if cost_time > float(timeout):
                         raise RequestTimeout('Call {0}.{1} timeout.'.format(target_name, method_name))
-                try:
-                    check_is_timeout(context)
-                    args = shell_req.get('args', None)
-                    kwargs = shell_req.get('kwargs', None)
-                    cb = functools.partial(self.handler.run, 
-                                           target_name, 
-                                           method_name, *args, **kwargs)
-                    return cb()
-                except Exception as e:
-                    def err_back(err):
-                        return Response.fail(err)
-                    d = defer.fail({})
-                    d.addErrback(lambda result: err_back(e))
-                    return d
+
+                check_is_timeout(context)
+                args = shell_req.get('args', None)
+                kwargs = shell_req.get('kwargs', None)
+                cb = functools.partial(self.handler.run, 
+                                       target_name, 
+                                       method_name, *args, **kwargs)
+                return cb()
             else:
                 raise BadShellRequest()
 

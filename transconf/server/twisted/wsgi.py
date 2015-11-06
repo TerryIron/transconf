@@ -15,12 +15,17 @@ class TranMiddleware(EventMiddleware):
     @classmethod                                                                                                                                               
     def factory(cls, global_config, **local_config):
         twisted.CONF = as_config(global_config['__file__'])
+        assert 'model' in local_config, 'please install model config as model=x'
+        model_shell = model_configure(as_config(local_config.pop('model')))
         def _factory(app, start_response=None):
-            return cls(app, **local_config)
+            c = cls(app, **local_config)
+            c.handler = model_shell
+            return c
         return _factory
 
     def process_request(self, request):
-        return super(TranMiddleware, self).process_request(request)
+        d = super(TranMiddleware, self).process_request(request)
+        return d
 
     def process_response(self, response):
         """Do whatever you'd like to the response."""
@@ -33,14 +38,11 @@ class TranMiddleware(EventMiddleware):
 
 class TranWSGIServer(object):
     def process_request(self, request):
-        print 'middleware: {0}'.format(self.middleware)
         d = self.middleware(request)
-        print 'defer: {0}'.format(d)
-        d = d.process_request(request)
-        #print 'defer: {0}'.format(d)
-        #print 'defer type: {0}'.format(type(d))
-        #print 'defer dir: {0}'.format(dir(d))
-        return d
+        if d:
+            d = d.process_request(request)
+            return d
+            
 
     def process_response(self, response):
         """Do whatever you'd like to the response."""

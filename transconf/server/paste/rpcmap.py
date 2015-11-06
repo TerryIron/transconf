@@ -102,7 +102,8 @@ class RPCMap(DictMixin):
 
         
     def __call__(self, environ, start_response=None):
-        environ['shell_command'] = environ.get('shell_command', None)
+        if not environ.get('shell_command', None):
+            return 
         for app_rpc, app in self.applications:
             app_rpc_dict = pickle.loads(app_rpc)
             app_is_found = True
@@ -111,7 +112,6 @@ class RPCMap(DictMixin):
                     app_is_found = False
                     break
             if app_is_found:
-                print 'found app: {0}'.format(app)
                 return app(environ, start_response)
         environ['paste.rpcmap_object'] = self
         return self.not_found_application(environ, start_response)
