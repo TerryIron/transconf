@@ -5,6 +5,9 @@ import sys
 
 from paste.script.command import Command, BadCommand
 from paste.script.filemaker import FileOp
+from tempita import paste_script_template_renderer
+
+from transconf.server.paste.deploy import loadapp
 
 
 class ControllerCommand(Command):
@@ -20,6 +23,14 @@ class ControllerCommand(Command):
                 name, directory = file_op.parse_path_name_args(self.args[0])
             except:
                 raise BadCommand('No egg_info directory was found')
+            # Check the name isn't the same as the package
+            base_package = file_op.find_dir('controllers', True)[0]
+            if base_package.lower() == name.lower():
+                raise BadCommand(
+                    'Your controller name should not be the same as '
+                    'the package name %r.' % base_package)
+            # Validate the name
+            name = name.replace('-', '_')
         except BadCommand, e:
             raise BadCommand('An error occurred. %s' % e)
         except:
