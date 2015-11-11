@@ -4,7 +4,7 @@ import time
 
 from transconf.common.reg import register_model, get_model
 from transconf.model import Model
-from transconf.configure import Configure
+from transconf.configration import Configuration
 from transconf.server.twisted.internet import get_public_client
 from transconf.server.twisted.event import Task, EventDispatcher
 from transconf.server.twisted import CONF as global_conf
@@ -25,12 +25,13 @@ class HeartBeatNotFound(Exception):
     def __str__(group_name, group_type):
         return 'Group name:{0}, Group type:{1} can not found.'.format(group_name, group_type)
 
+
 class HeartRateErr(Exception):
     def __str__(group_name, group_type):
         return 'Group name:{0}, Group type:{1} got a invalid heartrate.'.format(group_name, group_type)
 
 
-CONFIG = Configure(SERVER_CONF)
+CONFIG = Configuration(SERVER_CONF)
 CONFIG.add_members('heartbeats', sect='controller:heartbeat:listen', avoid_options='heartrate')
 CONFIG.add_members('heartbeartcenters', sect='controller:heartbeat:fanout', avoid_options='heartrate')
 master_group = CONFIG.add_group('master', sect='controller:heartbeat:listen')

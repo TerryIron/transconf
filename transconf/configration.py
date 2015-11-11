@@ -6,14 +6,14 @@ import json
 from transconf.utils import *
 
 
-class BaseConfigure(object):
+class BaseConf(object):
     def __init__(self, config):
         self.config = as_config(config)
 
 
-class ConfigureGroup(BaseConfigure):
+class ConfGroup(BaseConf):
     def __init__(self, config, sect=None):
-        super(ConfigureGroup, self).__init__(config)
+        super(ConfGroup, self).__init__(config)
         self.__help__ = {}
         self.sect = sect
 
@@ -27,8 +27,8 @@ class ConfigureGroup(BaseConfigure):
         return self.__help__[key]
 
     def __delitem__(self, key):
-        if name in self.__help__:
-            del self.__help__[name]
+        if key in self.__help__:
+            del self.__help__[key]
 
     def add_property(self, name, option=None, default_val=None, help=None):
         @from_config_option(option or '', default_val, sect=self.sect)
@@ -50,15 +50,16 @@ class ConfigureGroup(BaseConfigure):
         self.__delitem__(name)
 
 
-class Configure(BaseConfigure):
+class Configuration(BaseConf):
     def add_group(self, name, sect=None):
-        setattr(self, name, ConfigureGroup(self.config, sect))
+        setattr(self, name, ConfGroup(self.config, sect))
         return getattr(self, name)
 
     def del_group(self, name):
         delattr(self, name)
 
-    def _process_options(self, output, option_regex=None, avoid_options=None, avoid_option_regex=None):
+    @staticmethod
+    def _process_options(output, option_regex=None, avoid_options=None, avoid_option_regex=None):
         option_re, avoid_re, avoid_options, new  = re.compile('.*') if not option_regex else re.compile(option_regex), \
                                                    re.compile('^$') if not avoid_option_regex else re.compile(avoid_option_regex), \
                                                    tuple() if not avoid_options else avoid_options, \
