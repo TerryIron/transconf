@@ -20,7 +20,6 @@ def find_datafiles(where='.', include_endswith=()):
             if not include_endswith or any(d.endswith(end) for end in include_endswith):
                 d = d[len(where) + 1:]
                 item.append(d)
-                print item
         if item:
             data.append((p[len(where) + 1:], tuple(item)))
     return data

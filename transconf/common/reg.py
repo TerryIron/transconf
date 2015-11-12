@@ -24,16 +24,19 @@ class Registry(object):
         if name in self.reg:
             self.reg.pop(name)
 
+
 def get_reg_target(reg_type, name):
     if reg_type.startswith('lib'): return get_local_driver(name)
     elif reg_type.startswith('mod'): return get_model(name)
     elif reg_type.startswith('cmd'): return get_local_cmd(name)
 
 
+"""
 LibReg = Registry('lib')
 
+
 def register_local_lib(name):
-    def _register_local_lib(cls, *args, **kwargs):
+    def _register_local_lib(cls):
         def __register_local_lib(*_args, **_kwargs):
             obj = cls(*_args, **_kwargs)
             LibReg.register('__is_lib__' + str(name), obj)
@@ -42,20 +45,21 @@ def register_local_lib(name):
     return _register_local_lib
 
 
-def get_local_lib(name):
+def get_local_lib(name=None):
     return LibReg.get('__is_lib__' + str(name))
+"""
 
 
 ModelReg = Registry('model')
 
-def register_model(name):
-    def _register_model(cls, *args, **kwargs):
-        def __register_model(*_args, **_kwargs):
-            obj = cls(*_args, **_kwargs)
-            ModelReg.register('__is_model__' + str(name), obj)
-            return obj
-        return __register_model
-    return _register_model
+
+def register_model(cls):
+    def __register_model(*_args, **_kwargs):
+        obj = cls(*_args, **_kwargs)
+        for single in obj.FORM:
+            ModelReg.register('__is_model__' + str(single['node']), obj)
+        return obj
+    return __register_model
 
 
 def get_model(name):
@@ -64,14 +68,13 @@ def get_model(name):
 
 CmdReg = Registry('cmd')
 
-def register_local_cmd(name):
-    def _register_local_cmd(cls, *args, **kwargs):
-        def __register_local_cmd(*_args, **_kwargs):
-            obj = cls(*_args, **_kwargs)
-            CmdReg.register('__is_cmd__' + str(name), obj)
-            return obj
-        return __register_local_cmd
-    return _register_local_cmd
+
+def register_local_cmd(cls):
+    def __register_local_cmd(*_args, **_kwargs):
+        obj = cls(*_args, **_kwargs)
+        CmdReg.register('__is_cmd__' + str(obj.name), obj)
+        return obj
+    return __register_local_cmd
 
 
 def get_local_cmd(name):

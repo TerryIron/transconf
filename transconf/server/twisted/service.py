@@ -70,7 +70,6 @@ class RPCTranServer(RabbitAMQP):
     def process_request(self, body):
         return self.middleware.process_request(body)
             
-
     def _connect(self):
         cc = protocol.ClientCreator(reactor, 
                                     self.connection_class,
@@ -86,13 +85,15 @@ class RPCTranServer(RabbitAMQP):
 
     @defer.inlineCallbacks
     def _result_back(self, ch, properties, result):
+        result = self.packer.pack(result)
+        # If not result, some unexpected errors happened
         yield ch.basic_publish(exchange=self.bind_exchange,
                                routing_key=properties.reply_to,
                                properties=pika.BasicProperties(
                                    correlation_id=properties.correlation_id
                                ),
-                               body=self.packer.pack(result))
-        
+                               body=result)
+
     @defer.inlineCallbacks
     def success(self, result):
         yield defer.returnValue(Response.success(result))
@@ -126,4 +127,3 @@ class RPCTranServer(RabbitAMQP):
 
     def register(self):
         serve_register(self.connect, self.on_connect)
-

@@ -44,7 +44,7 @@ manage_group.add_property('group_type', option='local_group_type')
 manage_group.add_property('group_uuid', option='local_group_uuid')
 
 
-@register_model('heartbeat')                                                                                                                                                                    
+@register_model
 class HeartBeat(Model):
     # Ver: (0, 1, 0) by chijun
     # 1 add outbound method 'alive', 'dead'
@@ -52,7 +52,7 @@ class HeartBeat(Model):
     # 1 add get_fanout_members
     UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heart',
-             'public': ['alive', 'mod:heartbeat:heartbeat'],
+             'public': ['alive', 'mod:heart:heartbeat'],
             }
     ]
 
@@ -64,11 +64,6 @@ class HeartBeat(Model):
             if (len(g) > 1) and ((is_enabled and g_option) not in self.UNEXPECTED_OPTIONS):
                 yield (g[0], g[1], is_enabled)  
 
-    def init(self, config=None):
-        self.CONFIG = Configuration(config)
-        command_group = self.CONFIG.add_group('command_group', sect='model_action')
-        command_group.add_property('heartbeat', option='heartbeat')
-        
     def start(self, config=None):
         self.is_start = None
         self.heartbeat(int(CONFIG.slaver.heartrate))
@@ -84,7 +79,7 @@ class HeartBeat(Model):
         if local_name and local_type and local_uuid:
             for g_name, typ, is_enabled in self.get_fanout_members():
                 client = get_public_client(g_name, typ, type='fanout')
-                req = ActionRequest(self.CONFIG.command_group.heartbeat,
+                req = ActionRequest('heartcond.checkin',
                                     dict(group_name=local_name, 
                                          uuid=local_uuid,
                                          available=str(True),
@@ -94,7 +89,7 @@ class HeartBeat(Model):
                 t.LoopingCall(timeout)
 
 
-@register_model('heartcondition')                                                                                                                                                                    
+@register_model
 class HeartCondition(Model):
     # Ver: (0, 1, 0) by chijun
     # 1 add outbound method 'has', 'register'
@@ -104,10 +99,10 @@ class HeartCondition(Model):
     UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heartcond',
              'public': [
-                        ['has', 'mod:heartcondition:has_heartbeat'],
-                        ['add', 'mod:heartcondition:add_heartbeat'],
-                        ['remove', 'mod:heartcondition:remove_heartbeat'],
-                        ['checkin', 'mod:heartcondition:checkin'],
+                        ['has', 'mod:heartcond:has_heartbeat'],
+                        ['add', 'mod:heartcond:add_heartbeat'],
+                        ['remove', 'mod:heartcond:remove_heartbeat'],
+                        ['checkin', 'mod:heartcond:checkin'],
                        ]
             }
     ]

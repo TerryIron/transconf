@@ -13,7 +13,8 @@ from transconf.server.response import Response
 from transconf.utils import SimpleModel
 from transconf.server.twisted.log import getLogger
 
-LOG  = getLogger(__name__)
+LOG = getLogger(__name__)
+
 
 class BadShellRequest(Exception):
     """Raised when request comming with invalid data """
@@ -102,15 +103,17 @@ class ShellMiddleware(Middleware):
 
 class NetShell(ModelShell):
     def run(self, target_name, method_name, *args, **kwargs):
-        name_lst = str(target_name).split(self.split)
-        if len(name_lst) > 1:
-            model_name = name_lst[0]
-            model = self.get_namebus(model_name)
-            if isinstance(model, Model):
-                other_names = tuple(name_lst[1:])
-                d = defer.succeed({})
-                cb = functools.partial(model.run, other_names, method_name, *args, **kwargs)
-                d.addCallback(lambda r: cb())
-                return d
-        else:
-            raise ShellTargetNotFound(target_name)
+        try:
+            name_lst = str(target_name).split(self.split)
+            if len(name_lst) >= 1:
+                model_name = name_lst[0]
+                model = self.get_namebus(model_name)
+                if isinstance(model, Model):
+                    d = defer.succeed({})
+                    cb = functools.partial(model.run, tuple(name_lst), method_name, *args, **kwargs)
+                    d.addCallback(lambda r: cb())
+                    return d
+            else:
+                raise ShellTargetNotFound(target_name)
+        except Exception, e:
+            LOG.error(e)
