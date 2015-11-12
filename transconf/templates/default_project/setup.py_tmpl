@@ -1,0 +1,49 @@
+from setuptools import setup, find_packages
+
+from {{project}}.__init__ import __version__
+
+version = '.'.join(map(str, __version__))
+
+
+def find_datafiles(where='.', include_endswith=()):
+    data = []
+    import glob, os.path
+    where = os.path.abspath(where)
+    stack = glob.glob(os.path.join(where, '*'))
+    while stack:
+        p = stack.pop(0)
+        item = []
+        for d in glob.glob(os.path.join(p, '*')):
+            if os.path.isdir(d):
+                stack.append(d)
+                continue
+            if not include_endswith or any(d.endswith(end) for end in include_endswith):
+                d = d[len(where) + 1:]
+                item.append(d)
+                print item
+        if item:
+            data.append((p[len(where) + 1:], tuple(item)))
+    return data
+
+
+setup(
+    name="{{project}}",
+    version=version,
+    description="",
+    long_description=None,
+    author="{{author}}",
+    author_email="{{author_email}}",
+    packages=find_packages(),
+    data_files=find_datafiles(include_endswith=['_tmpl']),
+    include_package_data=True,
+    zip_safe=False,
+    install_requires=[
+        'twisted>=14.0',
+        'pika>=0.9.14',
+        'SQLAlchemy>=0.7.8,!=0.9.5,<=0.9.99',
+        'PasteDeploy>=1.5.2',
+        'PasteScript>=1.7.5',
+        'Mako>=0.5.0',
+        'Tempita>=0.5.1',
+    ]
+)

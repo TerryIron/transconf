@@ -24,35 +24,35 @@ __all__ = ['loadapp', 'loadserver', 'loadfilter', 'appconfig']
 
 
 
-#class _ModelPack(_PipeLine):
-#    name = 'model_package'
-#    config_prefixes = [['mod-pack', 'model-pack']]
-#
-#MODELPACK = _ModelPack()
-#        
-#
-#class _Model(_FilterApp):
-#    name = 'model'
-#    config_prefixes = [['model', 'mod']]
-#    egg_protocols = ['paste.model_factory', 'paste.mod_factory']
-#
-#
-#MODEL = _Model()
-#
-#
-#class _CommandPack(_PipeLine):
-#    name = 'command_package'
-#    config_prefixes = [['cmd-pack', 'command-pack']]
-#
-#COMMANDPACK = _CommandPack()
-#
-#
-#class _Command(_FilterApp):
-#    name = 'command'
-#    config_prefixes = [['command', 'cmd']]
-#    egg_protocols = ['paste.command_factory', 'paste.cmd_factory']
-#
-#COMMAND = _Command()
+class _ModelPack(_PipeLine):
+    name = 'model_package'
+    config_prefixes = [['mods', 'models', 'mod-pack', 'model-pack']]
+
+MODELPACK = _ModelPack()
+
+
+class _Model(_FilterApp):
+    name = 'model'
+    config_prefixes = [['model', 'mod']]
+    egg_protocols = ['paste.model_factory', 'paste.mod_factory']
+
+
+MODEL = _Model()
+
+
+class _CommandPack(_PipeLine):
+    name = 'command_package'
+    config_prefixes = [['cmds', 'commands', 'cmd-pack', 'command-pack']]
+
+COMMANDPACK = _CommandPack()
+
+
+class _Command(_FilterApp):
+    name = 'command'
+    config_prefixes = [['command', 'cmd']]
+    egg_protocols = ['paste.command_factory', 'paste.cmd_factory']
+
+COMMAND = _Command()
 
 
 class _APP(_App):
@@ -225,8 +225,11 @@ class _ConfigLoader(ConfigLoader):
     #                       global_conf, local_conf, global_additions):
     #    pass
 
-    #def _model_pack_context(self, object_type, section, name,                                                                                                                                             
+    #def _model_pack_context(self, object_type, section, name,
     #                        global_conf, local_conf, global_additions):
+    #    pass
+
+
     #    if 'model_pack' not in local_conf:
     #        raise LookupError(
     #            "The [%s] section in %s is missing a 'model_pack' setting"
@@ -237,7 +240,7 @@ class _ConfigLoader(ConfigLoader):
     #                         global_conf, local_conf, global_additions):
     #    pass
 
-    #def _command_pack_context(self, object_type, section, name,                                                                                                                                             
+    #def _command_pack_context(self, object_type, section, name,
     #                          global_conf, local_conf, global_additions):
     #    if 'command_pack' not in local_conf:
     #        raise LookupError(

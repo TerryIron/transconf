@@ -1,0 +1,17 @@
+__author__ = 'chijun'
+
+import os.path
+
+here = os.path.join('/etc', {{project}})
+
+from transconf.server.twisted.wsgi import TranServer
+
+
+if __name__ == '__main__':
+    from transconf.server.paste.deploy import loadapp
+
+    app = loadapp('config:deployment.ini',
+                  'main',
+                   relative_to=here)
+    server = TranServer(app)
+    server.start()

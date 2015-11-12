@@ -12,9 +12,7 @@ try:
 except ImportError:
     from collections import MutableMapping as DictMixin
 
-from transconf.utils import as_config
 import transconf.server.paste.rpcexceptions as rpcexceptions
-
 
 
 def rpcmap_factory(loader, global_conf, **local_conf):
@@ -38,10 +36,10 @@ def parse_rpcline_expression(rpcline):
 
 class RPCMap(DictMixin):
     def __init__(self, not_found_app=None):
-	self.applications = []
-	if not not_found_app:
-	    not_found_app = self.not_found_app
-	self.not_found_application = not_found_app
+        self.applications = []
+        if not not_found_app:
+            not_found_app = self.not_found_app
+        self.not_found_application = not_found_app
 
     def not_found_app(self, environ, start_response=None):
         mapper = environ.get('paste.rpcmap_object')
@@ -61,17 +59,16 @@ class RPCMap(DictMixin):
         self.applications.sort()
 
     def __setitem__(self, rpc, app):
-	if app is None:
-	    try:
-		del self[rpc]
-	    except KeyError:
-		pass
-	    return
-	dom_rpc = self.normalize_rpc(rpc)
-	if dom_rpc in self:
-	    del self[dom_rpc]
-	self.applications.append((dom_rpc, app))
-	self.sort_apps()
+        if app is None:
+            try:
+                del self[rpc]
+            except KeyError:
+                pass
+        dom_rpc = self.normalize_rpc(rpc)
+        if dom_rpc in self:
+            del self[dom_rpc]
+        self.applications.append((dom_rpc, app))
+        self.sort_apps()
 
     def __getitem__(self, rpc):
 	dom_rpc = self.normalize_rpc(rpc)
@@ -100,7 +97,6 @@ class RPCMap(DictMixin):
     def keys(self):
         return [app_rpcline for app_rpcline, app in self.applications]
 
-        
     def __call__(self, environ, start_response=None):
         if not environ.get('shell_command', None):
             return 

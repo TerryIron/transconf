@@ -65,7 +65,7 @@ class HeartBeat(Model):
                 yield (g[0], g[1], is_enabled)  
 
     def init(self, config=None):
-        self.CONFIG = Configure(config)
+        self.CONFIG = Configuration(config)
         command_group = self.CONFIG.add_group('command_group', sect='model_action')
         command_group.add_property('heartbeat', option='heartbeat')
         

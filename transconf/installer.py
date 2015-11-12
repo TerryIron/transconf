@@ -18,12 +18,12 @@ class TransconfTemplate(Template):
     vars = [
         var('template_engine', 'mako/genshi/jinja2/etc: Template language',
             default='mako'),
-        var('group_name', 'Project\'s group name for AMQP',
+        var('group_name', 'Group name of your project',
             default='test'),
-        var('group_type', 'Project\'s group type for AMQP',
+        var('group_type', 'Group type of your project',
             default='test_type'),
-        var('group_uuid', 'Project\'s group uuid for AMQP',
-            default=None),
+        var('group_uuid', 'Group uuid of your project',
+            default=uuid.uuid1()),
     ]
     ensure_names = ['description', 'author', 'author_email', 'url']
 
@@ -55,10 +55,6 @@ class TransconfTemplate(Template):
         vars['group_name'] = vars.get('group_name', 'test')
         vars['group_type'] = vars.get('group_type', 'test_type')
         vars['group_uuid'] = vars.get('group_uuid', uuid.uuid1())
-
-
-class MinimalTransconfTemplate(TransconfTemplate):
-    pass
 
 
 class TransconfInstaller(Installer):

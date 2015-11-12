@@ -1,5 +1,6 @@
 __author__ = 'chijun'
 
+
 class NameBus(object):
     
     def __init__(self):

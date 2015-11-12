@@ -20,5 +20,5 @@ use=call:transconf.server.paste.rpcmap:rpcmap_factory
 ver|v1 = mainapp
 
 [app:mainapp]
-paste.app_factory=transconf.tests.test_app:HeartHandler.factory
+paste.app_factory={{project}}.controller.test:TestHandler.factory
 model=test_models.ini

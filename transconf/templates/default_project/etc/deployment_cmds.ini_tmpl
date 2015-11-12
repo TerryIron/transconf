@@ -1,0 +1,11 @@
+[regular_file]
+factory=transconf.cmd.linux.File
+new=touch {name}
+forced_remove=rm -f {name}
+read_all=cat {name}
+
+[regular_dir]
+factory=transconf.cmd.linux.Directory
+new=mkdir {name}
+forced_remove=rm -rf {name}
+list_all=ls {name}

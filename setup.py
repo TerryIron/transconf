@@ -145,6 +145,5 @@ setup(
 
         [paste.paster_create_template]
         transconf = transconf.installer:TransconfTemplate
-        transconf_minimal = transconf.installer:MinimalTransconfTemplate
     """
 )
