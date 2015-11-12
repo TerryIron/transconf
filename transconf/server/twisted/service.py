@@ -14,12 +14,11 @@ from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 
 from transconf.msg.rabbit.core import RabbitAMQP
-from transconf.utils import from_config_option
 from transconf.server.response import Response
 from transconf.server.twisted.log import getLogger
 
 
-LOG  = getLogger(__name__)
+LOG = getLogger(__name__)
 
 
 SERVER = []
@@ -100,7 +99,7 @@ class RPCTranServer(RabbitAMQP):
 
     @defer.inlineCallbacks
     def failed(self, err):
-        yield defer.returnValue(Response.failed(err))
+        yield defer.returnValue(Response.fail(err))
 
     @defer.inlineCallbacks
     def on_request(self, queue_object):

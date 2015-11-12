@@ -114,9 +114,3 @@ class NetShell(ModelShell):
         cb = functools.partial(model.run, name, method, *args, **kwargs)
         d.addCallback(lambda r: cb())
         return d
-
-    def run(self, target_name, method_name, *args, **kwargs):
-        try:
-            return super(NetShell, self).run(target_name, method_name, *args, **kwargs)
-        except Exception, e:
-            LOG.error(e)

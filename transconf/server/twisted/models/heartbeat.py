@@ -11,6 +11,10 @@ from transconf.server.twisted import CONF as global_conf
 from transconf.server.twisted import get_sql_engine 
 from transconf.server.twisted.netshell import ActionRequest
 from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
+from transconf.server.twisted.log import getLogger
+
+
+LOG = getLogger(__name__)
 
 SERVER_CONF = global_conf
 
@@ -166,11 +170,10 @@ class HeartCondition(Model):
             self.buf_group_target[group_name + '_' + group_type] = False
 
     def checkin(self, context, heartrate=60, timeout=5):
-        print 'checkin'
         group_name = context.get('group_name', None)
         group_type = context.get('group_type', None)
         uuid = context.get('uuid', None)
-        available = context.get('available', None) or False
+        available = context.get('available', False)
         if group_name and group_type and uuid:
             try:
                 cur_time = self._check_heart_health(group_name, group_type, uuid)
@@ -181,9 +184,10 @@ class HeartCondition(Model):
             except HeartRateErr:
                 return 
             except:
-                return 
+                return
         self._update_target(group_name, group_type, uuid, available)
         self._check_has_available_targets(group_name, group_type)
+        LOG.debug('Got a heartbeat from group:{0}, type:{1}, uuid:{2}'.format(group_name, group_type, uuid))
         t = Task(lambda:  self._check_heart_still_alive(group_name, group_type, uuid))
         t.CallLater(heartrate + timeout)
 
