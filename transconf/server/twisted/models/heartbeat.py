@@ -79,7 +79,9 @@ class HeartBeat(Model):
         if local_name and local_type and local_uuid:
             for g_name, typ, is_enabled in self.get_fanout_members():
                 client = get_public_client(g_name, typ, type='fanout')
-                req = ActionRequest('heartcond.checkin',
+                # TODO by chijun
+                # Action Request version can not be supported by server.
+                req = ActionRequest('heartcond.checkin:0.1.0',
                                     dict(group_name=local_name, 
                                          uuid=local_uuid,
                                          available=str(True),
@@ -164,6 +166,7 @@ class HeartCondition(Model):
             self.buf_group_target[group_name + '_' + group_type] = False
 
     def checkin(self, context, heartrate=60, timeout=5):
+        print 'checkin'
         group_name = context.get('group_name', None)
         group_type = context.get('group_type', None)
         uuid = context.get('uuid', None)

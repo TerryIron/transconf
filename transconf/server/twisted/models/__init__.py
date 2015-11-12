@@ -42,7 +42,7 @@ def check_needs(conf, model_name, needs):
 
 def model_configure(conf, sh=None):
     if not sh:
-        sh = NetShell(LOG)
+        sh = NetShell()
     for sect in conf.sections():
         @from_config_option('model', None, sect=sect)
         def get_model_class():

@@ -71,7 +71,8 @@ class FormParser(object):
         buf = new_buf()
         for n, f, k, typ, v in self._parse_form(form):
             if n != v:
-                self.log.debug('Parse node:{0}, father:{1}, method:{2}, bond_method:{3}'.format(n, f, k, v))
+                if self.log:
+                    self.log.debug('Parse node:{0}, father:{1}, method:{2}, bond_method:{3}'.format(n, f, k, v))
                 if not buf['node_name']:
                     buf['node_name'] = n
                 if not buf['father']:
@@ -82,7 +83,7 @@ class FormParser(object):
                 if buf['node_name'] != n:
                     old_items = buf['items']
                     buf['items'] = []
-                    old_name= buf['node_name']
+                    #old_name= buf['node_name']
                     buf['node_name'] = n
                     old_fname = buf['fname']
                     buf['fname'] = new_name(n)

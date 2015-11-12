@@ -9,7 +9,6 @@ from transconf.shell import ModelShell, ShellTargetNotFound
 from transconf.model import Model
 from transconf.server.twisted.service import Middleware
 from transconf.server.request import Request, RequestTimeout, InvalidRequest
-from transconf.server.response import Response
 from transconf.utils import SimpleModel
 from transconf.server.twisted.log import getLogger
 
@@ -102,18 +101,22 @@ class ShellMiddleware(Middleware):
 
 
 class NetShell(ModelShell):
+    def __init__(self):
+        super(NetShell, self).__init__(LOG)
+
+    def preload_model(self, model_class, config=None):
+        model = super(NetShell, self).preload_model(model_class, config)
+        LOG.debug('Load model:{0} successfully'.format(model))
+        return model
+
+    def _run(self, model, name, method, *args, **kwargs):
+        d = defer.succeed({})
+        cb = functools.partial(model.run, name, method, *args, **kwargs)
+        d.addCallback(lambda r: cb())
+        return d
+
     def run(self, target_name, method_name, *args, **kwargs):
         try:
-            name_lst = str(target_name).split(self.split)
-            if len(name_lst) >= 1:
-                model_name = name_lst[0]
-                model = self.get_namebus(model_name)
-                if isinstance(model, Model):
-                    d = defer.succeed({})
-                    cb = functools.partial(model.run, tuple(name_lst), method_name, *args, **kwargs)
-                    d.addCallback(lambda r: cb())
-                    return d
-            else:
-                raise ShellTargetNotFound(target_name)
+            return super(NetShell, self).run(target_name, method_name, *args, **kwargs)
         except Exception, e:
             LOG.error(e)

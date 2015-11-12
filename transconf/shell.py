@@ -17,8 +17,10 @@ class ModelShell(NameBus):
         super(ModelShell, self).__init__()
         self.split = self.SPLIT_DOT
         self.environ = {}
-        self.log = log
         self.parser = FormParser(log)
+
+    def _run(self, model, name, method, *args, **kwargs):
+        pass
 
     def run(self, target_name, method_name, *args, **kwargs):
         name_lst = str(target_name).split(self.split)
@@ -26,7 +28,7 @@ class ModelShell(NameBus):
             model_name = name_lst[0]
             model = self.get_namebus(model_name)
             if isinstance(model, Model):
-                return model.run(tuple(name_lst), method_name, *args, **kwargs)
+                return self._run(model, tuple(name_lst), method_name, *args, **kwargs)
             return False
         else:
             raise ShellTargetNotFound(target_name)
@@ -42,7 +44,6 @@ class ModelShell(NameBus):
             model = model_class()
             model.init(config)
             self.parser.translate(model)
-            self.log.debug('Load model:{0} successfully'.format(model))
             return model
         model = translate()
         if model:
