@@ -1,8 +1,7 @@
-"""
 TransConf
 ---------
 
-TransConf is a framework based on Twisted, AMQP, SqlAlChemy.
+TransConf is a framework based on AMQP, Twisted, SqlAlChemy.
 
 Save in a shell.py:
 
@@ -80,4 +79,3 @@ Save in a server.py:
             serve = TranServer()
             serve.setup(m)
             serve.serve_forever()
-"""

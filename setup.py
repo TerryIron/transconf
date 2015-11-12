@@ -115,7 +115,7 @@ def find_datafiles(where='.', include_endswith=()):
 setup(
     name="TransConf",
     version=version,
-    description="A framework based on Twisted, AMQP, SqlAlChemy etc",
+    description="A framework based on AMQP, Twisted, SqlAlChemy etc",
     long_description=__doc__,
     author="Chi Jun",
     author_email="greenhoop777@gmail.com",
