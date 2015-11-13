@@ -1,12 +1,11 @@
 __author__ = 'chijun'
 
 from transconf.common.model import BaseModel
-from transconf.common.namebus import NameBus
-from transconf.common.basetype import BaseType
 from transconf.mystruct import NodeStructV1
 from transconf.mystructtypes import *
-from transconf.utils import as_config
+from transconf.server.twisted.log import getLogger
 
+LOG = getLogger(__name__)
 
 class ModelInternalStuctErr(Exception):
     """Raised when pointed node object's struct or its env struct being bad"""

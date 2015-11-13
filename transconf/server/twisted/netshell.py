@@ -5,8 +5,7 @@ import functools
 
 from twisted.internet import defer
 
-from transconf.shell import ModelShell, ShellTargetNotFound
-from transconf.model import Model
+from transconf.shell import ModelShell
 from transconf.server.twisted.service import Middleware
 from transconf.server.request import Request, RequestTimeout, InvalidRequest
 from transconf.utils import SimpleModel
@@ -27,7 +26,7 @@ class ShellRequest(Request):
                  version=version,
                  args=args,
                  kwargs=kwargs)
-        return super(ShellRequest, self).__init__(**d)
+        super(ShellRequest, self).__init__(**d)
 
     def to_dict(self, context=None, timeout=60):
         if not context:
@@ -56,11 +55,11 @@ class ActionRequest(ShellRequest):
                                                                                     target.action,
                                                                                     args,
                                                                                     kwargs))
-        return super(ActionRequest, self).__init__(target.target,
-                                                   target.action,
-                                                   target.version,
-                                                   *args,
-                                                   **kwargs)
+        super(ActionRequest, self).__init__(target.target,
+                                            target.action,
+                                            target.version,
+                                            *args,
+                                            **kwargs)
 
     def to_dict(self, context=None, timeout=60):
         context = super(ActionRequest, self).to_dict(context, timeout)
@@ -92,7 +91,7 @@ class ShellMiddleware(Middleware):
                 check_is_timeout(context)
                 args = shell_req.get('args', None)
                 kwargs = shell_req.get('kwargs', None)
-                cb = functools.partial(self.handler.run, 
+                cb = functools.partial(self.handler.run,
                                        target_name, 
                                        method_name, *args, **kwargs)
                 return cb()
@@ -106,11 +105,9 @@ class NetShell(ModelShell):
 
     def preload_model(self, model_class, config=None):
         model = super(NetShell, self).preload_model(model_class, config)
-        LOG.debug('Load model:{0} successfully'.format(model))
         return model
 
     def _run(self, model, name, method, *args, **kwargs):
         d = defer.succeed({})
-        cb = functools.partial(model.run, name, method, *args, **kwargs)
-        d.addCallback(lambda r: cb())
+        d.addCallback(lambda r: model.run(name, method, *args, **kwargs))
         return d

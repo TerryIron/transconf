@@ -1,10 +1,8 @@
 __author__ = 'chijun'
 
-import functools
 from twisted.internet import defer
 
 from transconf.server.twisted import get_service_conf
-from transconf.server.twisted.service import serve_forever, serve_stop
 from transconf.server.twisted.service import RPCTranServer as AsyncServer
 from transconf.server.twisted.client import RPCTranClient as RPCClient
 from transconf.server.twisted.client import TopicTranClient as TopicClient
@@ -13,7 +11,7 @@ from transconf.utils import from_config_option
 from transconf.msg.rabbit.client import _get_client
 from transconf.server.twisted.log import getLogger
 
-LOG  = getLogger(__name__)
+LOG = getLogger(__name__)
 
 
 class TranServer(AsyncServer):

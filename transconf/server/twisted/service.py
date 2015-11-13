@@ -86,7 +86,8 @@ class RPCTranServer(RabbitAMQP):
     def _result_back(self, ch, properties, result):
         result = self.packer.pack(result)
         # If not result, some unexpected errors happened
-        yield ch.basic_publish(exchange=self.bind_exchange,
+        LOG.debug('Result back to queue:{0}, result:{1}'.format(properties.reply_to, result))
+        yield ch.basic_publish(exchange='',
                                routing_key=properties.reply_to,
                                properties=pika.BasicProperties(
                                    correlation_id=properties.correlation_id
@@ -104,8 +105,10 @@ class RPCTranServer(RabbitAMQP):
     @defer.inlineCallbacks
     def on_request(self, queue_object):
         ch, method, properties, body = yield queue_object.get()
+        LOG.debug('ch: {0}, method:{1}, properties:{2}, body:{3}'.format(ch, method, properties, body))
         body = yield self.packer.unpack(body)
         if body:
+            LOG.debug('Got a request:{0}'.format(body))
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
             body = self.process_request(body)
             if body:

@@ -9,7 +9,7 @@ from transconf.server.twisted.netshell import ShellMiddleware
 from transconf.server.request import Request, RequestTimeout, InvalidRequest
 from transconf.server.twisted.log import getLogger
 
-LOG  = getLogger(__name__)
+LOG = getLogger(__name__)
 
 
 class Task(object):

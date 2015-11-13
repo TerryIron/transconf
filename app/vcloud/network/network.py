@@ -13,10 +13,10 @@ model_conf = as_config(os.path.join(os.path.dirname(__file__),
                                     '{0}/network_models.ini'.format(INSTALL_PATH)))
 twisted.CONF = serve_conf
 
-from transconf.server.twisted.internet import TranServer 
-from transconf.server.twisted.utils import TranMiddleware
+from transconf.server.twisted.internet import RPCTranServer, TopicTranServer, FanoutTranServer
+from transconf.server.twisted.service import serve_forever
 from transconf.server.twisted.models import model_configure
-from transconf.command_driver import command_configure
+from transconf.server.twisted.wsgi import TranMiddleware
 
 
 class ServerMiddleware(TranMiddleware):
@@ -25,8 +25,9 @@ class ServerMiddleware(TranMiddleware):
 
 
 if __name__ == '__main__':
-    command_configure(cmd_conf)
     m = ServerMiddleware(model_configure(model_conf))
-    serve = TranServer()
-    serve.setup(m)
-    serve.serve_forever()
+    for s in (RPCTranServer, TopicTranServer, FanoutTranServer):
+        serve = s()
+        serve.setup(m)
+        serve.register()
+    serve_forever()

@@ -2,7 +2,7 @@ __author__ = 'chijun'
 
 from transconf.utils import as_config
 
-from transconf.server.twisted.internet import serve_forever, serve_stop
+from transconf.server.twisted.service import serve_forever, serve_stop
 from transconf.server.twisted.internet import RPCTranServer as _RPCTranServer
 from transconf.server.twisted.internet import TopicTranServer as _TopicTranServer 
 from transconf.server.twisted.internet import FanoutTranServer as _FanoutTranServer

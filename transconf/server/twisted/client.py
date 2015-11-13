@@ -9,7 +9,7 @@ from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
 from transconf.utils import from_config_option
 from transconf.server.twisted.log import getLogger
 
-LOG  = getLogger(__name__)
+LOG = getLogger(__name__)
 
 
 class BaseClient(BaseSyncClient):
