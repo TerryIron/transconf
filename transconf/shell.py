@@ -20,7 +20,7 @@ class ModelShell(NameBus):
         self.parser = FormParser(log)
 
     def _run(self, model, name, method, *args, **kwargs):
-        pass
+        return model.run(name, method, *args, **kwargs)
 
     def run(self, target_name, method_name, *args, **kwargs):
         name_lst = str(target_name).split(self.split)

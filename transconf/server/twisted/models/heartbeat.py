@@ -141,12 +141,14 @@ class HeartCondition(Model):
 
     def _check_heart_health(self, group_name, group_type, uuid):
         heartrate = CONFIG.master.heartrate
+        # TODO by chijun
+        # Use MQ timestamp as better
+        cur_time = time.time()
         if uuid not in self._timestamp:
-            self._timestamp[uuid] = time.time()
-            return True
+            self._timestamp[uuid] = cur_time
+            return cur_time
         else:
-            cur_time = time.time()
-            if int(cur_time - self._timestamp[uuid]) >= (int(heartrate) - 1):
+            if int(cur_time - self._timestamp[uuid]) >= (int(heartrate)):
                 return cur_time
         raise HeartRateErr(group_name, group_type)
 
@@ -177,11 +179,14 @@ class HeartCondition(Model):
         else:
             self.buf_group_target[group_name + '_' + group_type] = False
 
-    def checkin(self, context, heartrate=60, timeout=5):
+    def checkin(self, context, heartrate=60, timeout=3):
         group_name = context.get('group_name', None)
         group_type = context.get('group_type', None)
         uuid = context.get('uuid', None)
         available = context.get('available', False)
+        LOG.debug('Got a heartbeat from group:{0}, type:{1}, uuid:{2}'.format(group_name,
+                                                                              group_type,
+                                                                              uuid))
         if group_name and group_type and uuid:
             try:
                 cur_time = self._check_heart_health(group_name, group_type, uuid)
@@ -195,7 +200,6 @@ class HeartCondition(Model):
                 return
             self._update_target(group_name, group_type, uuid, available)
             self._check_has_available_targets(group_name, group_type)
-            LOG.debug('Got a heartbeat from group:{0}, type:{1}, uuid:{2}'.format(group_name, group_type, uuid))
             t = Task(lambda:  self._check_heart_still_alive(group_name, group_type, uuid))
             t.CallLater(heartrate + timeout)
         else:

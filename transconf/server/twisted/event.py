@@ -56,7 +56,7 @@ class EventRequest(Request):
                  cb_cli=callback_client,
                  eb_rq=errback_request,
                  eb_cli=errback_client)
-        return super(EventRequest, self).__init__(**d)       
+        super(EventRequest, self).__init__(**d)
 
     def to_dict(self, context=None, timeout=60):
         if not context:
@@ -74,6 +74,8 @@ class EventRequest(Request):
             d['failed_cli'] = dict(self['eb_cli'].__simple__)
         if len(d) > 0:
             d['timeout'] = self['timeout']
+            # TODO by chijun
+            # use MQ timestamp as better
             d['timestamp'] = time.time()
             context['eventloop'].append(d)
         return context
