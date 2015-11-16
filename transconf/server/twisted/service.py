@@ -86,7 +86,7 @@ class RPCTranServer(RabbitAMQP):
     def _result_back(self, ch, properties, result):
         result = self.packer.pack(result)
         # If not result, some unexpected errors happened
-        # LOG.debug('Result back to queue:{0}, result:{1}'.format(properties.reply_to, result))
+        LOG.debug('Result back to queue:{0}, result:{1}'.format(properties.reply_to, result))
         yield ch.basic_publish(exchange='',
                                routing_key=properties.reply_to,
                                properties=pika.BasicProperties(

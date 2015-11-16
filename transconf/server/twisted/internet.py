@@ -7,6 +7,7 @@ from transconf.server.twisted.service import RPCTranServer as AsyncServer
 from transconf.server.twisted.client import RPCTranClient as RPCClient
 from transconf.server.twisted.client import TopicTranClient as TopicClient
 from transconf.server.twisted.client import FanoutTranClient as FanoutClient
+from transconf.server.response import Response
 from transconf.utils import from_config_option
 from transconf.msg.rabbit.client import _get_client
 from transconf.server.twisted.log import getLogger
@@ -108,6 +109,7 @@ class FanoutTranServer(TranServer):
         return self.conf
 
     def init(self):
+        self.step = None
         self.bind_exchange = self.conf_fanout_exchange if not 'default_fanout_exchange' else self._conf_get_name + 'fanout'
         self.bind_queue = self.conf_fanout_queue if not 'default_fanout_exchange' else self._conf_get_name + self._get_uuid()
         LOG.info('''' Message Service is starting, Mode:FANOUT;
@@ -122,6 +124,37 @@ class FanoutTranServer(TranServer):
         yield channel.queue_declare(queue=self.bind_queue, auto_delete=True)
         yield channel.queue_bind(exchange=self.bind_exchange, queue=self.bind_queue)
         yield self.on_channel(channel)
+
+    @defer.inlineCallbacks
+    def _validation(self, ch, properties, body):
+        if not self.step:
+            self.step = 0
+        if self.step == 0 and body == 'whoareyou':
+            self.step = 1
+            print 'STEP1 Joined in'
+            yield self._result_back(ch, properties, {'result': '11111'})
+        elif self.step == 1 and body.startswith('im'):
+            self.step = 2
+            print 'STEP2 Joined in'
+            yield self._result_back(ch, properties, {'result': '22222'})
+        elif self.step == 2:
+            body = yield self.process_request(body)
+            if body:
+                body.addCallbacks(lambda result: self.success(result),
+                                  errback=lambda err: self.failed(err))
+                body.addBoth(lambda ret: self._result_back(ch, properties, ret))
+            self.step = None
+            yield body
+
+    @defer.inlineCallbacks
+    def on_request(self, queue_object):
+        ch, method, properties, body = yield queue_object.get()
+        body = yield self.packer.unpack(body)
+        if body:
+            LOG.debug('Got a request:{0} from {1}'.format(body, properties.reply_to))
+            yield ch.basic_ack(delivery_tag=method.delivery_tag)
+            yield self._validation(ch, properties, body)
+        yield queue_object.close(None)
 
 
 class RPCTranClient(RPCClient):
@@ -160,6 +193,10 @@ class TopicTranClient(TopicClient):
         return super(TopicTranClient, self)._ready(context, routing_key)
 
 
+class FanoutValidationFailed(Exception):
+    """Validation failed by fanout mode."""
+
+
 class FanoutTranClient(FanoutClient):
     DEFAULT_CONF = get_service_conf()
 
@@ -169,6 +206,38 @@ class FanoutTranClient(FanoutClient):
                                group=group,
                                type=type,
                                uuid=uuid)
+
+    @defer.inlineCallbacks
+    def _validation_call(self, routing_key=None, delivery_mode=2):
+        def _error_back(err):
+            LOG.error(Response.fail(err))
+        d = defer.succeed({})
+        d.addCallback(lambda r: self.callBase('whoareyou', routing_key, delivery_mode))
+        d.addCallback(lambda token: self._validation(token, 1))
+        d.addErrback(lambda e: _error_back(e))
+        d.addCallback(lambda r: self.callBase('im' + str(self.__simple__['uuid']), routing_key, delivery_mode))
+        d.addCallback(lambda token: self._validation(token, 2))
+        d.addErrback(lambda e: _error_back(e))
+        yield d
+
+    def _validation(self, token, step=1):
+        if step == 1:
+            print 'STEP1 token:' + str(token)
+            if not token == '11111':
+                raise FanoutValidationFailed('FANOUT STEP1')
+        elif step == 2:
+            print 'STEP2 token:' + str(token)
+            if not token == '22222':
+                raise FanoutValidationFailed('FANOUT STEP2')
+
+    def call(self, request, routing_key=None, delivery_mode=2):
+        d = self._validation_call(routing_key, delivery_mode)
+        d.addCallback(lambda r: self.callBase(request, routing_key, delivery_mode))
+        return d
+
+    def cast(self, request, routing_key=None, delivery_mode=2):
+        d = self._validation_call(routing_key, delivery_mode)
+        d.addCallback(lambda r: self.callBase(request, routing_key, delivery_mode))
 
 
 CLIENT_POOL = {}

@@ -74,14 +74,14 @@ class HeartBeat(Model):
 
     def heartbeat(self, timeout):
         # Check if has call heartbeat event-loop, don't call it again.
-        if getattr(self, 'is_start', default=None):
+        if self.is_start:
             return True
         local_name = CONFIG.manage.group_name
         local_type = CONFIG.manage.group_type
         local_uuid = CONFIG.manage.group_uuid
         if local_name and local_type and local_uuid:
             for g_name, typ, is_enabled in self.get_fanout_members():
-                client = get_public_client(g_name, typ, type='fanout')
+                client = get_public_client(g_name, typ, local_uuid, type='fanout')
                 # TODO by chijun
                 # Action Request version can not be supported by server.
                 req = ActionRequest('heartcond.checkin:0.1.0',
@@ -133,7 +133,7 @@ class HeartCondition(Model):
     def _check_heart_still_alive(self, group_name, group_type, uuid):
         heartrate = CONFIG.master.heartrate
         cur_time = time.time()
-        #Check this heartbeat was timeout?
+        # Check this heartbeat was timeout?
         if int(cur_time - self._timestamp[uuid]) > int(heartrate):
             # Maybe heartbeat is lost?
             self._update_target(group_name, group_type, uuid, False, False)

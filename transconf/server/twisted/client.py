@@ -77,13 +77,13 @@ class BaseClient(BaseSyncClient):
             result = yield self.channel.queue_declare(exclusive=True, auto_delete=True)
             self.reply_to = result.method.queue
         yield self.channel.basic_publish(exchange=context[1],
-                                    routing_key=context[2],
-                                    properties=pika.BasicProperties(
-                                        reply_to=self.reply_to,
-                                        correlation_id=self.corr_id,
-                                        delivery_mode=self.delivery_mode,
-                                    ),
-                                    body=self.packer.pack(context[0]))
+                                         routing_key=context[2],
+                                         properties=pika.BasicProperties(
+                                             reply_to=self.reply_to,
+                                             correlation_id=self.corr_id,
+                                             delivery_mode=self.delivery_mode,
+                                         ),
+                                         body=self.packer.pack(context[0]))
 
     @defer.inlineCallbacks
     def close(self):
@@ -98,14 +98,10 @@ class BaseClient(BaseSyncClient):
     """
     def castBase(self, context, routing_key=None, delivery_mode=2):
         self._on_connect(self._ready(context, routing_key), None, delivery_mode)
-        #LOG.debug('Context:{0}, routing_key:{1}, delivery:{2}'.format(context, 
-        #                                                              routing_key,
-        #                                                              delivery_mode))
 
     def cast(self, request, routing_key=None, delivery_mode=2):
         self.castBase(request.to_dict(), routing_key, delivery_mode)
 
-        
     """
         Publish an async message, return a defer, do not support concurrency
         @request: request object
@@ -113,10 +109,6 @@ class BaseClient(BaseSyncClient):
     """
     def callBase(self, context, routing_key=None, delivery_mode=2):
         d = self._on_connect(self._ready(context, routing_key), self.on_response, delivery_mode)
-        #LOG.debug('Context:{0}, routing_key:{1}, delivery:{2}, value:{3}'.format(context, 
-        #                                                                         routing_key,
-        #                                                                         delivery_mode,
-        #                                                                         val))
         return d
 
     def call(self, request, routing_key=None, delivery_mode=2):
@@ -131,7 +123,6 @@ class RPCTranClient(BaseClient):
     @from_config_option('rpc_binding_queue', 'default_rpc_queue')
     def conf_rpc_queue(self):
         return self.conf
-
 
     def _ready(self, context, routing_key):
         rpc_queue = self.bind_rpc_queue if not routing_key else routing_key
