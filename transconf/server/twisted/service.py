@@ -107,7 +107,7 @@ class RPCTranServer(RabbitAMQP):
         ch, method, properties, body = yield queue_object.get()
         # LOG.debug('ch: {0}, method:{1}, properties:{2}, body:{3}'.format(ch, method, properties, body))
         body = yield self.packer.unpack(body)
-        if body:
+        if isinstance(body, dict):
             # LOG.debug('Got a request:{0}'.format(body))
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
             body = self.process_request(body)

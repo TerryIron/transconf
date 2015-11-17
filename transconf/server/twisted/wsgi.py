@@ -43,7 +43,6 @@ class TranWSGIServer(object):
             d = d.process_request(request)
             return d
             
-
     def process_response(self, response):
         """Do whatever you'd like to the response."""
         return response
@@ -86,4 +85,3 @@ class TranServer(object):
 
     def wait(self):
         raise NotImplementedError()
-
