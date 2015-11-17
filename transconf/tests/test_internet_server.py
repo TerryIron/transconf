@@ -9,7 +9,7 @@ from test_internet_shell import Ifconfig
 
 from datetime import datetime
 
-from transconf.server.twisted.service import Middleware
+from transconf.server.twisted.service import Middleware, serve_forever
 from transconf.server.twisted.internet import TranServer
 from transconf.server.twisted.netshell import NetShell, ShellMiddleware
 from transconf.shell import ModelShell
@@ -24,8 +24,8 @@ class ServerMiddleware(ShellMiddleware):
 
 if __name__ == '__main__':
     sh = NetShell()
-    sh.load_model('network', Ifconfig)
+    sh.load_model(Ifconfig)
     m = ServerMiddleware(sh)
     serve = TranServer()
     serve.setup(m)
-    serve.serve_forever()
+    serve_forever()
