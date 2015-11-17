@@ -3,7 +3,7 @@ TransConf
 
 TransConf is a framework based on AMQP, Twisted, SqlAlChemy.
 
-Save in a shell.py:
+Sample in a client.py:
 
 .. code:: python
 
@@ -12,7 +12,7 @@ Save in a shell.py:
     from transconf.shell import ModelShell
     from transconf.server.twisted.internet import get_client
 
-    @register_model('ifdev')
+    @register_model
     class Ifconfig(Model):
         FORM = [{'node': 'if_name',
                 'subs': [
@@ -42,7 +42,7 @@ Save in a shell.py:
 
         def ip_addr(self, ifname):
             data = dict(kwargs={'value': ifname,
-                                'target': 'network.if_name.hw_addr',
+                                'target': 'if_name.hw_addr',
                                 'method': 'hw_addr',
                                }
                         )
@@ -53,14 +53,14 @@ Save in a shell.py:
         def hw_addr(self, ifname):
             return 'xx.xx.xx.xx.xx.xx'
 
-Save in a server.py:
+Sample in a server.py:
 
 .. code:: python
 
         import functools
         from shell import Ifconfig
 
-        from transconf.server.twisted.service import Middleware
+        from transconf.server.twisted.service import Middleware, serve_forver
         from transconf.server.twisted.internet import TranServer
         from transconf.server.twisted.netshell import NetShell
 
@@ -74,8 +74,8 @@ Save in a server.py:
 
         if __name__ == '__main__':
             sh = NetShell()
-            sh.load_model('network', Ifconfig)
+            sh.load_model(Ifconfig)
             m = ShellMiddleware(sh)
             serve = TranServer()
             serve.setup(m)
-            serve.serve_forever()
+            serve_forever()
