@@ -12,7 +12,7 @@ version = '.'.join(map(str, __version__))
 
     TransConf is a framework based on Twisted, AMQP, SqlAlChemy.
 
-    Save in a shell.py:
+    Sample in a client.py:
 
     .. code:: python
 
@@ -21,7 +21,7 @@ version = '.'.join(map(str, __version__))
         from transconf.shell import ModelShell
         from transconf.server.twisted.internet import get_client
 
-        @register_model('ifdev')
+        @register_model
         class Ifconfig(Model):
             FORM = [{'node': 'if_name',
                     'subs': [
@@ -51,7 +51,7 @@ version = '.'.join(map(str, __version__))
 
             def ip_addr(self, ifname):
                 data = dict(kwargs={'value': ifname,
-                                    'target': 'network.if_name.hw_addr',
+                                    'target': 'if_name.hw_addr',
                                     'method': 'hw_addr',
                                    }
                             )
@@ -62,14 +62,14 @@ version = '.'.join(map(str, __version__))
             def hw_addr(self, ifname):
                 return 'xx.xx.xx.xx.xx.xx'
 
-    Save in a server.py:
+    Sample in a server.py:
 
     .. code:: python
 
             import functools
             from shell import Ifconfig
 
-            from transconf.server.twisted.service import Middleware
+            from transconf.server.twisted.service import Middleware, serve_forever
             from transconf.server.twisted.internet import TranServer
             from transconf.server.twisted.netshell import NetShell
 
@@ -83,11 +83,11 @@ version = '.'.join(map(str, __version__))
 
             if __name__ == '__main__':
                 sh = NetShell()
-                sh.load_model('network', Ifconfig)
+                sh.load_model(Ifconfig)
                 m = ShellMiddleware(sh)
                 serve = TranServer()
                 serve.setup(m)
-                serve.serve_forever()
+                serve_forever()
 """
 
 
