@@ -9,7 +9,7 @@ from test_shell import Ifconfig
 
 from datetime import datetime
 
-from transconf.server.twisted.service import RPCTranServer, Middleware
+from transconf.server.twisted.service import RPCTranServer, Middleware, serve_forever
 from transconf.server.twisted.netshell import NetShell
 from transconf.shell import ModelShell
 
@@ -27,8 +27,8 @@ class ShellMiddleware(Middleware):
 
 if __name__ == '__main__':
     sh = NetShell()
-    sh.load_model('network', Ifconfig)
+    sh.load_model(Ifconfig)
     m = ShellMiddleware(sh)
     serve = RPCTranServer()
     serve.setup(m)
-    serve.serve_forever()
+    serve_forever()
