@@ -12,11 +12,11 @@ from transconf.msg.rabbit.client import get_client
 
 if __name__ == '__main__':
     sh = ModelShell()
-    sh.load_model('network', Ifconfig)
+    sh.load_model(Ifconfig)
     client = get_client(type='rpc')
     for i in range(1):
         data = dict(kwargs={'value': i,
-                            'target': 'network.if_name.ip_addr.test_name:test',
+                            'target': 'if_name.ip_addr.test_name:test',
                             'method': 'owner_ip_addr',
                     }
                 )
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     client = get_client(type='topic')
     for i in range(1):
         data = dict(kwargs={'value': i,
-                            'target': 'network.if_name.hw_addr',
+                            'target': 'if_name.hw_addr',
                             'method': 'hw_addr',
                     }
                 )
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     client = get_client(type='fanout')
     for i in range(1):
         data = dict(kwargs={'value': i,
-                            'target': 'network.if_name.ip_addr.test_name:test',
+                            'target': 'if_name.ip_addr.test_name:test',
                             'method': 'owner_ip_addr',
                     }
                 )
