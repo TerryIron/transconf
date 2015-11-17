@@ -126,19 +126,24 @@ class FanoutTranServer(TranServer):
 
     @defer.inlineCallbacks
     def _validation(self, ch, properties, body):
-        LOG.debug('STEP1 Joined in, body:{0}'.format(body))
-        if body == 'whoareyou':
-            self._result_back(ch, properties, {'result': '11111'})
-        else:
-            raise FanoutValidationFailed('FANOUT STEP1 FAILED')
-        yield 2
+        def _validation_im(d):
+            LOG.debug('STEP1 Joined in, body:{0}'.format(body))
+            if body == 'whoareyou':
+                d.addCallback(lambda r: self._result_back(ch, properties, {'result': '11111'}))
+            else:
+                raise FanoutValidationFailed('FANOUT STEP1 FAILED')
+            return d
 
-        LOG.debug('STEP2 Joined in, body:{0}'.format(body))
-        if body.startswith('im'):
-            self._result_back(ch, properties, {'result': '22222'})
-        else:
-            raise FanoutValidationFailed('FANOUT STEP2 FAILED')
-        yield 3
+        def _validation_who(d):
+            LOG.debug('STEP2 Joined in, body:{0}'.format(body))
+            if body.startswith('im'):
+                d.addCallback(lambda r: self._result_back(ch, properties, {'result': '22222'}))
+            else:
+                raise FanoutValidationFailed('FANOUT STEP2 FAILED')
+            return d
+        d = defer.succed({}) 
+        yield _validation_im(d)
+        yield _validation_who(d)
 
     @defer.inlineCallbacks
     def on_request(self, queue_object):
@@ -148,16 +153,14 @@ class FanoutTranServer(TranServer):
             LOG.debug('Got a request:{0} from {1}'.format(body, properties.reply_to))
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
             try:
-                step = yield self._validation(ch, properties, body)
-                LOG.debug('Validation step:{0}'.format(step))
-                if step >= 3:
-                    LOG.debug('Ready to process request, body:{0}'.format(body))
-                    if isinstance(body, dict):
-                        body = self.process_request(body)
-                        if body:
-                            body.addCallbacks(lambda result: self.success(result),
-                                              errback=lambda err: self.failed(err))
-                            body.addBoth(lambda ret: self._result_back(ch, properties, ret))
+                yield self._validation(ch, properties, body)
+                LOG.debug('Ready to process request, body:{0}'.format(body))
+                if isinstance(body, dict):
+                    body = self.process_request(body)
+                    if body:
+                        body.addCallbacks(lambda result: self.success(result),
+                                          errback=lambda err: self.failed(err))
+                        body.addBoth(lambda ret: self._result_back(ch, properties, ret))
             except FanoutValidationFailed as e:
                 LOG.error(e)
         yield queue_object.close(None)
@@ -216,7 +219,7 @@ class FanoutTranClient(FanoutClient):
     def _validation(self, routing_key=None, delivery_mode=2):
         def _error_back(err):
             LOG.error(Response.fail(err))
-
+        
         @defer.inlineCallbacks
         def _validation_token(token):
             LOG.debug('STEP1 joined in, token:{0}'.format(token))
