@@ -17,7 +17,7 @@ def sleeping(timeout):
     from time import sleep
     sleep(timeout)
 
-@register_model('ifdev')
+@register_model
 class Ifconfig(Model):
     FORM = [{'node': 'if_name',
             'subs': [
@@ -59,7 +59,7 @@ class Ifconfig(Model):
             def get_result(t):
                 print '[SHELL] get result:{0}'.format(t)
             data = dict(kwargs={'value': ifname,
-                                'target': 'network.if_name.hw_addr',
+                                'target': 'if_name.hw_addr',
                                 'method': 'hw_addr',
                                }
                         )
@@ -87,6 +87,6 @@ class Ifconfig(Model):
 
 if __name__ == '__main__':
     sh = ModelShell()
-    sh.load_model('network', Ifconfig)
+    sh.load_model(Ifconfig)
     for i in range(1):
-        sh.run('network.if_name.ip_addr.test_name:test', 'owner_ip_addr', i)
+        sh.run('if_name.ip_addr.test_name:test', 'owner_ip_addr', i)
