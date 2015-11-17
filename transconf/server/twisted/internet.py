@@ -126,30 +126,19 @@ class FanoutTranServer(TranServer):
 
     @defer.inlineCallbacks
     def _validation(self, ch, properties, body):
-        def _validation_im(_body):
-            LOG.debug('STEP1 Joined in')
-            if _body == 'whoareyou':
-                return self._result_back(ch, properties, {'result': '11111'})
+        LOG.debug('STEP1 Joined in, body:{0}'.format(body))
+        if body == 'whoareyou':
+            self._result_back(ch, properties, {'result': '11111'})
+        else:
+            raise FanoutValidationFailed('FANOUT STEP1 FAILED')
+        yield 2
 
-        def _validation_who(_body):
-            LOG.debug('STEP2 Joined in')
-            if _body.startswith('im'):
-                return self._result_back(ch, properties, {'result': '22222'})
-
-        def _process_request(_body):
-            LOG.debug('STEP3 body:{0}'.format(_body))
-            if not isinstance(body, dict):
-                return
-            _body = self.process_request(_body)
-            if _body:
-                _body.addCallbacks(lambda result: self.success(result),
-                                   errback=lambda err: self.failed(err))
-                _body.addBoth(lambda ret: self._result_back(ch, properties, ret))
-            return _body
-
-        yield _validation_im(body)
-        #yield _validation_who(body)
-        yield _process_request(body)
+        LOG.debug('STEP2 Joined in, body:{0}'.format(body))
+        if body.startswith('im'):
+            self._result_back(ch, properties, {'result': '22222'})
+        else:
+            raise FanoutValidationFailed('FANOUT STEP2 FAILED')
+        yield 3
 
     @defer.inlineCallbacks
     def on_request(self, queue_object):
@@ -158,7 +147,19 @@ class FanoutTranServer(TranServer):
         if body:
             LOG.debug('Got a request:{0} from {1}'.format(body, properties.reply_to))
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
-            yield self._validation(ch, properties, body)
+            try:
+                step = yield self._validation(ch, properties, body)
+                LOG.debug('Validation step:{0}'.format(step))
+                if step >= 3:
+                    LOG.debug('Ready to process request, body:{0}'.format(body))
+                    if isinstance(body, dict):
+                        body = self.process_request(body)
+                        if body:
+                            body.addCallbacks(lambda result: self.success(result),
+                                              errback=lambda err: self.failed(err))
+                            body.addBoth(lambda ret: self._result_back(ch, properties, ret))
+            except FanoutValidationFailed as e:
+                LOG.error(e)
         yield queue_object.close(None)
 
 
@@ -212,49 +213,39 @@ class FanoutTranClient(FanoutClient):
                                type=type,
                                uuid=uuid)
 
-    def _validation(self, request, routing_key=None, delivery_mode=2):
+    def _validation(self, routing_key=None, delivery_mode=2):
         def _error_back(err):
             LOG.error(Response.fail(err))
 
-        def _validation_token(token, step=1):
-            LOG.debug('Step:{0}, get token:{1}'.format(step, token))
-            if step == 1:
-                if token == '11111' or token == '22222': return
-            elif step == 2:
-                if token == '22222': return
-            raise FanoutValidationFailed('FANOUT STEP{0}'.format(step))
+        @defer.inlineCallbacks
+        def _validation_token(token):
+            LOG.debug('STEP1 joined in, token:{0}'.format(token))
+            if token != '11111':
+                raise FanoutValidationFailed('FANOUT STEP1')
+            yield
+            LOG.debug('STEP2 joined in, token:{0}'.format(token))
+            if token != '22222':
+                raise FanoutValidationFailed('FANOUT STEP2')
+            yield
 
-        def _validation_who(body):
-            LOG.debug('Start go STEP1')
-            _d1 = self.callBase(body, routing_key, delivery_mode)
-            _d1.addBoth(lambda token: _validation_token(token, 1))
-            _d1.addErrback(lambda e: _error_back(e))
-            return _d1
-
-        def _validation_im(body):
-            LOG.debug('Start go STEP2')
-            _d2 = self.callBase(body, routing_key, delivery_mode)
-            _d2.addBoth(lambda token: _validation_token(token, 2))
-            _d2.addErrback(lambda e: _error_back(e))
-            return _d2
-
-        def _process_result(body):
-            LOG.debug('Start go STEP3')
-            _d3 = self.callBase(body, routing_key, delivery_mode)
-            _d3.addErrback(lambda e: _error_back(e))
-            return _d3
+        def _validation_step(_d, body):
+            _d.addCallback(lambda r: self.callBase(body, routing_key, delivery_mode))
+            _d.addCallback(lambda token: _validation_token(token))
+            _d.addErrback(lambda e: _error_back(e))
 
         d = defer.succeed({})
-        d.addCallback(lambda r: _validation_who('whoareyou'))
-        d.addCallback(lambda r: _validation_im('im' + str(self.__simple__['uuid'])))
-        d.addCallback(lambda r: _process_result(request))
+        _validation_step(d, 'whoareyou')
+        _validation_step(d, 'im' + str(self.__simple__['uuid']))
         return d
 
     def call(self, request, routing_key=None, delivery_mode=2):
-        return self._validation(request, routing_key, delivery_mode)
+        d = self._validation(routing_key, delivery_mode)
+        d.addCallback(lambda r: self.callBase(request, routing_key, delivery_mode))
+        return d
 
     def cast(self, request, routing_key=None, delivery_mode=2):
-        self._validation(request, routing_key, delivery_mode)
+        d = self._validation(routing_key, delivery_mode)
+        d.addCallback(lambda r: self.castBase(request, routing_key, delivery_mode))
 
 
 CLIENT_POOL = {}
