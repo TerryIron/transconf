@@ -54,7 +54,7 @@ class ModelShell(NameBus):
     """
         Load model class and finally call the start-code.
     """
-    def load_model(self, name, model_class, config=None):
+    def load_model(self, model_class, config=None):
         model = self.preload_model(model_class, config)
         if model:
             model.start(config)
