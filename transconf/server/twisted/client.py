@@ -7,12 +7,13 @@ from twisted.internet import defer, reactor, protocol
 
 from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
 from transconf.utils import from_config_option
+from transconf.server.twisted.crypto import Crypto
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)
 
 
-class BaseClient(BaseSyncClient):
+class BaseClient(BaseSyncClient, Crypto):
     CONNECTION_CLASS = twisted_connection.TwistedProtocolConnection
 
     def init(self):
@@ -58,6 +59,7 @@ class BaseClient(BaseSyncClient):
         if queue_object:
             ch, method, properties, body = yield queue_object.get()
             if self.corr_id == properties.correlation_id:
+                body = self._decode(body)
                 body = yield self.packer.unpack(body)
                 result = yield body['result'] if body else None
                 yield defer.returnValue(result)
@@ -76,14 +78,17 @@ class BaseClient(BaseSyncClient):
         if not self.reply_to: 
             result = yield self.channel.queue_declare(exclusive=True, auto_delete=True)
             self.reply_to = result.method.queue
+        body = self.packer.pack(context[0])
+        body = self._encode(body)
         yield self.channel.basic_publish(exchange=context[1],
                                          routing_key=context[2],
                                          properties=pika.BasicProperties(
                                              reply_to=self.reply_to,
                                              correlation_id=self.corr_id,
                                              delivery_mode=self.delivery_mode,
+                                             timestamp=time.time(),
                                          ),
-                                         body=self.packer.pack(context[0]))
+                                         body=body)
 
     @defer.inlineCallbacks
     def close(self):
@@ -97,6 +102,7 @@ class BaseClient(BaseSyncClient):
         @routing_key: routing key
     """
     def castBase(self, context, routing_key=None, delivery_mode=2):
+        LOG.debug('Ready to send context:{0}'.format(context))
         self._on_connect(self._ready(context, routing_key), None, delivery_mode)
 
     def cast(self, request, routing_key=None, delivery_mode=2):
@@ -108,6 +114,7 @@ class BaseClient(BaseSyncClient):
         @routing_key: routing key
     """
     def callBase(self, context, routing_key=None, delivery_mode=2):
+        LOG.debug('Ready to send context:{0}'.format(context))
         d = self._on_connect(self._ready(context, routing_key), self.on_response, delivery_mode)
         return d
 

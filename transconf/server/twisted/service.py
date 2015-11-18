@@ -15,8 +15,8 @@ from twisted.internet import defer, reactor, protocol, task
 
 from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.response import Response
+from transconf.server.twisted.crypto import Crypto
 from transconf.server.twisted.log import getLogger
-
 
 LOG = getLogger(__name__)
 
@@ -48,7 +48,7 @@ class Middleware(object):
         return succeed({})
 
 
-class RPCTranServer(RabbitAMQP):
+class RPCTranServer(RabbitAMQP, Crypto):
     CONNECTION_CLASS = twisted_connection.TwistedProtocolConnection
     TIMEOUT = 30
 
@@ -85,6 +85,7 @@ class RPCTranServer(RabbitAMQP):
     @defer.inlineCallbacks
     def _result_back(self, ch, properties, result):
         result = self.packer.pack(result)
+        result = self._encode(result)
         # If not result, some unexpected errors happened
         LOG.debug('Result back to queue:{0}, result:{1}'.format(properties.reply_to, result))
         yield ch.basic_publish(exchange='',
@@ -102,19 +103,24 @@ class RPCTranServer(RabbitAMQP):
     def failed(self, err):
         yield defer.returnValue(Response.fail(err))
 
-    @defer.inlineCallbacks
-    def on_request(self, queue_object):
-        ch, method, properties, body = yield queue_object.get()
-        # LOG.debug('ch: {0}, method:{1}, properties:{2}, body:{3}'.format(ch, method, properties, body))
-        body = yield self.packer.unpack(body)
+    def _process_request(self, ch, properties, body):
+        LOG.debug('Ready to process request, body:{0}'.format(body))
         if isinstance(body, dict):
-            # LOG.debug('Got a request:{0}'.format(body))
-            yield ch.basic_ack(delivery_tag=method.delivery_tag)
             body = self.process_request(body)
             if body:
                 body.addCallbacks(lambda result: self.success(result),
                                   errback=lambda err: self.failed(err))
                 body.addBoth(lambda ret: self._result_back(ch, properties, ret))
+
+
+    @defer.inlineCallbacks
+    def on_request(self, queue_object):
+        ch, method, properties, body = yield queue_object.get()
+        # LOG.debug('ch: {0}, method:{1}, properties:{2}, body:{3}'.format(ch, method, properties, body))
+        yield ch.basic_ack(delivery_tag=method.delivery_tag)
+        body = yield self._decode(body)
+        body = yield self.packer.unpack(body)
+        yield self._process_request(ch, properties, body)
         yield queue_object.close(None)
 
     @defer.inlineCallbacks

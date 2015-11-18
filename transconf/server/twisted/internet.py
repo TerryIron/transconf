@@ -7,7 +7,6 @@ from transconf.server.twisted.service import RPCTranServer as AsyncServer
 from transconf.server.twisted.client import RPCTranClient as RPCClient
 from transconf.server.twisted.client import TopicTranClient as TopicClient
 from transconf.server.twisted.client import FanoutTranClient as FanoutClient
-from transconf.server.response import Response
 from transconf.utils import from_config_option
 from transconf.msg.rabbit.client import _get_client
 from transconf.server.twisted.log import getLogger
@@ -124,47 +123,6 @@ class FanoutTranServer(TranServer):
         yield channel.queue_bind(exchange=self.bind_exchange, queue=self.bind_queue)
         yield self.on_channel(channel)
 
-    @defer.inlineCallbacks
-    def _validation(self, ch, properties, body):
-        def _validation_im(d):
-            LOG.debug('STEP1 Joined in, body:{0}'.format(body))
-            if body == 'whoareyou':
-                d.addCallback(lambda r: self._result_back(ch, properties, {'result': '11111'}))
-            else:
-                raise FanoutValidationFailed('FANOUT STEP1 FAILED')
-            return d
-
-        def _validation_who(d):
-            LOG.debug('STEP2 Joined in, body:{0}'.format(body))
-            if body.startswith('im'):
-                d.addCallback(lambda r: self._result_back(ch, properties, {'result': '22222'}))
-            else:
-                raise FanoutValidationFailed('FANOUT STEP2 FAILED')
-            return d
-        d = defer.succed({}) 
-        yield _validation_im(d)
-        yield _validation_who(d)
-
-    @defer.inlineCallbacks
-    def on_request(self, queue_object):
-        ch, method, properties, body = yield queue_object.get()
-        body = yield self.packer.unpack(body)
-        if body:
-            LOG.debug('Got a request:{0} from {1}'.format(body, properties.reply_to))
-            yield ch.basic_ack(delivery_tag=method.delivery_tag)
-            try:
-                yield self._validation(ch, properties, body)
-                LOG.debug('Ready to process request, body:{0}'.format(body))
-                if isinstance(body, dict):
-                    body = self.process_request(body)
-                    if body:
-                        body.addCallbacks(lambda result: self.success(result),
-                                          errback=lambda err: self.failed(err))
-                        body.addBoth(lambda ret: self._result_back(ch, properties, ret))
-            except FanoutValidationFailed as e:
-                LOG.error(e)
-        yield queue_object.close(None)
-
 
 class RPCTranClient(RPCClient):
     DEFAULT_CONF = get_service_conf()
@@ -202,10 +160,6 @@ class TopicTranClient(TopicClient):
         return super(TopicTranClient, self)._ready(context, routing_key)
 
 
-class FanoutValidationFailed(Exception):
-    """Validation failed by fanout mode."""
-
-
 class FanoutTranClient(FanoutClient):
     DEFAULT_CONF = get_service_conf()
 
@@ -215,40 +169,6 @@ class FanoutTranClient(FanoutClient):
                                group=group,
                                type=type,
                                uuid=uuid)
-
-    def _validation(self, routing_key=None, delivery_mode=2):
-        def _error_back(err):
-            LOG.error(Response.fail(err))
-        
-        @defer.inlineCallbacks
-        def _validation_token(token):
-            LOG.debug('STEP1 joined in, token:{0}'.format(token))
-            if token != '11111':
-                raise FanoutValidationFailed('FANOUT STEP1')
-            yield
-            LOG.debug('STEP2 joined in, token:{0}'.format(token))
-            if token != '22222':
-                raise FanoutValidationFailed('FANOUT STEP2')
-            yield
-
-        def _validation_step(_d, body):
-            _d.addCallback(lambda r: self.callBase(body, routing_key, delivery_mode))
-            _d.addCallback(lambda token: _validation_token(token))
-            _d.addErrback(lambda e: _error_back(e))
-
-        d = defer.succeed({})
-        _validation_step(d, 'whoareyou')
-        _validation_step(d, 'im' + str(self.__simple__['uuid']))
-        return d
-
-    def call(self, request, routing_key=None, delivery_mode=2):
-        d = self._validation(routing_key, delivery_mode)
-        d.addCallback(lambda r: self.callBase(request, routing_key, delivery_mode))
-        return d
-
-    def cast(self, request, routing_key=None, delivery_mode=2):
-        d = self._validation(routing_key, delivery_mode)
-        d.addCallback(lambda r: self.castBase(request, routing_key, delivery_mode))
 
 
 CLIENT_POOL = {}
