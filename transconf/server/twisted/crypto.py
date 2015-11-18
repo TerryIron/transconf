@@ -1,28 +1,37 @@
 __author__ = 'chijun'
 
+import rsa
 import base64
 import os.path
-from OpenSSL.crypto import load_privatekey, FILETYPE_PEM, sign
 
 from transconf.utils import from_config_option
 from transconf.server.twisted import CONF as global_conf
 
 SSL_PRIVATE_PEM = """
 -----BEGIN RSA PRIVATE KEY-----
-MIICXQIBAAKBgQDGJ2aGEQ0ivLwENmHuRSeaf2bYzp9zoRcdUsdKzt4vqI1EAByy
-1JNWNgAP4dcpajlBtrrQlm/akQ7IlN9yEpVPnrXGOHICAxb/mdBesSIY1Km2oE6W
-CcHRnUaEjoX6K0lcFTdmUwkDeCon+UghJBhRtqClbjqOvXTiau7ufLk2BQIDAQAB
-AoGAXnC64VzRGORA6/ULWadmB7F+0AgyYMa/IH+qclID/Uzk/yragrTj/+u+vdMS
-XC+/WD2B7hY0+0O1ew3RLSoENNYUPKj4oIkVI+NTG8ZWtpmfS6M0OpuY8OqanS1l
-uavhsVPHS53t+l0jWyp26jvVkaLt+vEL6MMy43JkA9/2yIUCQQDyl1SU1z6QDrOm
-7VFTpYlwLo2S7v5E7ajxXI5Rd4lE9N7u2GSfvEZXiSuXbM4sYHFzV4zXyo3TVhnI
-3iUxNbA3AkEA0RtITA2gFhXBMBPqYZrpAQyDW/DTixFHqgITe0OsTIOSosF2DmSH
-d7zO/qC99Z0QMl9MxVxHC9dXuT1pNtaVowJBAMWJDlmIj6wUHJufgOqgz7ImZiew
-LiIId9nZqRWTRZZ94o4QbJdZYtnimzlZYuTlv1vRfaE1kZj18lcK9LQGaK8CQQDE
-No2Ij+B/2LoGmyl7nRi22z8HrttRy00rwfb123J5+ZxHDLHyn3JecNTrKXoWVuMz
-4SjwqL4h5ldygqWPx5txAkBvlCw7p5+R1X8hkCXR+CUUfACp2IL7QMkOWKyEpWao
-DbTKvkg2N/1hanKWXrfDYVxNy8cy6hehA9Pm2f0gZNIl
+MIICXQIBAAKBgQDIA9KiADB5H7qe9CxDCPw44BQKSQ00RKN3oMmEAs7LTAx4r8l6
+MbbBbsF4/t79uaHN3UXxrVL74nP5Ay7qBOkMUymRHTsfBnGwx+MhFuiHH5QP82pM
+Tii9vzbbHqdHxYd5qqRJ/Br8exWNAmIIIPJ1OePQKVOHLHrAHwnz8s7V7QIDAQAB
+AoGAKBGj+7JAA7PYhglyaId/R8GUIi9aRtNNUCTU2e5aER4ODYthuGoHK58NgTjF
+4VxzzrL6VR0c17sY8pSxrE4JhYTNCMTh5/XfP23l5cNNP1hr45EvsV/lfOzluv4J
+j6lOty1n/8Chd6KZt9SXS1Vb7sz5AE7Rrolx76+Y/SzZJr0CQQDs73cNF+laFtci
+vYEAPKgGKODbC5V64iKm0kp0P2Hx86jczr19b8JNPd3rTo5ItkN5KhQ1CJtfHMT5
+2ZjGPSa/AkEA2BvZGDdk3V7wZbr+L5wziR9zZell+MFVuwANA58kz2qz4onZ7ox9
+76dlft2pItUZ2WA6qT3tjfyZ8+b3jsw6UwJBAK4m+X+jQr8YKLt9RROSggI9C8GV
+iyLOkp/B1D4L1IdODKF4SGmpusyhm7t4ezbQ2Vl253FvyRwo/lOTcCrOCesCQGhG
+F5wtrkd6NbiAX4GNdvhk6oNz+LXsY3dVcPIcaeCC9cULCtKli2aFeN2cCq458L0I
+R4W90c++4HHlMfH+7O0CQQCRaytc9jq6p52fALqxD6pK/4YVbhuyLsMBE0RgkyLS
+DzHUN5UzkFeG0jyBHu7CnUcYSrE7m5aMHyVcaiS3JM3P
 -----END RSA PRIVATE KEY-----
+"""
+
+SSL_PUBLIC_PEM = """
+-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDIA9KiADB5H7qe9CxDCPw44BQK
+SQ00RKN3oMmEAs7LTAx4r8l6MbbBbsF4/t79uaHN3UXxrVL74nP5Ay7qBOkMUymR
+HTsfBnGwx+MhFuiHH5QP82pMTii9vzbbHqdHxYd5qqRJ/Br8exWNAmIIIPJ1OePQ
+KVOHLHrAHwnz8s7V7QIDAQAB
+-----END PUBLIC KEY-----
 """
 
 
@@ -34,8 +43,21 @@ class Crypto(object):
         return global_conf
 
     @property
+    @from_config_option('ssl_public_pem', SSL_PUBLIC_PEM)
+    def public_pem(self):
+        return global_conf
+
+    @property
     def local_private_pem(self):
         p = self.private_pem
+        if os.path.isfile(p):
+            return open(p).read()
+        else:
+            return p
+
+    @property
+    def local_public_pem(self):
+        p = self.public_pem
         if os.path.isfile(p):
             return open(p).read()
         else:
@@ -47,17 +69,18 @@ class Crypto(object):
         return global_conf
 
     def _encode_crypto_ssl(self, body):
-        key = load_privatekey(FILETYPE_PEM, self.local_private_pem)
-        d = sign(key, body, 'sha1')
-        body = base64.b64encode(d)
+        pubkey = rsa.PublicKey.load_pkcs1(self.local_public_pem)
+        body = base64.b64encode(body)
+        body = rsa.encrypt(body, pubkey)
         return body
 
     def _decode_crypto_ssl(self, body):
-        # TODO by chijun
-        # Not implement error
-        key = load_privatekey(FILETYPE_PEM, self.local_private_pem)
-        d = sign(key, body, 'sha1')
-        body = base64.b64decode(d)
+        pubkey = rsa.PublicKey.load_pkcs1(self.local_public_pem)
+        privkey = rsa.PrivateKey.load_pkcs1(self.local_private_pem)
+        body = rsa.decrypt(body, privkey)
+        body = base64.b64decode(body)
+        signature = rsa.sign(body, privkey, 'SHA-1')
+        rsa.verify(body, signature, pubkey)
         return body
 
     def _encode(self, body):
