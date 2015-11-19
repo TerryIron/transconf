@@ -9,6 +9,7 @@ here = os.path.dirname(os.path.abspath(__file__))
 
 from transconf.server.twisted.wsgi import TranMiddleware, TranServer
 
+
 class HeartHandler(TranMiddleware):
     def __call__(self, req):
         return super(HeartHandler, self).__call__(req)

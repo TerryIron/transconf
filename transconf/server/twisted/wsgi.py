@@ -14,12 +14,15 @@ from transconf.server.twisted.models import model_configure
 class TranMiddleware(EventMiddleware):
     @classmethod                                                                                                                                               
     def factory(cls, global_config, **local_config):
+        print 'middleware factory called'
         twisted.CONF = as_config(global_config['__file__'])
-        assert 'model' in local_config, 'please install model config as model=x'
-        model_shell = model_configure(as_config(local_config.pop('model')))
+        # assert 'model' in local_config, 'please install model config as model=x'
+        # model_shell = model_configure(as_config(local_config.pop('model')))
+        assert 'shell' in local_config, 'please install model shell as shell=x'
+
         def _factory(app, start_response=None):
             c = cls(app, **local_config)
-            c.handler = model_shell
+            c.handler = local_config['shell']
             return c
         return _factory
 
