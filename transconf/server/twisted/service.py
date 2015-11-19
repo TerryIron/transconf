@@ -15,7 +15,7 @@ from twisted.internet import defer, reactor, protocol, task
 
 from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.response import Response
-from transconf.server.twisted.crypto import Crypto
+from transconf.server.crypto import Crypto
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)
@@ -84,10 +84,10 @@ class RPCTranServer(RabbitAMQP, Crypto):
 
     @defer.inlineCallbacks
     def _result_back(self, ch, properties, result):
+        LOG.debug('Result back to queue:{0}, result:{1}'.format(properties.reply_to, result))
         result = self.packer.pack(result)
         result = self._encode(result)
         # If not result, some unexpected errors happened
-        LOG.debug('Result back to queue:{0}, result:{1}'.format(properties.reply_to, result))
         yield ch.basic_publish(exchange='',
                                routing_key=properties.reply_to,
                                properties=pika.BasicProperties(
@@ -112,14 +112,13 @@ class RPCTranServer(RabbitAMQP, Crypto):
                                   errback=lambda err: self.failed(err))
                 body.addBoth(lambda ret: self._result_back(ch, properties, ret))
 
-
     @defer.inlineCallbacks
     def on_request(self, queue_object):
         ch, method, properties, body = yield queue_object.get()
-        # LOG.debug('ch: {0}, method:{1}, properties:{2}, body:{3}'.format(ch, method, properties, body))
         yield ch.basic_ack(delivery_tag=method.delivery_tag)
-        body = yield self._decode(body)
-        body = yield self.packer.unpack(body)
+        # LOG.debug('ch: {0}, method:{1}, properties:{2}, body length:{3}'.format(ch, method, properties, len(body)))
+        body = self._decode(body)
+        body = self.packer.unpack(body)
         yield self._process_request(ch, properties, body)
         yield queue_object.close(None)
 

@@ -1,13 +1,12 @@
 __author__ = 'chijun'
 
-import time
 import functools
 
 from twisted.internet import defer
 
 from transconf.shell import ModelShell
 from transconf.server.twisted.service import Middleware
-from transconf.server.request import Request, RequestTimeout, InvalidRequest
+from transconf.server.request import Request
 from transconf.utils import SimpleModel
 from transconf.server.twisted.log import getLogger
 
@@ -31,10 +30,7 @@ class ShellRequest(Request):
     def to_dict(self, context=None, timeout=60):
         if not context:
             context = {}
-        context['shell_env'] = dict(
-            timestamp=time.time(),
-            timeout=timeout,
-        )
+
         context['shell_command'] = dict(
             target_name=self['target_name'],
             method_name=self['method_name'],
@@ -74,21 +70,6 @@ class ShellMiddleware(Middleware):
             target_name = shell_req.get('target_name', None)
             method_name = shell_req.get('method_name', None)
             if target_name and method_name:
-                def check_is_timeout(context):
-                    shell_env = context.get('shell_env', None)
-                    if not shell_env:
-                        raise InvalidRequest('Invalid request for {0}.{1}.'.format(target_name, method_name))
-                    else:
-                        timestamp = shell_env.get('timestamp', None)
-                        timeout = shell_env.get('timeout', None)
-                        if not (timestamp and timeout):
-                            raise InvalidRequest('Invalid request for {0}.{1}.'.format(target_name, method_name))
-                    cost_time = float(time.time()) - float(timestamp)
-                    LOG.debug('Get request [{0}.{1}] costs time {2} (s).'.format(target_name, method_name, cost_time))
-                    if cost_time > float(timeout):
-                        raise RequestTimeout('Call {0}.{1} timeout.'.format(target_name, method_name))
-
-                check_is_timeout(context)
                 args = shell_req.get('args', None)
                 kwargs = shell_req.get('kwargs', None)
                 cb = functools.partial(self.handler.run,

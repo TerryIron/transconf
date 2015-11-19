@@ -40,12 +40,8 @@ class TranServer(AsyncServer):
 
 
 class RPCTranServer(TranServer):
-    @from_config_option('rpc_binding_queue', 'default_rpc_queue')
-    def conf_rpc_queue(self):
-        return self.conf
-
     def init(self):
-        self.bind_queue = self.conf_queue if not 'default_rpc_queue' else self._conf_get_name + self._get_uuid() + 'rpc'
+        self.bind_queue = self._conf_get_name + self._get_uuid() + 'rpc'
         LOG.info('''' Message Service is starting, Mode:RPC;
                       Listen PRC queue:{0};'''.format(self.bind_queue))
 
@@ -58,25 +54,10 @@ class RPCTranServer(TranServer):
 
 
 class TopicTranServer(TranServer):
-    @property
-    @from_config_option('topic_binding_exchange', 'default_topic_exchange')
-    def conf_topic_exchange(self):
-        return self.conf
-
-    @property
-    @from_config_option('topic_binding_queue', 'default_topic_queue')
-    def conf_topic_queue(self):
-        return self.conf
-
-    @property
-    @from_config_option('topic_routing_key', 'default_topic_routing_key')
-    def conf_topic_routing_key(self):
-        return self.conf
-
     def init(self):
-        self.bind_exchange = self.conf_topic_exchange if not 'default_topic_exchange' else self._conf_get_name + 'topic'
-        self.bind_queue = self.conf_topic_queue if not 'default_topic_queue' else self._conf_get_name
-        self.bind_routing_key = self.conf_topic_routing_key if not 'default_topic_routing_key' else self._conf_get_type
+        self.bind_exchange = self._conf_get_name + 'topic'
+        self.bind_queue = self._conf_get_name + self._get_uuid() + 'topic'
+        self.bind_routing_key = self._conf_get_type
         LOG.info('''' Message Service is starting, Mode:TOPIC;
                       Listen TOPIC exchange:{0};
                       Listen TOPIC queue:{1};
@@ -97,19 +78,9 @@ class TopicTranServer(TranServer):
 
 
 class FanoutTranServer(TranServer):
-    @property
-    @from_config_option('fanout_binding_queue', 'default_fanout_queue')
-    def conf_fanout_queue(self):
-        return self.conf
-
-    @property
-    @from_config_option('fanout_binding_exchange', 'default_fanout_exchange')
-    def conf_fanout_exchange(self):
-        return self.conf
-
     def init(self):
-        self.bind_exchange = self.conf_fanout_exchange if not 'default_fanout_exchange' else self._conf_get_name + 'fanout'
-        self.bind_queue = self.conf_fanout_queue if not 'default_fanout_exchange' else self._conf_get_name + self._get_uuid()
+        self.bind_exchange = self._conf_get_name + 'fanout'
+        self.bind_queue = self._conf_get_name + self._get_uuid() + 'fanout'
         LOG.info('''' Message Service is starting, Mode:FANOUT;
                       Listen FANOUT exchange:{0};
                       Listen FANOUT queue:{1};'''.format(self.bind_exchange,

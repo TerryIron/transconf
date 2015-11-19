@@ -16,6 +16,13 @@ class Response(object):
                 'params': self.params}
 
     @classmethod
+    def from_dict(cls, result):
+        try:
+            return result['result'] 
+        except:
+            return None
+
+    @classmethod
     def fail(cls, err):
         r = cls(cls.FAIL, err_msg=str(err))
         return r.as_dict()

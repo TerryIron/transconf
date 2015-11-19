@@ -7,7 +7,8 @@ from twisted.internet import defer, reactor, protocol
 
 from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
 from transconf.utils import from_config_option
-from transconf.server.twisted.crypto import Crypto
+from transconf.server.response import Response
+from transconf.server.crypto import Crypto
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)
@@ -59,9 +60,9 @@ class BaseClient(BaseSyncClient, Crypto):
         if queue_object:
             ch, method, properties, body = yield queue_object.get()
             if self.corr_id == properties.correlation_id:
-                body = self._decode(body)
+                body = yield self._decode(body)
                 body = yield self.packer.unpack(body)
-                result = yield body['result'] if body else None
+                result = yield Response.from_dict(body)
                 yield defer.returnValue(result)
 
     @defer.inlineCallbacks
@@ -78,8 +79,9 @@ class BaseClient(BaseSyncClient, Crypto):
         if not self.reply_to: 
             result = yield self.channel.queue_declare(exclusive=True, auto_delete=True)
             self.reply_to = result.method.queue
-        body = self.packer.pack(context[0])
-        body = self._encode(body)
+        body = context[0]
+        body = yield self.packer.pack(body)
+        body = yield self._encode(body)
         yield self.channel.basic_publish(exchange=context[1],
                                          routing_key=context[2],
                                          properties=pika.BasicProperties(
