@@ -29,13 +29,11 @@ class _Shell(_ObjectType):
     egg_protocols = ['paste.shell_factory', 'paste.sh_factory']
 
     def invoke(self, context):
-        print dir(context)
-        sh = context.app_context['shell'].create()
-        filters = [c.create() for c in context.filter_contexts['shell']]
+        sh = context.app_context.create()
+        filters = [c.create() for c in context.filter_contexts]
         filters.reverse()
         for filter in filters:
             if filter: sh = filter(sh)
-        print 'call Shell invoke sh:{0}'.format(sh)
         return sh
 
 SHELL = _Shell()
@@ -47,12 +45,7 @@ class _Model(_ObjectType):
     egg_protocols = ['paste.model_factory', 'paste.mod_factory']
 
     def invoke(self, context):
-        print 'call Model invoke'
         app = context.app_context.create()
-        filters = [c.create() for c in context.filter_contexts]
-        filters.reverse()
-        for filter in filters:
-            if filter: app = filter(app)
         return app
 
 MODEL = _Model()
@@ -78,18 +71,21 @@ class _APP(_App):
                      'paste.composit_factory',
                      'paste.composite_factory',
                      'paste.platform_factory',
-                     'paste.shell_factory']
+                     'paste.model_factory',
+                     'paste.shell_factory',
+                     ]
     config_prefixes = [['app', 'application'],
                        ['platform', 'pf'],
+                       ['shell', 'sh'],
                        ['composite', 'composit'],
-                       'pipeline', 'filter-app', 'shell', 'model'
+                       'pipeline', 'filter-app', 'model'
                       ]
 
     def invoke(self, context):
         if context.protocol == 'paste.platform_factory':
             return fix_call(context.object,
                             context.loader, context.global_conf,
-                            1**context.local_conf)
+                            **context.local_conf)
         elif context.protocol == 'paste.shell_factory':
             return fix_call(context.object,
                             context.loader, context.global_conf,
@@ -97,7 +93,11 @@ class _APP(_App):
         elif context.protocol == 'paste.model_factory':
             return fix_call(context.object,
                             context.loader, context.global_conf,
-                            1**context.local_conf)
+                            **context.local_conf)
+        elif context.protocol == 'paste.app_factory':
+            return fix_call(context.object,
+                            context.loader, context.global_conf,
+                            **context.local_conf)
         return super(_APP, self).invoke(context)
 
 APP = _APP()
@@ -128,8 +128,7 @@ class _ConfigLoader(ConfigLoader):
     SECTION_PASTER = [
         ('filter-app:', '_filter_app_context'),
         ('pipeline:', '_pipeline_app_context'),
-        ('platform:', '_platform_app_context'),
-        ('app:', '_app_context'),
+        ('shell:', '_shell_app_context'),
         ('model:', '_model_app_context'),
     ]
 
@@ -140,7 +139,6 @@ class _ConfigLoader(ConfigLoader):
                                global_conf=global_conf)
         section = self.find_config_section(
             object_type, name=name)
-        print 'gogogo', section
         if global_conf is None:
             global_conf = {}
         else:
@@ -207,49 +205,19 @@ class _ConfigLoader(ConfigLoader):
             return filter_with_context
         return context
 
-    def _app_context(self, object_type, section, name,
-                     global_conf, local_conf, global_additions):
-        if not ('shell' and 'paste.app_factory' in local_conf):
+    def _shell_app_context(self, object_type, section, name,
+                           global_conf, local_conf, global_additions):
+        if 'models' not in local_conf:
             raise LookupError(
-                "The [%s] section in %s is missing a 'shell' or 'paste.app_factory' setting"
+                "The [%s] section in %s is missing a 'models' setting"
                 % (section, self.filename))
-        shell = local_conf.pop('shell').split()
-        app_factory = local_conf.pop('paste.app_factory').split()
-        if local_conf:
-            raise LookupError(
-                "The [%s] app section in %s has extra "
-                "(disallowed) settings: %s"
-                % (', '.join(local_conf.keys())))
-        context = LoaderContext(None, SHELL, None, global_conf,
-                                local_conf, self)
-        context.app_context = dict(app=None, shell=None)
-        context.filter_contexts = dict(app=None, shell=None)
-        print 1111111111111
-        context.app_context['shell'] = self.get_context(SHELL, shell[-1], global_conf)
-        print 2222222222222
-        context.filter_contexts['shell'] = [
-            self.get_context(APP, name, global_conf)
-            for name in shell[:-1]]
-        #context.app_context['app'] = self.get_context(SHELL, app_factory[-1], global_conf)
-        #context.filter_contexts['app'] = [
-        #    self.get_context(APP, name, global_conf)
-        #    for name in app_factory[:-1]]
-        print dir(context)
-        return context
-
-    def _platform_app_context(self, object_type, section, name,
-                              global_conf, local_conf, global_additions):
-        if 'platform' not in local_conf:
-            raise LookupError(
-                "The [%s] section in %s is missing a 'platform' setting"
-                % (section, self.filename))
-        platform = local_conf.pop('platform').split()
+        platform = local_conf.pop('models').split()
         if local_conf:
             raise LookupError(
                 "The [%s] platform section in %s has extra "
                 "(disallowed) settings: %s"
                 % (', '.join(local_conf.keys())))
-        context = LoaderContext(None, PLATFORM, None, global_conf,
+        context = LoaderContext(None, MODEL, None, global_conf,
                                 local_conf, self)
         context.app_context = self.get_context(APP, platform[-1], global_conf)
         context.filter_contexts = [
@@ -272,46 +240,9 @@ class _ConfigLoader(ConfigLoader):
 
             def create(self):
                 return self.model
-        return _MinModel(model[-1])
-        context.app_context['app'] = self.get_context(APP, app_factory[-1], global_conf)
+
+        context = _MinModel(model[-1])
         return context
-
-    def _platform_app_context(self, object_type, section, name,
-                              global_conf, local_conf, global_additions):
-        if 'platform' not in local_conf:
-            raise LookupError(
-                "The [%s] section in %s is missing a 'platform' setting"
-                % (section, self.filename))
-        platform = local_conf.pop('platform').split()
-        if local_conf:
-            raise LookupError(
-                "The [%s] platform section in %s has extra "
-                "(disallowed) settings: %s"
-                % (', '.join(local_conf.keys())))
-        context = LoaderContext(None, PLATFORM, None, global_conf,
-                                local_conf, self)
-        context.app_context = self.get_context(APP, platform[-1], global_conf)
-        context.filter_contexts = [
-            self.get_context(APP, name, global_conf)
-            for name in platform[:-1]]
-        return context
-
-    def _model_app_context(self, object_type, section, name,
-                             global_conf, local_conf, global_additions):
-        if 'model' not in local_conf:
-            raise LookupError(
-                "The [%s] section in %s is missing a 'model' setting"
-                % (section, self.filename))
-
-        model = local_conf.pop('model').split()
-
-        class _MinModel(object):
-            def __init__(self, model):
-                self.model = model
-
-            def create(self):
-                return self.model
-        return _MinModel(model[-1])
 
 
 def _loadconfig(object_type, uri, path, name, relative_to,

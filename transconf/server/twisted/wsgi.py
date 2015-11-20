@@ -6,23 +6,20 @@ from transconf.server.twisted.service import serve_forever, serve_stop
 from transconf.server.twisted.internet import RPCTranServer as _RPCTranServer
 from transconf.server.twisted.internet import TopicTranServer as _TopicTranServer 
 from transconf.server.twisted.internet import FanoutTranServer as _FanoutTranServer
-from transconf.server import twisted
 from transconf.server.twisted.event import EventMiddleware
-from transconf.server.twisted.models import model_configure
+from transconf.server import twisted
 
 
 class TranMiddleware(EventMiddleware):
     @classmethod                                                                                                                                               
     def factory(cls, global_config, **local_config):
-        print 'middleware factory called'
-        twisted.CONF = as_config(global_config['__file__'])
-        # assert 'model' in local_config, 'please install model config as model=x'
-        # model_shell = model_configure(as_config(local_config.pop('model')))
         assert 'shell' in local_config, 'please install model shell as shell=x'
+        twisted.CONF = as_config(global_config['__file__'])
+        sh = local_config.pop('shell')
 
         def _factory(app, start_response=None):
             c = cls(app, **local_config)
-            c.handler = local_config['shell']
+            c.handler = sh
             return c
         return _factory
 

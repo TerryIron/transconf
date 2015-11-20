@@ -166,6 +166,9 @@ class HeartCondition(Model):
         return True
 
     def _update_target(self, group_name, group_type, uuid, available, need_count=True):
+        LOG.debug('Update a heartbeat for group:{0}, type:{1}, uuid:{2}'.format(group_name,
+                                                                                group_type,
+                                                                                uuid))
         BACKEND.update(dict(group_name=group_name,
                             group_type=group_type,
                             uuid=uuid,

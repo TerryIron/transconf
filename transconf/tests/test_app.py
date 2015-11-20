@@ -20,6 +20,6 @@ if __name__ == '__main__':
     app = loadapp('config:test.ini', 
                   'main',
                   relative_to=here)
-    server = TranServer(app)
+    server = TranServer(app['mainrpc'])
     server.start()
 

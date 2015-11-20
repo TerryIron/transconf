@@ -13,6 +13,53 @@ except ImportError:
     from collections import MutableMapping as DictMixin
 
 import transconf.server.paste.rpcexceptions as rpcexceptions
+from transconf.server.twisted.netshell import NetShell
+from transconf.utils import as_config, import_class
+from transconf.server import twisted
+
+
+SHELL_CLASS = NetShell
+
+
+def _load_factory(factory_line, global_conf, **local_conf):
+    model, cls = factory_line.split(':')
+    cls = cls.split('.')
+    if len(cls) > 1: func = cls[1]
+    else: func = 'factory'
+    model = '.'.join([model, cls[0]])
+    conf = as_config(global_conf['__file__'])
+    twisted.CONF = conf
+    middleware = import_class(model)
+    func = getattr(middleware, func)
+    if callable(func):
+        return func(global_conf, **local_conf)
+
+
+def shell_factory(loader, global_conf, **local_conf):
+    assert 'paste.app_factory' in local_conf, 'please install model config as paste.app_factory=x'
+    assert 'shell' in local_conf, 'please install model config as shell=x'
+    conf = as_config(global_conf['__file__'])
+    twisted.CONF = conf
+    sh = SHELL_CLASS()
+    for model in local_conf['shell'].split():
+        model = loader.get_app(model, global_conf=global_conf)
+        mod = import_class(model)
+        sh.load_model(mod, config=conf)
+    app_factory = local_conf.pop('paste.app_factory')
+    local_conf['shell'] = sh
+    app = _load_factory(app_factory, global_conf, **local_conf)
+    return app
+
+
+def platform_factory(loader, global_conf, **local_conf):
+    assert 'platform' in local_conf, 'please install platform config as platform=x'
+    conf = as_config(global_conf['__file__'])
+    twisted.CONF = conf
+    platform = {}
+    for pf in local_conf['platform'].split():
+        app = loader.get_app(pf, global_conf=global_conf)
+        platform[pf] = app
+    return platform
 
 
 def rpcmap_factory(loader, global_conf, **local_conf):
