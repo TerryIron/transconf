@@ -86,7 +86,7 @@ class RPCTranServer(RabbitAMQP, Crypto):
     def _result_back(self, ch, properties, result):
         LOG.debug('Result back to queue:{0}, result:{1}'.format(properties.reply_to, result))
         result = self.packer.pack(result)
-        result = self._encode(result)
+        result = self.encode(result)
         # If not result, some unexpected errors happened
         yield ch.basic_publish(exchange='',
                                routing_key=properties.reply_to,
@@ -117,7 +117,7 @@ class RPCTranServer(RabbitAMQP, Crypto):
         ch, method, properties, body = yield queue_object.get()
         yield ch.basic_ack(delivery_tag=method.delivery_tag)
         # LOG.debug('ch: {0}, method:{1}, properties:{2}, body length:{3}'.format(ch, method, properties, len(body)))
-        body = self._decode(body)
+        body = self.decode(body)
         body = self.packer.unpack(body)
         yield self._process_request(ch, properties, body)
         yield queue_object.close(None)

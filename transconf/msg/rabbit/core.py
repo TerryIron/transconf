@@ -50,34 +50,65 @@ class RabbitAMQP(object):
 
     @property
     def rand_corr_id(self):
+        """
+        Returns:
+            str: 随机UUID值
+
+        """
         return str(uuid.uuid4())
 
     @property
     @from_config_option('amqp_url', 'amqp://guest:guest@localhost:5672')
     def conf_amqp_url(self):
+        """
+        Returns:
+            str: AMQP地址
+
+        """
         return self.conf
 
     @property
     def conf_rpc_queue(self):
+        """
+        Returns:
+            str: RPC模式队列
+
+        """
         raise NotImplementedError()
 
     @property
     def conf_topic_exchange(self):
+        """
+        Returns:
+            str: TOPIC模式交换机
+
+        """
         raise NotImplementedError()
 
     @property
     def conf_topic_queue(self):
-        raise NotImplementedError()
+        """
+        Returns:
+            str: TOPIC模式队列
 
-    @property
-    def conf_topic_routing_key(self):
+        """
         raise NotImplementedError()
 
     @property
     def conf_fanout_exchange(self):
+        """
+        Returns:
+            str: FANOUT模式交换机
+
+        """
         raise NotImplementedError()
 
     @property
     def conf_fanout_queue(self):
+        """
+        Returns:
+            str: FANOUT模式队列
+
+        """
         raise NotImplementedError()
 

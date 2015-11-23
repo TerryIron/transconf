@@ -4,9 +4,6 @@ __author__ = 'chijun'
 from transconf.common.model_driver import *
 
 
-"""
-    Collecting node server's compute resource 
-"""
 class ComputeResource(declarative_base()):
     __tablename__ = 'vm_compute_resource'
     

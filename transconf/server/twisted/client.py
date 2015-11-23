@@ -60,7 +60,7 @@ class BaseClient(BaseSyncClient, Crypto):
         if queue_object:
             ch, method, properties, body = yield queue_object.get()
             if self.corr_id == properties.correlation_id:
-                body = yield self._decode(body)
+                body = yield self.decode(body)
                 body = yield self.packer.unpack(body)
                 result = yield Response.from_dict(body)
                 yield defer.returnValue(result)
@@ -81,7 +81,7 @@ class BaseClient(BaseSyncClient, Crypto):
             self.reply_to = result.method.queue
         body = context[0]
         body = yield self.packer.pack(body)
-        body = yield self._encode(body)
+        body = yield self.encode(body)
         yield self.channel.basic_publish(exchange=context[1],
                                          routing_key=context[2],
                                          properties=pika.BasicProperties(

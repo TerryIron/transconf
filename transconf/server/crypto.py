@@ -83,19 +83,38 @@ rWLSSKJSM3wQma8GBHx3zWB/8nL3EgrjIkcBwKGo0/FiNT5ENLJyfdkCAwEAAQ==
 
 
 class Crypto(object):
+    """
+    加密处理对象
+
+    """
 
     @property
     @from_config_option('ssl_private_pem', SSL_PRIVATE_PEM)
     def private_pem(self):
+        """
+        Returns:
+            私有钥匙
+
+        """
         return global_conf
 
     @property
     @from_config_option('ssl_public_pem', SSL_PUBLIC_PEM)
     def public_pem(self):
+        """
+        Returns:
+            公有钥匙
+
+        """
         return global_conf
 
     @property
     def local_private_pem(self):
+        """
+        Returns:
+            本地私有钥匙
+
+        """
         def _get_private_pem():
             p = self.private_pem
             if os.path.isfile(p):
@@ -108,6 +127,11 @@ class Crypto(object):
 
     @property
     def local_public_pem(self):
+        """
+        Returns:
+            本地公有钥匙
+
+        """
         def _get_public_pem():
             p = self.public_pem
             if os.path.isfile(p):
@@ -121,6 +145,11 @@ class Crypto(object):
     @property
     @from_config_option('enable_ssl', True)
     def enable_crypto_ssl(self):
+        """
+        Returns:
+            bool: 是否使用SSL加密
+
+        """
         return global_conf
 
     def _encode_crypto_ssl(self, body):
@@ -142,14 +171,34 @@ class Crypto(object):
         enables.sort()
         return enables
 
-    def _encode(self, body):
+    def encode(self, body):
+        """
+        数据加码
+
+        Args:
+            body: 基本数据
+
+        Returns:
+            加码后数据
+
+        """
         for ce in self._get_enables():
             ce = getattr(self, '_encode_crypto_' + ce)
             if callable(ce):
                 body = ce(body)
         return body
 
-    def _decode(self, body):
+    def decode(self, body):
+        """
+        数据解码
+
+        Args:
+            body: 基本数据
+
+        Returns:
+            解码后数据
+
+        """
         for de in self._get_enables():
             de = getattr(self, '_decode_crypto_' + de)
             if callable(de):
