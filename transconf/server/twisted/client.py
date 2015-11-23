@@ -126,7 +126,7 @@ class BaseClient(BaseSyncClient, Crypto):
 
 class RPCTranClient(BaseClient):
     def config(self, exchange=None, queue=None):
-        self.bind_rpc_queue = self.conf_rpc_queue if not queue else queue
+        self.bind_queue = self.conf_rpc_queue if not queue else queue
 
     @property
     @from_config_option('rpc_binding_queue', 'default_rpc_queue')
@@ -134,7 +134,7 @@ class RPCTranClient(BaseClient):
         return self.conf
 
     def _ready(self, context, routing_key):
-        rpc_queue = self.bind_rpc_queue if not routing_key else routing_key
+        rpc_queue = self.bind_queue if not routing_key else routing_key
         return super(RPCTranClient, self)._ready(context, 
                                                  '', 
                                                  rpc_queue)
@@ -146,8 +146,8 @@ class TopicTranClient(BaseClient):
         self.exchange_type = 'topic'
 
     def config(self, exchange=None, queue=None):
-        self.bind_topic_exchange = self.conf_topic_exchange if not exchange else exchange
-        self.bind_topic_queue = self.conf_topic_queue if not queue else queue
+        self.bind_exchange = self.conf_topic_exchange if not exchange else exchange
+        self.bind_queue = self.conf_topic_queue if not queue else queue
 
     @property
     @from_config_option('topic_binding_exchange', 'default_topic_exchange')
@@ -162,8 +162,8 @@ class TopicTranClient(BaseClient):
     def _ready(self, context, routing_key):
         real_routing = str(routing_key)
         return super(TopicTranClient, self)._ready(context,
-                                                   self.bind_topic_exchange, 
-                                                   '.'.join([self.bind_topic_queue, real_routing]))
+                                                   self.bind_exchange,
+                                                   '.'.join([self.bind_queue, real_routing]))
 
 
 class FanoutTranClient(BaseClient):
@@ -172,7 +172,7 @@ class FanoutTranClient(BaseClient):
         self.exchange_type = 'fanout'
 
     def config(self, exchange=None, queue=None):
-        self.bind_fanout_exchange = self.conf_fanout_exchange if not exchange else exchange
+        self.bind_exchange = self.conf_fanout_exchange if not exchange else exchange
 
     @property
     @from_config_option('fanout_binding_exchange', 'default_fanout_exchange')
@@ -180,7 +180,7 @@ class FanoutTranClient(BaseClient):
         return self.conf
 
     def _ready(self, context, routing_key):
-        fanout_exchange = self.bind_fanout_exchange if not routing_key else routing_key
+        fanout_exchange = self.bind_exchange if not routing_key else routing_key
         return super(FanoutTranClient, self)._ready(context,
                                                     fanout_exchange,
                                                     '')

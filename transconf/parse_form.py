@@ -48,10 +48,10 @@ class FormParser(object):
             struct = self._get_struct(form_unit)
             if not struct:
                 raise FormUnitTypeError('Form: {0}'.format(form_unit))
-            for branch in [form_unit.pop(b) for b in struct.get_branchname() if b in form_unit]:
+            for branch in [form_unit.pop(b) for b in struct.branchname if b in form_unit]:
                 for n, f, k, typ, v in self._parse_form(branch, form_unit[struct.name]):
                     yield (n, f, k, typ, v)
-            node_name = struct.get_nodename()
+            node_name = struct.nodename
             for k, typ, v in self._walk_form_unit_item(struct, form_unit):
                 yield (form_unit[node_name], father, k, typ, v)
 
@@ -101,7 +101,7 @@ class FormParser(object):
         self.register_struct(model.struct)
         for node_name, items in self._gen_parser(model.form):
             node_name = [n for n in node_name if n != 'ROOT']
-            model.set_nodeobj(node_name)
+            model.init_nodeobj(node_name)
             for k, item in items:
                 model.set_node_member(node_name, k, item)
 

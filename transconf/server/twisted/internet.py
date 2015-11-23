@@ -100,9 +100,9 @@ class RPCTranClient(RPCClient):
 
     def config(self, group='', type='', uuid=None):
         if uuid:
-            self.bind_rpc_queue = group + uuid + 'rpc'
+            self.bind_queue = group + uuid + 'rpc'
         else:
-            self.bind_rpc_queue = group + 'rpc'
+            self.bind_queue = group + 'rpc'
         self.__simple__ = dict(cls='rpc',
                                group=group,
                                type=type,
@@ -117,8 +117,8 @@ class TopicTranClient(TopicClient):
         self.routing_key = None
 
     def config(self, group='', type='', uuid=None):
-        self.bind_topic_exchange = group + 'topic'
-        self.bind_topic_queue = group
+        self.bind_exchange = group + 'topic'
+        self.bind_queue = group
         self.bind_routing_key = type
         self.__simple__ = dict(cls='topic',
                                group=group,
@@ -135,7 +135,7 @@ class FanoutTranClient(FanoutClient):
     DEFAULT_CONF = get_service_conf()
 
     def config(self, group='', type='', uuid=None):
-        self.bind_fanout_exchange = group + 'fanout'
+        self.bind_exchange = group + 'fanout'
         self.__simple__ = dict(cls='fanout',
                                group=group,
                                type=type,

@@ -26,6 +26,10 @@ class NoneBody(object):
 
 
 class BaseClient(RabbitAMQP):
+    """
+        RabbitMQ客户端封装
+
+    """
 
     def _on_connect(self):
         self.connection = self.connection_class(self.parms)
@@ -43,15 +47,42 @@ class BaseClient(RabbitAMQP):
                                    body=self.packer.pack(context))
 
     def config(self):
+        """
+        初始化配置
+
+        Returns:
+            未实现
+
+        """
         raise NotImplementedError()
 
     def init(self):
+        """
+        初始化客户端
+
+        Returns:
+            None
+
+        """
         self.config()
         self._on_connect()
         result = self.channel.queue_declare(exclusive=True, auto_delete=True)
         self.callback_queue = result.method.queue
 
     def on_response(self, ch, method, properties, body):
+        """
+        响应结果
+
+        Args:
+            ch: 频道
+            method: 方法
+            properties: 属性
+            body: 结果
+
+        Returns:
+            None
+
+        """
         if self.corr_id == properties.correlation_id:
             body = self.packer.unpack(body)
             if body:
@@ -63,22 +94,40 @@ class BaseClient(RabbitAMQP):
 class RPCTranClient(BaseClient):
 
     def config(self, exchange=None, queue=None):
-        self.bind_rpc_queue = self.conf_rpc_queue if not queue else queue
+        """
+        初始化RPC模式配置
+
+        Returns:
+            None
+
+        """
+        self.bind_queue = self.conf_rpc_queue if not queue else queue
 
     @property
     @from_config_option('rpc_binding_queue', 'default_rpc_queue')
     def conf_rpc_queue(self):
+        """
+        Returns:
+            str: RPC队列名
+
+        """
         return self.conf
 
-    """
-        Send a message without result
-        @context: message context
-        @routing_key: routing key of exchange
-        @delivery_mode: 2 to set queue message been persistence, 
-                        1 to set queue message been short-lived.
-    """
     def cast(self, context, routing_key=None, delivery_mode=2):
-        rpc_queue = self.bind_rpc_queue if not routing_key else routing_key
+        """
+        发送数据，不返回结果
+
+
+        Args:
+            context: 发送数据
+            routing_key: 路由关键字
+            delivery_mode: 投递模式
+
+        Returns:
+            None
+
+        """
+        rpc_queue = self.bind_queue if not routing_key else routing_key
         self._ready(context, 
                     '', 
                     rpc_queue,
@@ -86,15 +135,20 @@ class RPCTranClient(BaseClient):
                     self.rand_corr_id,
                     delivery_mode)
         
-    """
-        Send a message without result
-        @context: message context
-        @routing_key: routing key of exchange
-        @delivery_mode: 2 to set queue message been persistence, 
-                        1 to set queue message been short-lived.
-    """
     @hold_on
     def call(self, context, routing_key=None, delivery_mode=2):
+        """
+        发送数据，返回结果 (等待结果)
+
+        Args:
+            context: 发送数据
+            routing_key: 路由关键字
+            delivery_mode: 投递模式
+
+        Returns:
+            结果
+
+        """
         self.cast(context, routing_key, delivery_mode)
 
 
@@ -104,61 +158,148 @@ class TopicTranClient(BaseClient):
     We use topic client to send tasks to worker's queue.
     """
     def config(self, exchange=None, queue=None):
-        self.bind_topic_exchange = self.conf_topic_exchange if not exchange else exchange
-        self.bind_topic_queue = self.conf_topic_queue if not queue else queue
+        """
+        初始化TOPIC模式配置
+
+        Returns:
+            None
+
+        """
+        self.bind_exchange = self.conf_topic_exchange if not exchange else exchange
+        self.bind_queue = self.conf_topic_queue if not queue else queue
 
     def init(self):
+        """
+        初始化TOPIC客户端
+
+        Returns:
+            None
+
+        """
         super(TopicTranClient, self).init()
-        self.channel.exchange_declare(exchange=self.bind_topic_exchange,
+        self.channel.exchange_declare(exchange=self.bind_exchange,
                                       type='topic')
 
     @property
     @from_config_option('topic_binding_exchange', 'default_topic_exchange')
     def conf_topic_exchange(self):
+        """
+        Returns:
+            str: TOPIC交换机名称
+
+        """
         return self.conf
 
     @property
     @from_config_option('topic_binding_queue', 'default_topic_queue')
     def conf_topic_queue(self):
+        """
+        Returns:
+            str: TOPIC队列名称
+
+        """
         return self.conf
 
     def cast(self, context, routing_key):
+        """
+        发送数据，不返回结果
+
+
+        Args:
+            context: 发送数据
+            routing_key: 路由关键字
+            delivery_mode: 投递模式
+
+        Returns:
+            None
+
+        """
         real_routing = str(routing_key)
         self._ready(context, 
-                    self.bind_topic_exchange, 
-                    '.'.join([self.bind_topic_queue, real_routing]),
+                    self.bind_exchange,
+                    '.'.join([self.bind_queue, real_routing]),
                     self.callback_queue,
                     self.rand_corr_id)
 
     @hold_on
     def call(self, context, routing_key):
+        """
+        发送数据，返回结果 (等待结果)
+
+        Args:
+            context: 发送数据
+            routing_key: 路由关键字
+            delivery_mode: 投递模式
+
+        Returns:
+            结果
+
+        """
         self.cast(context, routing_key)
+
 
 class FanoutTranClient(BaseClient):
     """
     We use fanout client to sync server's status.
     """
     def config(self, exchange=None, queue=None):
-        self.bind_fanout_exchange = self.conf_fanout_exchange if not exchange else exchange
-        self.bind_fanout_queue = self.conf_fanout_queue if not queue else queue
+        """
+        初始化FANOUT模式配置
+
+        Returns:
+            None
+
+        """
+        self.bind_exchange = self.conf_fanout_exchange if not exchange else exchange
+        self.bind_queue = self.conf_fanout_queue if not queue else queue
 
     def init(self):
+        """
+        初始化FANOUT客户端
+
+        Returns:
+            None
+
+        """
         super(FanoutTranClient, self).init()
-        self.channel.exchange_declare(exchange=self.bind_fanout_exchange,
+        self.channel.exchange_declare(exchange=self.bind_exchange,
                                       type='fanout')
 
     @property
     @from_config_option('fanout_binding_exchange', 'default_fanout_exchange')
     def conf_fanout_exchange(self):
+        """
+        Returns:
+            str: FANOUT交换机名称
+
+        """
         return self.conf
 
     @property
     @from_config_option('fanout_binding_queue', 'default_fanout_queue')
     def conf_fanout_queue(self):
+        """
+        Returns:
+            str: FANOUT队列名称
+
+        """
         return self.conf
 
     def cast(self, context, routing_key=None):
-        fanout_exchange= self.bind_fanout_exchange if not routing_key else routing_key
+        """
+        发送数据，不返回结果
+
+
+        Args:
+            context: 发送数据
+            routing_key: 路由关键字
+            delivery_mode: 投递模式
+
+        Returns:
+            None
+
+        """
+        fanout_exchange= self.bind_exchange if not routing_key else routing_key
         self._ready(context, 
                     fanout_exchange, 
                     '',
@@ -167,6 +308,18 @@ class FanoutTranClient(BaseClient):
         
     @hold_on
     def call(self, context, routing_key=None):
+        """
+        发送数据，返回结果 (等待结果)
+
+        Args:
+            context: 发送数据
+            routing_key: 路由关键字
+            delivery_mode: 投递模式
+
+        Returns:
+            结果
+
+        """
         self.cast(context, routing_key)
 
 
@@ -185,6 +338,18 @@ def _get_client(client_list, type, amqp_url=None, exchange=None, queue=None):
 
 
 def get_client(amqp_url=None, exchange=None, queue=None, type='topic'):
+    """
+    获取客户端
+
+    Args:
+        amqp_url: AMQP地址
+        exchange: 交换机名
+        queue: 队列名
+        type: 类型
+
+    Returns:
+
+    """
     c = _get_client(client_list, type, amqp_url, exchange, queue)
     if not c: 
         return 

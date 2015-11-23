@@ -55,7 +55,7 @@ class Model(BaseModel):
         return None, None
 
     def set_node_member(self, name_lst, key, value):
-        real_name = self._build_class_nodename(name_lst)
+        real_name = self._build_real_nodename(name_lst)
         if real_name in self.namebus:
             n = self.get_namebus(real_name)
             if isinstance(n, dict):

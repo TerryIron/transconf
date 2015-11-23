@@ -16,6 +16,10 @@ class NodeItemStructError(Exception):
 
 
 class NodeStruct(object):
+    """
+        节点结构对象
+
+    """
 
     SUPPORT_TYPES = None
 
@@ -26,18 +30,60 @@ class NodeStruct(object):
         self.name = None
 
     def set_nodename(self, name):
+        """
+        设置节点名
+
+        Args:
+            name: 节点名
+
+        Returns:
+            None
+
+        """
         self.name = name
 
-    def get_nodename(self):
+    @property
+    def nodename(self):
+        """
+        Returns:
+            str: 节点名
+
+        """
         return self.name
 
     def set_branchname(self, name):
+        """
+        设置添加分支名
+
+        Args:
+            name: 分支名
+
+        Returns:
+            None
+
+        """
         self.branch.add(name)
 
-    def get_branchname(self):
+    @property
+    def branchname(self):
+        """
+        Returns:
+            str: 分支名
+
+        """
         return self.branch
 
-    def is_branch(self, name):
+    def exist_branch(self, name):
+        """
+        检测是否存在分支
+
+        Args:
+            name: 分支名
+
+        Returns:
+            bool: True或False
+
+        """
         if name not in self.branch:
             return False
         else:
@@ -50,6 +96,18 @@ class NodeStruct(object):
         return self.dic.items()
 
     def set_default(self, var_name, var_type, len=10, default_value=None):
+        """
+        设置默认值
+
+        Args:
+            var_name: 变量名
+            var_type: 变量类型
+            len: 长度
+            default_value: 默认值
+
+        Returns:
+
+        """
         self.dic[var_name] = [[], (default_value), var_type, len]
         return True
 
@@ -80,6 +138,16 @@ class NodeStruct(object):
         return item[0]
 
     def get_value(self, var_name):
+        """
+        获取变量值, 若不存在返回默认值
+
+        Args:
+            var_name: 变量名
+
+        Returns:
+            object: 值
+
+        """
         item = self._get(var_name)
         v = self._get_value(item)
         if len(v) > 0:
@@ -88,18 +156,59 @@ class NodeStruct(object):
             return self._get_default(item)
 
     def get_default(self, var_name):
+        """
+        获取默认值
+
+        Args:
+            var_name: 变量名
+
+        Returns:
+            object: 默认值
+
+        """
         item = self._get(var_name)
         return self._get_default(item)
 
     def get_type(self, var_name):
+        """
+        获取变量类型
+
+        Args:
+            var_name: 变量名
+
+        Returns:
+            str: 类型名
+
+        """
         item = self._get(var_name)
         return self._get_type(item)
 
-    def get_len(self, item):
+    def get_len(self, var_name):
+        """
+        获取变量长度
+
+        Args:
+            var_name: 变量名
+
+        Returns:
+            int: 长度
+
+        """
         item = self._get(var_name)
         return self._get_len(item)
 
     def set(self, var_name, value):
+        """
+        设置变量值
+
+        Args:
+            var_name: 变量名
+            value: 值
+
+        Returns:
+            bool: True
+
+        """
         _v = self._get(var_name)
         if self._check_type(_v, value):
             _v[0].append(value)
@@ -107,7 +216,18 @@ class NodeStruct(object):
                 _v.pop(0)
             return True
         else:
-            raise NodeItemTypeNotSupport('Type: {0} not in {1}'.format(var_type, self.support_types))
+            raise NodeItemTypeNotSupport('Type: {0} not in {1}'.format(_v, self.support_types))
 
     def check_input(self, key, value):
+        """
+        检查数据输入
+
+        Args:
+            key: 变量名
+            value: 变量值
+
+        Returns:
+            未实现
+
+        """
         raise NotImplementedError()

@@ -9,6 +9,10 @@ from transconf.utils import from_config_option, as_config
 
 
 class RabbitAMQP(object):
+    """
+        RabbitMQ 基础类
+
+    """
     CONNECTION_CLASS = pika.BlockingConnection
     CONNECTION_ATTEMPTS = 3
     DEFAULT_CONF = as_config(os.path.join(os.path.dirname(__file__), 'default.ini'))
@@ -30,15 +34,18 @@ class RabbitAMQP(object):
             'connection_attempts={1}'.format(con_timeout,
                                              con_attempts or self.CONNECTION_ATTEMPTS)
         )
-        self.bind_rpc_queue = None
-        self.bind_topic_exchange = None
-        self.bind_topic_queue = None
-        self.bind_topic_routing_key = None
-        self.bind_fanout_exchange = None
-        self.bind_fanout_queue = None
+        self.bind_queue = None
+        self.bind_exchange = None
         self.init()
 
     def init(self):
+        """
+        初始化
+
+        Returns:
+            未实现
+
+        """
         pass
 
     @property
