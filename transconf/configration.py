@@ -7,11 +7,17 @@ from transconf.utils import *
 
 
 class BaseConf(object):
+    """
+    配置对象
+    """
     def __init__(self, config):
         self.config = as_config(config)
 
 
 class ConfGroup(BaseConf):
+    """
+    配置对象组
+    """
     def __init__(self, config, sect=None):
         super(ConfGroup, self).__init__(config)
         self.__help__ = {}
@@ -31,6 +37,19 @@ class ConfGroup(BaseConf):
             del self.__help__[key]
 
     def add_property(self, name, option=None, default_val=None, help=None):
+        """
+        添加配置组成员
+
+        Args:
+            name: 成员名
+            option: 配置文件选项
+            default_val: 默认值
+            help: 帮助信息
+
+        Returns:
+            None
+
+        """
         @from_config_option(option or '', default_val, sect=self.sect)
         def add():
             return self.config
@@ -46,16 +65,51 @@ class ConfGroup(BaseConf):
         self.__setitem__(name, str(help))
 
     def del_property(self, name):
+        """
+        删除配置组成员
+
+        Args:
+            name: 成员名
+
+        Returns:
+            None
+
+        """
         delattr(self, name)
         self.__delitem__(name)
 
 
 class Configuration(BaseConf):
+    """
+    配置文件对象化
+
+    """
     def add_group(self, name, sect=None):
+        """
+        添加配置组对象
+
+        Args:
+            name: 对象名
+            sect: 配置文件段落名
+
+        Returns:
+            None
+
+        """
         setattr(self, name, ConfGroup(self.config, sect))
         return getattr(self, name)
 
     def del_group(self, name):
+        """
+        删除配置组对象
+
+        Args:
+            name: 对象名
+
+        Returns:
+            None
+
+        """
         delattr(self, name)
 
     @staticmethod
@@ -74,9 +128,25 @@ class Configuration(BaseConf):
             if option_re.search(out[0]):
                 new.add((out[0], out[1]))
         return new
-            
-    def add_members(self, name, sect=None, default_val=None, option_regex=None, 
+
+    def add_members(self, name, sect=None, default_val=None, option_regex=None,
                     avoid_options=None, avoid_option_regex=None, help=None):
+        """
+        添加配置组成员
+
+        Args:
+            name: 对象名
+            sect: 配置文件段落名
+            default_val: 默认值
+            option_regex: 可匹配配置选项
+            avoid_options: 可避免配置选项
+            avoid_option_regex: 可避免匹配配置选项
+            help: 帮助信息
+
+        Returns:
+            None
+
+        """
         @from_config(sect)
         def add():
             return self.config
@@ -85,4 +155,14 @@ class Configuration(BaseConf):
         setattr(self, name, val)
 
     def del_members(self, name):
+        """
+        删除配置组成员
+
+        Args:
+            name: 对象名
+
+        Returns:
+            None
+
+        """
         delattr(self, name)

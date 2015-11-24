@@ -4,7 +4,10 @@ from transconf.common.struct import *
 from transconf.mystructtypes import *
 
 
-class NodeStructV1(NodeStruct): 
+class NodeStructV1(NodeStruct):
+    """
+    节点结构类型检查器
+    """
     SUPPORTED_TYPES = [
                        IsString, 
                        IsDict, 
@@ -26,6 +29,17 @@ class NodeStructV1(NodeStruct):
         self.set_branchname('subs')
 
     def check_input(self, key, value):
+        """
+        检查输入数据
+
+        Args:
+            key: 键值
+            value: 数据
+
+        Returns:
+            处理后的数据
+
+        """
         if key not in self.keys():
             raise NodeItemNotFound('Can not found variable:{0}'.format(key))
         try:

@@ -11,26 +11,42 @@ __all__ = [
 
 
 # Use these BaseType class to define static value
-class IsString(BaseType): 
+class IsString(BaseType):
+    """
+    字符串类型检查器
+
+    """
     def check(self, data):
         if isinstance(data['value'], str):
             return data['key'], self, data['value']
 
 
-class IsList(BaseType): 
+class IsList(BaseType):
+    """
+    列表类型检查器
+
+    """
     def check(self, data):
         if isinstance(data['value'], list):
             return data['key'], self, data['value']
 
 
-class IsDict(BaseType): 
+class IsDict(BaseType):
+    """
+    字典类型检查器
+
+    """
     def check(self, data):
         if isinstance(data['value'], dict):
             return data['key'], self, data['value']
 
 
 # Use these BaseType class to define class members
-class IsInterface(BaseType): 
+class IsInterface(BaseType):
+    """
+    接口类型检查器
+
+    """
     def check(self, data):
         key = data['value'][0]
         typ, name, val = data['value'][1].split(':')
@@ -43,22 +59,38 @@ class IsInterface(BaseType):
                 return key, self, _method
 
 
-class IsPrivateInterface(IsInterface): 
+class IsPrivateInterface(IsInterface):
+    """
+    私有接口类型检查器
+
+    """
     def check(self, data):
         return super(IsPrivateInterface, self).check(data)
 
 
-class IsPublicInterface(IsInterface): 
+class IsPublicInterface(IsInterface):
+    """
+    公有接口类型检查器
+
+    """
     def check(self, data):
         return super(IsPublicInterface, self).check(data)
 
 
-class IsNodeInterface(IsInterface): 
+class IsNodeInterface(IsInterface):
+    """
+    节点接口类型检查器
+
+    """
     def check(self, data):
         return super(IsNodeInterface, self).check(data)
 
 
-class IsProperty(BaseType): 
+class IsProperty(BaseType):
+    """
+    节点属性类型检测器
+
+    """
     def check(self, data):
         key = data['value'][0]
         typ, name, val = data['value'][1].split(':')

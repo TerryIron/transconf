@@ -25,14 +25,6 @@ transconf.command_driver module
     :undoc-members:
     :show-inheritance:
 
-transconf.commands module
--------------------------
-
-.. automodule:: transconf.commands
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 transconf.configration module
 -----------------------------
 

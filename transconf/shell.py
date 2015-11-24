@@ -11,6 +11,9 @@ class ShellTargetNotFound(Exception):
 
 
 class ModelShell(NameBus):
+    """
+    模型命令行解释器
+    """
     SPLIT_DOT = '.'
 
     def __init__(self, log=None):
@@ -23,6 +26,19 @@ class ModelShell(NameBus):
         return model.run(name, method, *args, **kwargs)
 
     def run(self, target_name, method_name, *args, **kwargs):
+        """
+        运行命令
+
+        Args:
+            target_name: 命令对象
+            method_name: 方法名
+            *args: 列表参数
+            **kwargs: 字典参数
+
+        Returns:
+            执行结果
+
+        """
         name_lst = str(target_name).split(self.split)
         if len(name_lst) >= 1:
             model_name = name_lst[0]
@@ -34,12 +50,44 @@ class ModelShell(NameBus):
             raise ShellTargetNotFound(target_name)
 
     def set_env(self, key, value):
+        """
+        设置解释器环境变量
+
+        Args:
+            key: 变量名
+            value: 变量值
+
+        Returns:
+            未实现
+
+        """
         raise NotImplementedError()
 
     def get_env(self, key):
+        """
+        获取解释器环境变量
+
+        Args:
+            key: 变量名
+
+        Returns:
+            变量值
+
+        """
         raise NotImplementedError()
 
     def preload_model(self, model_class, config=None):
+        """
+        预加载模型解释器
+
+        Args:
+            model_class: 模型类
+            config: 配置对象
+
+        Returns:
+            None
+
+        """
         def translate():
             model = model_class()
             model.init(config)
@@ -51,21 +99,43 @@ class ModelShell(NameBus):
                 self.set_namebus(single['node'], model, False)
         return model
 
-    """
-        Load model class and finally call the start-code.
-    """
     def load_model(self, model_class, config=None):
+        """
+        加载并启动模型解释器
+
+        Args:
+            model_class: 模型类
+            config: 配置对象
+
+        Returns:
+            None
+
+        """
         model = self.preload_model(model_class, config)
         if model:
             model.start(config)
 
-    """
-        Remove pointed model and finally call the stop-code.
-    """
     def remove_model(self, name):
+        """
+        删除模型解释器
+
+        Args:
+            name: 解释器名
+
+        Returns:
+            None
+
+        """
         model = self.get_namebus(name)
         model.stop()
         self.remove_namebus(name)
 
     def list_models(self):
+        """
+        获取模型解释器列表
+
+        Returns:
+            list: 模型解释器名列表
+
+        """
         return self.list_namebus()

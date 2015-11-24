@@ -3,7 +3,7 @@ __author__ = 'chijun'
 
 class BaseType(object):
     """
-    基本变量类型
+    基本变量类型检查器
 
     """
 

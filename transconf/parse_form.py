@@ -7,7 +7,7 @@ class FormUnitTypeError(Exception):
 
 class FormParser(object):
     """
-      Parse form data to a parser object.
+    模型节点解析器
     """
 
     def __init__(self, log=None):
@@ -18,6 +18,15 @@ class FormParser(object):
         self.ext_struct = set()
 
     def register_struct(self, struct):
+        """
+        注册结构检查器
+
+        Args:
+            struct: 结构检查器
+
+        Returns:
+
+        """
         self.ext_struct.add(struct)
 
     def _walk_form_unit_item(self, struct, form_unit):
@@ -61,7 +70,7 @@ class FormParser(object):
            Not: Only support node object's maxdepth=3.
         """
         # Init buffer by lambda expression
-        new_buf = lambda : {
+        new_buf = lambda: {
                 'items': [],
                 'node_name': None,
                 'father': None,
@@ -97,6 +106,16 @@ class FormParser(object):
         yield (buf['fname'], buf['items'])
 
     def translate(self, model):
+        """
+        解析模型
+
+        Args:
+            model: 模型对象
+
+        Returns:
+            None
+
+        """
         self._reset()
         self.register_struct(model.struct)
         for node_name, items in self._gen_parser(model.form):

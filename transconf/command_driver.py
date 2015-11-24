@@ -8,14 +8,17 @@ from transconf.common.reg import get_local_cmd
 
 
 class Command(object):
-    DEFAULT_CONF = as_config(os.path.join(os.path.dirname(__file__), 'cmd/default.ini'))
-    CONF = None 
     """
-        Sample code:
+        基础命令对象
+
+        使用示例:
         cmd = Command('regular_file')
         cmd.setup()
         cmd['forced_remove'](name='kkk')
     """
+    DEFAULT_CONF = as_config(os.path.join(os.path.dirname(__file__), 'cmd/default.ini'))
+    CONF = None
+
     def __init__(self, name):
         self.conf = self.DEFAULT_CONF if not self.CONF else self.CONF
         self.name = name #Section Name
@@ -24,13 +27,38 @@ class Command(object):
         self.init()
 
     def init(self):
+        """
+        基础命令初始化
+
+        Returns:
+            None
+
+        """
         pass
 
     @staticmethod
     def translate(expression, **kwargs):
+        """
+        命令行表达式
+
+        Args:
+            expression: 表达式
+            **kwargs: 表达式参数
+
+        Returns:
+            str: 命令表达式
+
+        """
         return str(expression).format(**kwargs)
 
     def setup(self):
+        """
+        安装命令行
+
+        Returns:
+            None
+
+        """
         if self.enabled_method:
             self._default_setup()
         else:
@@ -67,6 +95,16 @@ class Command(object):
 
 
 def command_configure(conf):
+    """
+    自动配置命令行对象
+
+    Args:
+        conf: 配置对象
+
+    Returns:
+        None
+
+    """
     Command.DEFAULT_CONF = conf
     for sect in conf.sections():
         @from_config_option('factory', None, sect=sect)
@@ -88,6 +126,18 @@ class CommandNotFound(Exception):
 
 
 def command(target_name, method_name, **kwargs):
+    """
+    调用命令行
+
+    Args:
+        target_name: 命令对象名
+        method_name: 方法名
+        **kwargs: 参数
+
+    Returns:
+        命令结果
+
+    """
     target = get_local_cmd(target_name)
     if not target:
         raise CommandNotRegister(target_name)

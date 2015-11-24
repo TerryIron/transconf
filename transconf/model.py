@@ -10,6 +10,10 @@ class ModelInternalStuctErr(Exception):
 
 
 class Model(BaseModel):
+    """
+    模型解释器
+
+    """
     STRUCT = NodeStructV1()
     SPLIT_DOT = '&'
     IS_NODE_METHOD = IsNodeInterface
@@ -55,6 +59,18 @@ class Model(BaseModel):
         return None, None
 
     def set_node_member(self, name_lst, key, value):
+        """
+        设置节点成员
+
+        Args:
+            name_lst(lis): 节点名
+            key: 节点属性名
+            value: 节点属性值
+
+        Returns:
+            None
+
+        """
         real_name = self._build_real_nodename(name_lst)
         if real_name in self.namebus:
             n = self.get_namebus(real_name)
@@ -66,6 +82,19 @@ class Model(BaseModel):
         return False
 
     def run(self, target_name, method_name, *args, **kwargs):
+        """
+        运行内置方法
+
+        Args:
+            target_name: 内置对象名
+            method_name: 内置方法名
+            *args: 列表参数
+            **kwargs: 字典参数
+
+        Returns:
+            运行结果
+
+        """
         # Check node instance is available ?
         real_name, inst_name, typ = self._build_nodename(target_name)
         m_inst = self.get_namebus(real_name) or {}
