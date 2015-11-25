@@ -2,8 +2,9 @@
 
 __author__ = 'chijun'
 
-from transconf.utils import as_config
+from twisted.application import internet, service
 
+from transconf.utils import as_config
 from transconf.server.twisted.service import serve_forever, serve_stop
 from transconf.server.twisted.internet import RPCTranServer as _RPCTranServer
 from transconf.server.twisted.internet import TopicTranServer as _TopicTranServer 
@@ -39,6 +40,10 @@ class TranMiddleware(EventMiddleware):
 
 
 class TranWSGIServer(object):
+
+    def setup(self, middleware):
+        self.middleware = middleware
+
     def process_request(self, request):
         d = self.middleware(request)
         if d:
@@ -46,7 +51,6 @@ class TranWSGIServer(object):
             return d
             
     def process_response(self, response):
-        """Do whatever you'd like to the response."""
         return response
 
 
@@ -62,22 +66,26 @@ class FanoutTranServer(TranWSGIServer, _FanoutTranServer):
     pass
 
 
+class URLTranServer(TranWSGIServer):
+    def __init__(self, port=9889):
+        super(URLTranServer, self).__init__()
+
+
 class TranServer(object):
-    def __init__(self, app, pool_size=1000):
-        self.app = app
+    def __init__(self, pool_size=1000):
         self.pool_size = pool_size
-        self._init()
 
-    def _init(self):
-        init_meth = [getattr(self, item) for item in dir(self) if item.startswith('init_')]
-        for c in init_meth:
-            if callable(c): c()
-
-    def init_rpc(self):
+    def setup_rpc(self, app, key):
+        real_app = app[key]
         for s in (RPCTranServer, TopicTranServer, FanoutTranServer):
             serve = s()
-            serve.setup(self.app)
+            serve.setup(real_app)
             serve.register()
+
+    def setup_url(self, app, key):
+        real_app = app[key]
+        serve = URLTranServer()
+        serve.setup(real_app)
 
     def start(self):
         serve_forever(pool_size=self.pool_size)

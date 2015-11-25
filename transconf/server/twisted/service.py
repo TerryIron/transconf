@@ -59,15 +59,9 @@ class RPCTranServer(RabbitAMQP, Crypto):
         self.bind_queue = None
         self.bind_routing_key = None
 
-    """
-        Setup Middleware
-    """
     def setup(self, middleware):
         self.middleware = middleware
 
-    """
-        Process request by Customer Middleware 
-    """
     def process_request(self, body):
         return self.middleware.process_request(body)
             
