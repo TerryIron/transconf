@@ -72,13 +72,12 @@ class Model(BaseModel):
 
         """
         real_name = self._build_real_nodename(name_lst)
-        if real_name in self.namebus:
-            n = self.get_namebus(real_name)
-            if isinstance(n, dict):
-                if isinstance(value[0], self.is_node_rule):
-                    self.node_rules[real_name] = value[1]
-                n[key] = value
-                return True
+        n = self[real_name]
+        if isinstance(n, dict):
+            if isinstance(value[0], self.is_node_rule):
+                self.node_rules[real_name] = value[1]
+            n[key] = value
+            return True
         return False
 
     def run(self, target_name, method_name, *args, **kwargs):
@@ -97,7 +96,7 @@ class Model(BaseModel):
         """
         # Check node instance is available ?
         real_name, inst_name, typ = self._build_nodename(target_name)
-        m_inst = self.get_namebus(real_name) or {}
+        m_inst = self[real_name] or {}
         _type, meth = m_inst.get(method_name)
         if meth and isinstance(_type, typ):
             if callable(meth):

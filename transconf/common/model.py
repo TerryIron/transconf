@@ -51,11 +51,10 @@ class BaseModel(NameBus):
 
         """
         real_name = self._build_real_nodename(name_lst)
-        if real_name in self.namebus:
-            n = self.get_namebus(real_name)
-            if isinstance(n, dict):
-                n[key] = value
-                return True
+        n = self[real_name]
+        if isinstance(n, dict):
+            n[key] = value
+            return True
         return False
 
     def init_nodeobj(self, name_lst):
@@ -70,7 +69,7 @@ class BaseModel(NameBus):
 
         """
         real_name = self._build_real_nodename(name_lst)
-        self.set_namebus(real_name, {})
+        self[real_name] = {}
 
     def get_nodeobj(self, name_lst):
         """
@@ -84,7 +83,7 @@ class BaseModel(NameBus):
 
         """
         real_name = self._build_real_nodename(name_lst)
-        return self.get_namebus(real_name)
+        return self[real_name]
 
     def run(self, target_name, method_name, *args, **kwargs):
         """

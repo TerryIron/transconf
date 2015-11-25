@@ -118,10 +118,10 @@ class RPCMap(DictMixin):
         self.sort_apps()
 
     def __getitem__(self, rpc):
-	dom_rpc = self.normalize_rpc(rpc)
-	for app_rpc, app in self.applications:
-	    if app_rpc == dom_rpc:
-		return app
+        dom_rpc = self.normalize_rpc(rpc)
+        for app_rpc, app in self.applications:
+            if app_rpc == dom_rpc:
+                return app
         raise KeyError(
             "No application with the rpcline %r (existing: %s)"
             % (rpc, self.applications))

@@ -1,5 +1,9 @@
 __author__ = 'chijun'
 
+try:
+    from UserDict import DictMixin
+except ImportError:
+    from collections import MutableMapping as DictMixin
 
 """
     Target name's structure is like below:
@@ -45,30 +49,33 @@ __author__ = 'chijun'
 """
 
 
-class NameBus(object):
+class NameBus(DictMixin):
     """
     空间总线
     作为模型类和模型命令解释器的内置空间
 
     """
     
-    def __init__(self):
-        self.namebus = {}
+    def __init__(self, safe=True):
+        self.__namebus__ = []
+        self.safe = safe
 
-    def get_namebus(self, key):
+    def __getitem__(self, item):
         """
         获取总线对象
 
         Args:
-            key(str): 对象名称
+            item(str): 对象名称
 
         Returns:
             object: 总线对象
 
         """
-        return self.namebus.get(key, None)
+        for it, obj in self.__namebus__:
+            if it == item:
+                return obj
 
-    def set_namebus(self, key, value, force=False):
+    def __setitem__(self, key, value):
         """
         设置总线对象
 
@@ -78,22 +85,16 @@ class NameBus(object):
             force(bool): 是否强制，默认为False
 
         Returns:
-            bool: True或False
-
+            None
         """
-        if force:
-            self.namebus[key] = value
-            return True
+        if key in self:
+            if not self.safe:
+                del self[key]
+                self.__namebus__.append((key, value))
         else:
-            if key not in self.namebus:
-                if callable(value):
-                    self.namebus[key] = value()
-                else:
-                    self.namebus[key] = value
-                return True
-        return False
+            self.__namebus__.append((key, value))
 
-    def remove_namebus(self, key):
+    def __delitem__(self, key):
         """
         删除总线对象
 
@@ -104,15 +105,6 @@ class NameBus(object):
             None
 
         """
-        if key in self.namebus:
-            self.namebus.pop(key)
-
-    def list_namebus(self):
-        """
-        获取对象列表
-
-        Returns:
-            object: 对象表
-
-        """
-        return self.namebus.keys()
+        for it, obj in self.__namebus__:
+            if it == key:
+                self.__namebus__.remove((it, obj))

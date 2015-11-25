@@ -42,7 +42,7 @@ class ModelShell(NameBus):
         name_lst = str(target_name).split(self.split)
         if len(name_lst) >= 1:
             model_name = name_lst[0]
-            model = self.get_namebus(model_name)
+            model = self[model_name]
             if isinstance(model, Model):
                 return self._run(model, tuple(name_lst), method_name, *args, **kwargs)
             return False
@@ -96,7 +96,7 @@ class ModelShell(NameBus):
         model = translate()
         if model:
             for single in model.FORM:
-                self.set_namebus(single['node'], model, False)
+                self[single['node']] = model
         return model
 
     def load_model(self, model_class, config=None):
@@ -126,9 +126,8 @@ class ModelShell(NameBus):
             None
 
         """
-        model = self.get_namebus(name)
-        model.stop()
-        self.remove_namebus(name)
+        self[name].stop()
+        self.__delitem__(name)
 
     def list_models(self):
         """
@@ -138,4 +137,4 @@ class ModelShell(NameBus):
             list: 模型解释器名列表
 
         """
-        return self.list_namebus()
+        return self
