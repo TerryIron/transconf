@@ -1,3 +1,5 @@
+#coding=utf-8
+
 __author_ = 'chijun'
 
 __all__ = ['BaseModel']
@@ -18,7 +20,7 @@ class BaseModel(NameBus):
     MEMBER_SPLIT_DOT = ':'
 
     def __init__(self):
-        super(BaseModel, self).__init__()
+        NameBus.__init__(self)
         self._form = self.FORM
         self._struct = self.STRUCT
         self.split = self.SPLIT_DOT

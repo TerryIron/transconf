@@ -1,3 +1,5 @@
+#coding=utf-8
+
 __author__ = 'chijun'
 
 from transconf.common.model_driver import *

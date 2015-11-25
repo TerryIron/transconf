@@ -1,3 +1,5 @@
+#coding=utf-8
+
 __author__ = 'chijun'
 
 
@@ -90,6 +92,7 @@ class ModelShell(NameBus):
         """
         def translate():
             model = model_class()
+            print model
             model.init(config)
             self.parser.translate(model)
             return model

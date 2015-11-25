@@ -1,3 +1,5 @@
+#coding=utf-8
+
 __author__ = 'chijun'
 
 from transconf.common.reg import register_model, get_model

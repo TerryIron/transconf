@@ -1,3 +1,5 @@
+#coding=utf-8
+
 __author__ = 'chijun'
 
 from twisted.internet import defer

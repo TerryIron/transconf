@@ -1,3 +1,5 @@
+#coding=utf-8
+
 __author__ = 'chijun'
 
 from transconf.common.struct import *
@@ -44,9 +46,7 @@ class NodeStructV1(NodeStruct):
             raise NodeItemNotFound('Can not found variable:{0}'.format(key))
         try:
             typ = self.get_type(key)
-            data = dict(key=key,
-                        value=value)
-            return typ().check(data)
+            return typ().check(key, value)
         except Exception as e:
             raise NodeItemTypeNotSupport('Key:{0}, value:{1}, caused by {2}.'.format(key, value, e))
 

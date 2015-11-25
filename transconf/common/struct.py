@@ -1,3 +1,5 @@
+#coding=utf-8
+
 __author__ = 'chijun'
 
 __all__ = ['NodeItemNotFound', 'NodeItemTypeNotSupport', 'NodeItemStructError', 'NodeStruct']
@@ -129,7 +131,7 @@ class NodeStruct(object):
 
     def _check_type(self, item, data):
         _type = self._get_type(item)
-        return _type.check(data)
+        return _type.check(item, data)
 
     def _get_default(self, item):
         return item[1]

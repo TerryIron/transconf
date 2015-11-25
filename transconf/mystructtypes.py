@@ -1,3 +1,5 @@
+#coding=utf-8
+
 __author__ = 'chijun'
 
 from transconf.common.basetype import BaseType
@@ -16,9 +18,9 @@ class IsString(BaseType):
     字符串类型检查器
 
     """
-    def check(self, data):
-        if isinstance(data['value'], str):
-            return data['key'], self, data['value']
+    def check(self, key, value):
+        if isinstance(value, str):
+            return key, self, value
 
 
 class IsList(BaseType):
@@ -26,9 +28,9 @@ class IsList(BaseType):
     列表类型检查器
 
     """
-    def check(self, data):
-        if isinstance(data['value'], list):
-            return data['key'], self, data['value']
+    def check(self, key, value):
+        if isinstance(value, list):
+            return key, self, value
 
 
 class IsDict(BaseType):
@@ -36,9 +38,9 @@ class IsDict(BaseType):
     字典类型检查器
 
     """
-    def check(self, data):
-        if isinstance(data['value'], dict):
-            return data['key'], self, data['value']
+    def check(self, key, value):
+        if isinstance(value, dict):
+            return key, self, value
 
 
 # Use these BaseType class to define class members
@@ -47,9 +49,9 @@ class IsInterface(BaseType):
     接口类型检查器
 
     """
-    def check(self, data):
-        key = data['value'][0]
-        typ, name, val = data['value'][1].split(':')
+    def check(self, key, value):
+        key = value[0]
+        typ, name, val = value[1].split(':')
         obj = get_reg_target(typ, name)
         if not obj:
             return
@@ -64,8 +66,8 @@ class IsPrivateInterface(IsInterface):
     私有接口类型检查器
 
     """
-    def check(self, data):
-        return super(IsPrivateInterface, self).check(data)
+    def check(self, key, value):
+        return super(IsPrivateInterface, self).check(key ,value)
 
 
 class IsPublicInterface(IsInterface):
@@ -73,8 +75,8 @@ class IsPublicInterface(IsInterface):
     公有接口类型检查器
 
     """
-    def check(self, data):
-        return super(IsPublicInterface, self).check(data)
+    def check(self, key, value):
+        return super(IsPublicInterface, self).check(key, value)
 
 
 class IsNodeInterface(IsInterface):
@@ -82,8 +84,8 @@ class IsNodeInterface(IsInterface):
     节点接口类型检查器
 
     """
-    def check(self, data):
-        return super(IsNodeInterface, self).check(data)
+    def check(self, key, value):
+        return super(IsNodeInterface, self).check(key, value)
 
 
 class IsProperty(BaseType):
@@ -91,9 +93,9 @@ class IsProperty(BaseType):
     节点属性类型检测器
 
     """
-    def check(self, data):
-        key = data['value'][0]
-        typ, name, val = data['value'][1].split(':')
+    def check(self, key, value):
+        key = value[0]
+        typ, name, val = value[1].split(':')
         obj = get_reg_target(typ, name)
         if not obj:
             return

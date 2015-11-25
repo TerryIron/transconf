@@ -1,3 +1,5 @@
+#coding=utf-8
+
 __author__ = 'chijun'
 
 try:
@@ -49,16 +51,9 @@ except ImportError:
 """
 
 
-class NameBus(DictMixin):
-    """
-    空间总线
-    作为模型类和模型命令解释器的内置空间
-
-    """
-    
-    def __init__(self, safe=True):
-        self.__namebus__ = []
-        self.safe = safe
+class Bus(DictMixin):
+    def __init__(self):
+        self.bus = []
 
     def __getitem__(self, item):
         """
@@ -71,7 +66,7 @@ class NameBus(DictMixin):
             object: 总线对象
 
         """
-        for it, obj in self.__namebus__:
+        for it, obj in self.bus:
             if it == item:
                 return obj
 
@@ -88,11 +83,8 @@ class NameBus(DictMixin):
             None
         """
         if key in self:
-            if not self.safe:
-                del self[key]
-                self.__namebus__.append((key, value))
-        else:
-            self.__namebus__.append((key, value))
+            del self[key]
+        self.bus.append((key, value))
 
     def __delitem__(self, key):
         """
@@ -105,6 +97,30 @@ class NameBus(DictMixin):
             None
 
         """
-        for it, obj in self.__namebus__:
+        for it, obj in self.bus:
             if it == key:
-                self.__namebus__.remove((it, obj))
+                self.bus.remove((it, obj))
+
+
+class NameBus(object):
+    """
+    空间总线
+    作为模型类和模型命令解释器的内置空间
+
+    """
+    
+    def __init__(self, safe=True):
+        self.__namebus__ = Bus()
+        self.safe = safe
+
+
+    def __getitem__(self, item):
+        return self.__namebus__[item]
+
+    def __setitem__(self, key, value):
+        if key in self.__namebus__:
+            if not self.safe:
+                self.__namebus__[key] = value
+
+    def __delitem__(self, key):
+        del self.__namebus__[key]
