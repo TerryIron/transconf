@@ -2,13 +2,14 @@
 
 __author__ = 'chijun'
 
-from twisted.application import internet, service
+
 
 from transconf.utils import as_config
 from transconf.server.twisted.service import serve_forever, serve_stop
 from transconf.server.twisted.internet import RPCTranServer as _RPCTranServer
 from transconf.server.twisted.internet import TopicTranServer as _TopicTranServer 
 from transconf.server.twisted.internet import FanoutTranServer as _FanoutTranServer
+from transconf.server.twisted.service import URLTranServer as _URLTranServer
 from transconf.server.twisted.event import EventMiddleware
 from transconf.server import twisted
 
@@ -49,7 +50,7 @@ class TranWSGIServer(object):
         if d:
             d = d.process_request(request)
             return d
-            
+
     def process_response(self, response):
         return response
 
@@ -66,26 +67,23 @@ class FanoutTranServer(TranWSGIServer, _FanoutTranServer):
     pass
 
 
-class URLTranServer(TranWSGIServer):
-    def __init__(self, port=9889):
-        super(URLTranServer, self).__init__()
+class URLTranServer(TranWSGIServer, _URLTranServer):
+    pass
 
 
 class TranServer(object):
     def __init__(self, pool_size=1000):
         self.pool_size = pool_size
 
-    def setup_rpc(self, app, key):
-        real_app = app[key]
+    def setup_rpc(self, app):
         for s in (RPCTranServer, TopicTranServer, FanoutTranServer):
             serve = s()
-            serve.setup(real_app)
+            serve.setup(app)
             serve.register()
 
-    def setup_url(self, app, key):
-        real_app = app[key]
+    def setup_url(self, app, port=9889):
         serve = URLTranServer()
-        serve.setup(real_app)
+        serve.setup(app)
 
     def start(self):
         serve_forever(pool_size=self.pool_size)

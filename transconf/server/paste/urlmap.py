@@ -10,12 +10,12 @@ def urlmap_factory(loader, global_conf, **local_conf):
         not_found_app = global_conf.get('not_found_app')
     if not_found_app:
         not_found_app = loader.get_app(not_found_app, global_conf=global_conf)
-        urlmap = URLMap(not_found_app=not_found_app)
+    _map = URLMap(not_found_app=not_found_app)
     for path, app_name in local_conf.items():
-        path = paste.urlmap.parse_path_expression(path)                                                                                                                     
+        path = paste.urlmap.parse_path_expression(path)
         app = loader.get_app(app_name, global_conf=global_conf)
-        urlmap[path] = app
-    return urlmap
+        _map[path] = app
+    return _map
 
 
 class URLMap(paste.urlmap.URLMap):

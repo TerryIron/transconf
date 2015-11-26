@@ -113,7 +113,6 @@ class NameBus(object):
         self.__namebus__ = Bus()
         self.safe = safe
 
-
     def __getitem__(self, item):
         return self.__namebus__[item]
 

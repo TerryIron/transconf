@@ -21,6 +21,7 @@ if __name__ == '__main__':
                   'main',
                   relative_to=here)
     server = TranServer()
-    server.setup_rpc(app, 'mainrpc')
+    server.setup_rpc(app['mainrpc'])
+    server.setup_url(app['mainurl'])
     server.start()
 

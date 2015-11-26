@@ -14,6 +14,7 @@ import functools
 
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
+from twisted.web.server import Site, Request
 
 from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.response import Response
@@ -28,6 +29,10 @@ SERVER = []
 
 def serve_register(func, *args, **kwargs):
     SERVER.append(functools.partial(func, *args, **kwargs))
+
+
+def serve_register_tcp(app, port):
+    reactor.listenTCP(port, app)
 
 
 def serve_forever(pool_size=1000):
@@ -59,12 +64,6 @@ class RPCTranServer(RabbitAMQP, Crypto):
         self.bind_queue = None
         self.bind_routing_key = None
 
-    def setup(self, middleware):
-        self.middleware = middleware
-
-    def process_request(self, body):
-        return self.middleware.process_request(body)
-            
     def _connect(self):
         cc = protocol.ClientCreator(reactor, 
                                     self.connection_class,
@@ -130,3 +129,12 @@ class RPCTranServer(RabbitAMQP, Crypto):
 
     def register(self):
         serve_register(self.connect, self.on_connect)
+
+
+class URLRequest(Request):
+    pass
+
+
+class URLTranServer(Site):
+    requestFactory = URLRequest
+

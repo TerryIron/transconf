@@ -90,16 +90,13 @@ class ModelShell(NameBus):
             None
 
         """
+        # Check node name is exist ?
         def translate():
             model = model_class()
-            print model
             model.init(config)
             self.parser.translate(model)
             return model
         model = translate()
-        if model:
-            for single in model.FORM:
-                self[single['node']] = model
         return model
 
     def load_model(self, model_class, config=None):
