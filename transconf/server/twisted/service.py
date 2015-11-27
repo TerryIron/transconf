@@ -15,11 +15,13 @@ import functools
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 from twisted.web.server import Site, Request
+from twisted.web.http import unquote, datetimeToString, networkString
 
 from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.response import Response
 from transconf.server.crypto import Crypto
 from transconf.server.twisted.log import getLogger
+from transconf import __version__
 
 LOG = getLogger(__name__)
 
@@ -63,6 +65,12 @@ class RPCTranServer(RabbitAMQP, Crypto):
         self.bind_exchange = ''
         self.bind_queue = None
         self.bind_routing_key = None
+
+    def setup(self, middleware):
+        self.middleware = middleware
+
+    def process_request(self, request):
+        self.middleware.process_request(request)
 
     def _connect(self):
         cc = protocol.ClientCreator(reactor, 
@@ -131,10 +139,34 @@ class RPCTranServer(RabbitAMQP, Crypto):
         serve_register(self.connect, self.on_connect)
 
 
+version = networkString("TransWeb {0}".format(__version__))
+
+
 class URLRequest(Request):
-    pass
+    def process(self):
+        # get site from channel
+        self.site = self.channel.site
+
+        # set various default headers
+        self.setHeader(b'server', version)
+        self.setHeader(b'date', datetimeToString())
+
+        # Resource Identification
+        self.prepath = []
+        self.postpath = list(map(unquote, self.path[1:].split(b'/')))
 
 
 class URLTranServer(Site):
     requestFactory = URLRequest
 
+    def startFactory(self):
+        pass
+
+    def stopFactory(self):
+        pass
+
+    def setup(self, middleware):
+        self.resource = middleware
+
+    def register(self, port):
+        serve_register_tcp(self, port)

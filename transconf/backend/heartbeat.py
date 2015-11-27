@@ -20,17 +20,19 @@ class HeartBeatIsEnabled(declarative_base()):
 class HeartBeatCollection(declarative_base()):
     __tablename__ = 'heartbeat'
 
+    uuid = StrColumn(36)
     group_name = StrColumn(30)
     group_type = StrColumn(10)
-    uuid = StrColumn(36)
     available = StrColumn(5)
+    is_alive = StrColumn(5)
     count = IntColumn()
 
-    def __init__(self, group_name, group_type, uuid, available, count):
+    def __init__(self, group_name, group_type, uuid, count, is_alive=False, available=True):
         self.group_name = group_name
         self.group_type = group_type
         self.uuid = uuid
-        self.available = available
+        self.available = str(available)
+        self.is_alive = str(is_alive)
         self.count = count
 
 
@@ -70,6 +72,7 @@ class HeartBeatCollectionBackend(BaseModelDriver):
                 record.count = int(target.count)
                 if need_update_count:
                     record.count += 1
+                    record.is_alive = str(True)
             target.update(record)
         else:
             self.session.add(record)

@@ -89,7 +89,6 @@ class HeartBeat(Model):
                 req = ActionRequest('heartcond.checkin:0.1.0',
                                     dict(group_name=local_name, 
                                          uuid=local_uuid,
-                                         available=str(True),
                                          group_type=local_type))
                 event = EventDispatcher(client, req, need_close=False)
                 t = Task(lambda: event.startWithoutResult())
@@ -167,14 +166,13 @@ class HeartCondition(Model):
             return False
         return True
 
-    def _update_target(self, group_name, group_type, uuid, available, need_count=True):
+    def _update_target(self, group_name, group_type, uuid, need_count=True):
         LOG.debug('Update a heartbeat for group:{0}, type:{1}, uuid:{2}'.format(group_name,
                                                                                 group_type,
                                                                                 uuid))
         BACKEND.update(dict(group_name=group_name,
                             group_type=group_type,
-                            uuid=uuid,
-                            available=str(available)),
+                            uuid=uuid),
                        need_count)
 
     def _check_has_available_targets(self, group_name, group_type):
@@ -188,7 +186,6 @@ class HeartCondition(Model):
         group_name = context.get('group_name', None)
         group_type = context.get('group_type', None)
         uuid = context.get('uuid', None)
-        available = context.get('available', False)
         LOG.debug('Got a heartbeat from group:{0}, type:{1}, uuid:{2}'.format(group_name,
                                                                               group_type,
                                                                               uuid))
@@ -203,7 +200,7 @@ class HeartCondition(Model):
                 return 
             except Exception:
                 return
-            self._update_target(group_name, group_type, uuid, available)
+            self._update_target(group_name, group_type, uuid)
             self._check_has_available_targets(group_name, group_type)
             t = Task(lambda:  self._check_heart_still_alive(group_name, group_type, uuid))
             t.CallLater(heartrate + heartrate / 2)

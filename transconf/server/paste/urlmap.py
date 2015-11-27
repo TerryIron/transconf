@@ -15,6 +15,7 @@ def urlmap_factory(loader, global_conf, **local_conf):
         path = paste.urlmap.parse_path_expression(path)
         app = loader.get_app(app_name, global_conf=global_conf)
         _map[path] = app
+    print 111111111111, _map
     return _map
 
 
