@@ -55,6 +55,9 @@ class Bus(DictMixin):
     def __init__(self):
         self.bus = []
 
+    def keys(self):
+        return [k for k, v in self.bus]
+
     def __getitem__(self, item):
         """
         获取总线对象
@@ -113,13 +116,18 @@ class NameBus(object):
         self.__namebus__ = Bus()
         self.safe = safe
 
-    def __getitem__(self, item):
+    def get(self, item):
         return self.__namebus__[item]
 
-    def __setitem__(self, key, value):
-        if key in self.__namebus__:
+    def all(self):
+        return self.__namebus__
+
+    def set(self, key, value):
+        if key in self.__namebus__.keys():
             if not self.safe:
                 self.__namebus__[key] = value
+        else:
+            self.__namebus__[key] = value
 
-    def __delitem__(self, key):
+    def remove(self, key):
         del self.__namebus__[key]

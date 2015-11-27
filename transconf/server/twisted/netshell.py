@@ -86,7 +86,6 @@ class NetShell(ModelShell):
     def __init__(self):
         super(NetShell, self).__init__(LOG)
 
-
     def preload_model(self, model_class, config=None):
         model = super(NetShell, self).preload_model(model_class, config)
         return model

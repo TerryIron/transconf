@@ -178,13 +178,13 @@ class HeartCondition(Model):
                        need_count)
 
     def _check_has_available_targets(self, group_name, group_type):
-        #Check if it has available uuid of group target? 
+        # Check if it has available uuid of group target?
         if BACKEND.has(group_name, group_type):
             self.buf_group_target[group_name + '_' + group_type] = True
         else:
             self.buf_group_target[group_name + '_' + group_type] = False
 
-    def checkin(self, context, heartrate=60, timeout=3):
+    def checkin(self, context, heartrate=60):
         group_name = context.get('group_name', None)
         group_type = context.get('group_type', None)
         uuid = context.get('uuid', None)
@@ -206,7 +206,7 @@ class HeartCondition(Model):
             self._update_target(group_name, group_type, uuid, available)
             self._check_has_available_targets(group_name, group_type)
             t = Task(lambda:  self._check_heart_still_alive(group_name, group_type, uuid))
-            t.CallLater(heartrate + timeout)
+            t.CallLater(heartrate + heartrate / 2)
         else:
             LOG.warn('Got a bad heartbeat, context:{0}'.format(context))
 

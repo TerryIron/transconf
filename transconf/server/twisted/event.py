@@ -192,6 +192,7 @@ class EventDeferDispatcher(object):
     ------------------    -------------------------------- 
 """
 
+
 class EventMiddleware(ShellMiddleware):
     """
         Process Event Request
