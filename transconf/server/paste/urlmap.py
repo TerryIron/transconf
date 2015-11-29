@@ -1,5 +1,6 @@
 __author__ = 'chijun'
 
+import werkzeug.http
 import paste.urlmap
 
 
@@ -15,7 +16,6 @@ def urlmap_factory(loader, global_conf, **local_conf):
         path = paste.urlmap.parse_path_expression(path)
         app = loader.get_app(app_name, global_conf=global_conf)
         _map[path] = app
-    print 111111111111, _map
     return _map
 
 
@@ -69,7 +69,7 @@ class URLMap(paste.urlmap.URLMap):
     def _content_type_strategy(self, host, port, environ):
         """Check Content-Type header for API version."""
         app = None
-        params = parse_options_header(environ.get('CONTENT_TYPE', ''))[1]
+        params = werkzeug.http.parse_options_header(environ.get('CONTENT_TYPE', ''))[1]
         if 'version' in params:
             app, app_url = self._match(host, port, '/v' + params['version'])
             if app:
@@ -79,7 +79,7 @@ class URLMap(paste.urlmap.URLMap):
 
     def _accept_strategy(self, host, port, environ, supported_content_types):
         """Check Accept header for best matching MIME type and API version."""
-        accept = Accept(environ.get('HTTP_ACCEPT', ''))
+        accept = werkzeug.http.parse_accept_header(environ.get('HTTP_ACCEPT', ''))
 
         app = None
 
@@ -92,7 +92,7 @@ class URLMap(paste.urlmap.URLMap):
 
         return mime_type, app
 
-    def __call__(self, environ, start_response):
+    def __call__(self, environ, start_response=None):
         host = environ.get('HTTP_HOST', environ.get('SERVER_NAME')).lower()
         if ':' in host:
             host, port = host.split(':', 1)

@@ -69,7 +69,7 @@ class FanoutTranServer(TranWSGIServer, _FanoutTranServer):
 
 class URLTranServer(TranWSGIServer, _URLTranServer):
     def setup(self, middleware):
-        self.resource = middleware
+        self.middleware = middleware
 
 
 class TranServer(object):

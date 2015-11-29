@@ -16,6 +16,7 @@ from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
 from twisted.web.server import Site, Request
 from twisted.web.http import unquote, datetimeToString, networkString
+from twisted.python import failure
 
 from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.response import Response
@@ -143,6 +144,22 @@ version = networkString("TransWeb {0}".format(__version__))
 
 
 class URLRequest(Request):
+    def getRequest(self):
+        x = self.getStateToCopy()
+        del x['transport']
+        # XXX refactor this attribute out; it's from protocol
+        # del x['server']
+        del x['channel']
+        del x['content']
+        del x['site']
+        if 'HTTPS' in x['clientproto']:
+            x['wsgi.url_scheme'] = 'HTTPS'
+        else:
+            x['wsgi.url_scheme'] = 'HTTP'
+        x['requestHeaders'] = self.getAllHeaders()
+
+        return x
+
     def process(self):
         # get site from channel
         self.site = self.channel.site
@@ -155,6 +172,17 @@ class URLRequest(Request):
         self.prepath = []
         self.postpath = list(map(unquote, self.path[1:].split(b'/')))
 
+        LOG.debug('Site target:{0}'.format(self.site))
+        LOG.debug('Site path:{0}'.format(self.path))
+        LOG.debug('Site content:{0}'.format(self.content))
+        LOG.debug('Server response header:{0}'.format(self.responseHeaders))
+        LOG.debug('Get post path:{0}'.format(self.postpath))
+        try:
+            res = self.site.process_request(self.getRequest())
+            self.render(res)
+        except:
+            self.processingFailed(failure.Failure())
+
 
 class URLTranServer(Site):
     requestFactory = URLRequest
@@ -166,7 +194,10 @@ class URLTranServer(Site):
         pass
 
     def setup(self, middleware):
-        self.resource = middleware
+        self.middleware = middleware
+
+    def process_request(self, request):
+        return self.middleware.process_request(request)
 
     def register(self, port):
         serve_register_tcp(self, port)
