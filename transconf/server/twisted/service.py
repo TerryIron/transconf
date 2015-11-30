@@ -11,18 +11,19 @@ except:
 
 import pika
 import functools
+import webob
 
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
-from twisted.web.server import Site, Request
-from twisted.web.http import unquote, datetimeToString, networkString
-from twisted.python import failure
+from twisted.web.server import Site
+from twisted.web.wsgi import _WSGIResponse as WSGIResponse
+from twisted.web.wsgi import WSGIResource, NOT_DONE_YET, INTERNAL_SERVER_ERROR, exc_info, err, Failure
+from twisted.python.threadpool import ThreadPool
 
 from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.server.response import Response
 from transconf.server.crypto import Crypto
 from transconf.server.twisted.log import getLogger
-from transconf import __version__
 
 LOG = getLogger(__name__)
 
@@ -140,64 +141,72 @@ class RPCTranServer(RabbitAMQP, Crypto):
         serve_register(self.connect, self.on_connect)
 
 
-version = networkString("TransWeb {0}".format(__version__))
+class _Site(Site):
+    def doStart(self):
+        pass
+
+    def doStop(self):
+        pass
 
 
-class URLRequest(Request):
-    def getRequest(self):
-        x = self.getStateToCopy()
-        del x['transport']
-        # XXX refactor this attribute out; it's from protocol
-        # del x['server']
-        del x['channel']
-        del x['content']
-        del x['site']
-        if 'HTTPS' in x['clientproto']:
-            x['wsgi.url_scheme'] = 'HTTPS'
-        else:
-            x['wsgi.url_scheme'] = 'HTTP'
-        x['requestHeaders'] = self.getAllHeaders()
-
-        return x
-
-    def process(self):
-        # get site from channel
-        self.site = self.channel.site
-
-        # set various default headers
-        self.setHeader(b'server', version)
-        self.setHeader(b'date', datetimeToString())
-
-        # Resource Identification
-        self.prepath = []
-        self.postpath = list(map(unquote, self.path[1:].split(b'/')))
-
-        LOG.debug('Site target:{0}'.format(self.site))
-        LOG.debug('Site path:{0}'.format(self.path))
-        LOG.debug('Site content:{0}'.format(self.content))
-        LOG.debug('Server response header:{0}'.format(self.responseHeaders))
-        LOG.debug('Get post path:{0}'.format(self.postpath))
+class _WSGIResponse(WSGIResponse):
+    def run(self):
         try:
-            res = self.site.process_request(self.getRequest())
-            self.render(res)
+            def _write_response(appIterator):
+                for elem in appIterator:
+                    if elem:
+                        self.write(elem)
+                    if self._requestFinished:
+                        break
+                close = getattr(appIterator, 'close', None)
+                if close is not None:
+                    close()
+
+            def _wsgi_finish():
+                def wsgiFinish(started):
+                    if not self._requestFinished:
+                        if not started:
+                            self._sendResponseHeaders()
+                        self.request.finish()
+                self.reactor.callFromThread(wsgiFinish, self.started)
+
+            middleware = self.application(self.environ, self.startResponse)
+            if middleware:
+                if isinstance(middleware, list):
+                    _write_response(middleware)
+                    _wsgi_finish()
+                else:
+                    LOG.debug('Middleware: {0}, ready to process request.'.format(middleware))
+                    d = middleware.process_request(self.environ)
+                    if d:
+                        d.addCallback(lambda _appIterator: _write_response(_appIterator))
+                        d.addCallback(lambda r: _wsgi_finish())
         except:
-            self.processingFailed(failure.Failure())
+            def wsgiError(started, type, value, traceback):
+                err(Failure(value, type, traceback), "WSGI application error")
+                if started:
+                    self.request.transport.loseConnection()
+                else:
+                    self.request.setResponseCode(INTERNAL_SERVER_ERROR)
+                    self.request.finish()
+            self.reactor.callFromThread(wsgiError, self.started, *exc_info())
+        self.started = True
 
 
-class URLTranServer(Site):
-    requestFactory = URLRequest
+class _WSGIResource(WSGIResource):
+    def render(self, request):
+        response = _WSGIResponse(
+            self._reactor, self._threadpool, self._application, request)
+        response.start()
+        return NOT_DONE_YET
 
-    def startFactory(self):
-        pass
 
-    def stopFactory(self):
-        pass
-
-    def setup(self, middleware):
-        self.middleware = middleware
-
-    def process_request(self, request):
-        return self.middleware.process_request(request)
+class URLTranServer(object):
+    def __init__(self, app):
+        self.pool = ThreadPool()
+        self.pool.start()
+        self.resource = _WSGIResource(reactor, self.pool, app)
+        self.site = _Site(self.resource)
 
     def register(self, port):
-        serve_register_tcp(self, port)
+        serve_register_tcp(self.site, port)

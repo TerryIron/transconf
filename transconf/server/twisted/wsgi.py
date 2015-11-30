@@ -68,8 +68,7 @@ class FanoutTranServer(TranWSGIServer, _FanoutTranServer):
 
 
 class URLTranServer(TranWSGIServer, _URLTranServer):
-    def setup(self, middleware):
-        self.middleware = middleware
+    pass
 
 
 class TranServer(object):
@@ -83,8 +82,7 @@ class TranServer(object):
             serve.register()
 
     def setup_url(self, app, port=9889):
-        serve = URLTranServer()
-        serve.setup(app)
+        serve = URLTranServer(app)
         serve.register(port)
 
     def start(self):

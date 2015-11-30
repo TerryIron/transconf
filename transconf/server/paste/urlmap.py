@@ -19,6 +19,12 @@ def urlmap_factory(loader, global_conf, **local_conf):
     return _map
 
 
+SUPPORTED_CONTENT_TYPES = (
+    'application/json',
+    'application/xml',
+)
+
+
 class URLMap(paste.urlmap.URLMap):
     def _match(self, host, port, path_info):
         """Find longest match for a given URL path."""
@@ -53,7 +59,7 @@ class URLMap(paste.urlmap.URLMap):
         parts = path_info.rsplit('.', 1)
         if len(parts) > 1:
             possible_type = 'application/' + parts[1]
-            if possible_type in wsgi.SUPPORTED_CONTENT_TYPES:
+            if possible_type in SUPPORTED_CONTENT_TYPES:
                 mime_type = possible_type
 
         parts = path_info.split('/')
@@ -84,7 +90,11 @@ class URLMap(paste.urlmap.URLMap):
         app = None
 
         # Find the best match in the Accept header
-        mime_type, params = accept.best_match(supported_content_types)
+        match = accept.best_match(supported_content_types)
+        if match:
+            mime_type, params = match[0], match[1]
+        else:
+            mime_type, params = None, dict()
         if 'version' in params:
             app, app_url = self._match(host, port, '/v' + params['version'])
             if app:
@@ -114,7 +124,7 @@ class URLMap(paste.urlmap.URLMap):
         # 2) Content-Type header (eg application/json;version=1.1)
         # 3) Accept header (eg application/json;q=0.8;version=1.1)
 
-        supported_content_types = list(wsgi.SUPPORTED_CONTENT_TYPES)
+        supported_content_types = list(SUPPORTED_CONTENT_TYPES)
 
         mime_type, app, app_url = self._path_strategy(host, port, path_info)
 
