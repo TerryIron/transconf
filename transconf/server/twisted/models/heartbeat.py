@@ -58,7 +58,7 @@ class HeartBeat(Model):
     # 1 add get_fanout_members
     UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heart',
-             'public': ['alive', 'mod:heart:heartbeat'],
+             'public': ['alive', 'mod:self:heartbeat'],
             }
     ]
 
@@ -106,10 +106,10 @@ class HeartCondition(Model):
     UNEXPECTED_OPTIONS = ['heartrate']
     FORM = [{'node': 'heartcond',
              'public': [
-                        ['has', 'mod:heartcond:has_heartbeat'],
-                        ['add', 'mod:heartcond:add_heartbeat'],
-                        ['remove', 'mod:heartcond:remove_heartbeat'],
-                        ['checkin', 'mod:heartcond:checkin'],
+                        ['has', 'mod:self:has_heartbeat'],
+                        ['add', 'mod:self:add_heartbeat'],
+                        ['remove', 'mod:self:remove_heartbeat'],
+                        ['checkin', 'mod:self:checkin'],
                        ]
             }
     ]

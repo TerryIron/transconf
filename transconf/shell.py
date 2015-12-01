@@ -142,4 +142,4 @@ class ModelShell(NameBus):
             list: 模型解释器名列表
 
         """
-        return [k for k, v in self.all()]
+        return self.all().keys()

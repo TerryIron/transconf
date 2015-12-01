@@ -16,7 +16,8 @@ class Model(BaseModel):
     模型解释器
 
     """
-    STRUCT = NodeStructV1()
+    STRUCT_CLASS = NodeStructV1
+    STRUCT = None
     SPLIT_DOT = '&'
     IS_NODE_METHOD = IsNodeInterface
     IS_PRIVATE_METHOD = IsPrivateInterface
@@ -24,11 +25,13 @@ class Model(BaseModel):
     __version__ = (0, 1, 0)
 
     def __init__(self):
-        super(Model, self).__init__()
         self.is_pri_rule = self.IS_PRIVATE_METHOD
         self.is_pub_rule = self.IS_PUBLIC_METHOD 
         self.is_node_rule = self.IS_NODE_METHOD
         self.node_rules = {}
+        if self.STRUCT_CLASS:
+            self.STRUCT = self.STRUCT_CLASS(self)
+        super(Model, self).__init__()
 
     def _build_nodename(self, lst):
         def name(self, n, sub_name):

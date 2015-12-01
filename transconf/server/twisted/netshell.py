@@ -3,7 +3,6 @@
 __author__ = 'chijun'
 
 import functools
-
 from twisted.internet import defer
 
 from transconf.shell import ModelShell
@@ -17,6 +16,10 @@ LOG = getLogger(__name__)
 
 class BadShellRequest(Exception):
     """Raised when request comming with invalid data """
+
+
+class NoHandlerFound(Exception):
+    """Raised when no handler to process request"""
 
 
 class ShellRequest(Request):
@@ -67,6 +70,8 @@ class ActionRequest(ShellRequest):
 
 class ShellMiddleware(Middleware):
     def process_request(self, context):
+        if not hasattr(self.handler, 'run'):
+            raise NoHandlerFound()
         shell_req = context.get('shell_command', None)
         if shell_req:
             target_name = shell_req.get('target_name', None)

@@ -31,7 +31,7 @@ class FormParser(object):
         """
         self.ext_struct.add(struct)
 
-    def _walk_form_unit_item(self, struct, form_unit):
+    def _walk_from_unit_item(self, struct, form_unit):
         for unit_name, unit_var in form_unit.items(): 
             if isinstance(unit_var[0], (list or tuple)):
                 for var in unit_var:
@@ -40,12 +40,12 @@ class FormParser(object):
             else:
                 yield struct.check_input(unit_name, unit_var)
 
-    def _walk_form_unit(self, form):
+    def _walk_from_unit(self, form):
         for form_unit in form: 
-            if self._check_form_unit(form_unit):
+            if self._check_from_unit(form_unit):
                 yield form_unit
 
-    def _check_form_unit(self, form_unit):
+    def _check_from_unit(self, form_unit):
         return True if type(form_unit) == dict else False
 
     def _get_struct(self, form_unit):
@@ -55,7 +55,7 @@ class FormParser(object):
                 return struct
 
     def _parse_form(self, form, father='ROOT'):
-        for form_unit in self._walk_form_unit(form):
+        for form_unit in self._walk_from_unit(form):
             struct = self._get_struct(form_unit)
             if not struct:
                 raise FormUnitTypeError('Form: {0}'.format(form_unit))
@@ -63,7 +63,7 @@ class FormParser(object):
                 for n, f, k, typ, v in self._parse_form(branch, form_unit[struct.name]):
                     yield (n, f, k, typ, v)
             node_name = struct.nodename
-            for k, typ, v in self._walk_form_unit_item(struct, form_unit):
+            for k, typ, v in self._walk_from_unit_item(struct, form_unit):
                 yield (form_unit[node_name], father, k, typ, v)
 
     def _gen_parser(self, form):

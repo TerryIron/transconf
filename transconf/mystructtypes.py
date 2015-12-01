@@ -50,15 +50,15 @@ class IsInterface(BaseType):
 
     """
     def check(self, key, value):
-        key = value[0]
+        _key = value[0]
         typ, name, val = value[1].split(':')
-        obj = get_reg_target(typ, name)
+        obj = get_reg_target(typ, name) if name != 'self' else key
         if not obj:
             return
         if hasattr(obj, val):
             _method = getattr(obj, val)
             if callable(_method):
-                return key, self, _method
+                return _key, self, _method
 
 
 class IsPrivateInterface(IsInterface):
@@ -94,13 +94,13 @@ class IsProperty(BaseType):
 
     """
     def check(self, key, value):
-        key = value[0]
+        _key = value[0]
         typ, name, val = value[1].split(':')
-        obj = get_reg_target(typ, name)
+        obj = get_reg_target(typ, name) if name != 'self' else key
         if not obj:
             return
         if hasattr(obj, val):
             _property = getattr(obj, val)
             if not callable(_property):
-                return key, self, _property
+                return _key, self, _property
 

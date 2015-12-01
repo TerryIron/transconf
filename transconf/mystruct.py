@@ -19,7 +19,7 @@ class NodeStructV1(NodeStruct):
                        IsProperty
                       ]
 
-    def __init__(self):
+    def __init__(self, model):
         super(NodeStructV1, self).__init__()
         self.set_default('node', IsString, 1, None)
         self.set_default('name', IsNodeInterface, 1, None)
@@ -29,6 +29,7 @@ class NodeStructV1(NodeStruct):
         self.set_default('subs', IsList, 50, {})
         self.set_nodename('node')
         self.set_branchname('subs')
+        self.model = model
 
     def check_input(self, key, value):
         """
@@ -46,6 +47,8 @@ class NodeStructV1(NodeStruct):
             raise NodeItemNotFound('Can not found variable:{0}'.format(key))
         try:
             typ = self.get_type(key)
+            if key in ('private', 'public', 'property'):
+                key = self.model
             return typ().check(key, value)
         except Exception as e:
             raise NodeItemTypeNotSupport('Key:{0}, value:{1}, caused by {2}.'.format(key, value, e))

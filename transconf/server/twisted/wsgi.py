@@ -17,13 +17,16 @@ from transconf.server import twisted
 class TranMiddleware(EventMiddleware):
     @classmethod                                                                                                                                               
     def factory(cls, global_config, **local_config):
-        assert 'shell' in local_config, 'please install model shell as shell=x'
         twisted.CONF = as_config(global_config['__file__'])
-        sh = local_config.pop('shell')
+        if 'shell' in local_config:
+            sh = local_config.pop('shell')
+        else:
+            sh = None
 
         def _factory(app, start_response=None):
             c = cls(app, **local_config)
-            c.handler = sh
+            if sh:
+                c.handler = sh
             return c
         return _factory
 
@@ -48,8 +51,7 @@ class TranWSGIServer(object):
     def process_request(self, request):
         d = self.middleware(request)
         if d:
-            d = d.process_request(request)
-            return d
+            return d.process_request(request)
 
     def process_response(self, response):
         return response

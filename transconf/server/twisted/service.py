@@ -11,7 +11,7 @@ except:
 
 import pika
 import functools
-import webob
+import os, signal
 
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol, task
@@ -40,8 +40,13 @@ def serve_register_tcp(app, port):
 
 
 def serve_forever(pool_size=1000):
+    def _stop():
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        os.kill(os.getpgid(os.getpid()), signal.SIGKILL)
+
     for func in SERVER:
         func()
+    reactor.addSystemEventTrigger('before', 'shutdown', _stop)
     reactor.suggestThreadPoolSize(pool_size)
     reactor.run()
 
