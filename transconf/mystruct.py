@@ -51,5 +51,5 @@ class NodeStructV1(NodeStruct):
                 key = self.model
             return typ().check(key, value)
         except Exception as e:
-            raise NodeItemTypeNotSupport('Key:{0}, value:{1}, caused by {2}.'.format(key, value, e))
+            raise NodeItemTypeNotSupport('Key:{0}, value:{1}, caused:{2}.'.format(key, value, e))
 

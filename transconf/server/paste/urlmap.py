@@ -3,6 +3,15 @@ __author__ = 'chijun'
 import werkzeug.http
 import paste.urlmap
 
+from transconf.server.twisted.url import NetShell
+from transconf.server.paste import rpcmap
+
+rpcmap.SHELL_CLASS = NetShell
+
+
+def shell_factory(loader, global_conf, **local_conf):
+    return rpcmap.shell_factory(loader, global_conf, **local_conf)
+
 
 def urlmap_factory(loader, global_conf, **local_conf):
     if 'not_found_app' in local_conf:

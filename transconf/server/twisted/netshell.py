@@ -14,7 +14,7 @@ from transconf.server.twisted.log import getLogger
 LOG = getLogger(__name__)
 
 
-class BadShellRequest(Exception):
+class BadRequest(Exception):
     """Raised when request comming with invalid data """
 
 
@@ -84,7 +84,7 @@ class ShellMiddleware(Middleware):
                                        method_name, *args, **kwargs)
                 return cb()
             else:
-                raise BadShellRequest()
+                raise BadRequest(context)
 
 
 class NetShell(ModelShell):
@@ -94,6 +94,13 @@ class NetShell(ModelShell):
     def preload_model(self, model_class, config=None):
         model = super(NetShell, self).preload_model(model_class, config)
         return model
+
+    def run(self, target_name, method_name, *args, **kwargs):
+        try:
+            ret = super(NetShell, self).run(target_name, method_name, *args, **kwargs)
+            return ret
+        except Exception, e:
+            LOG.error(e)
 
     def _run(self, model, name, method, *args, **kwargs):
         d = defer.succeed({})

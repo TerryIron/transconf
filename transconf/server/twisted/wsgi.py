@@ -11,11 +11,15 @@ from transconf.server.twisted.internet import TopicTranServer as _TopicTranServe
 from transconf.server.twisted.internet import FanoutTranServer as _FanoutTranServer
 from transconf.server.twisted.service import URLTranServer as _URLTranServer
 from transconf.server.twisted.event import EventMiddleware
+from transconf.server.twisted.url import URLMiddleware as _URLMiddleware
 from transconf.server import twisted
+from transconf.server.twisted.log import getLogger
+
+LOG = getLogger(__name__)
 
 
-class TranMiddleware(EventMiddleware):
-    @classmethod                                                                                                                                               
+class WSGIMiddleware(object):
+    @classmethod
     def factory(cls, global_config, **local_config):
         twisted.CONF = as_config(global_config['__file__'])
         if 'shell' in local_config:
@@ -27,20 +31,18 @@ class TranMiddleware(EventMiddleware):
             c = cls(app, **local_config)
             if sh:
                 c.handler = sh
+            if callable(start_response):
+                start_response('200 OK', [('Content-type', 'text/html'), ])
             return c
         return _factory
 
-    def process_request(self, request):
-        d = super(TranMiddleware, self).process_request(request)
-        return d
 
-    def process_response(self, response):
-        """Do whatever you'd like to the response."""
-        return response
+class URLMiddleware(_URLMiddleware, WSGIMiddleware):
+    pass
 
-    def __call__(self, req):
-        response = self.process_request(req)
-        return self.process_response(response)
+
+class TranMiddleware(EventMiddleware, WSGIMiddleware):
+    pass
 
 
 class TranWSGIServer(object):
@@ -52,9 +54,6 @@ class TranWSGIServer(object):
         d = self.middleware(request)
         if d:
             return d.process_request(request)
-
-    def process_response(self, response):
-        return response
 
 
 class RPCTranServer(TranWSGIServer, _RPCTranServer):

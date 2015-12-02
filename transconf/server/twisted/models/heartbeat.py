@@ -149,7 +149,7 @@ class HeartCondition(Model):
             self._timestamp[uuid] = cur_time
             return cur_time
         else:
-            if int(cur_time - self._timestamp[uuid]) >= (int(heartrate)):
+            if int(cur_time - self._timestamp[uuid] + 1) >= (int(heartrate)):
                 return cur_time
         raise HeartRateErr(group_name, group_type)
 

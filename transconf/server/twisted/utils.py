@@ -24,6 +24,8 @@ class PeerRequest(Request):
     Here instance 'found_var_name' is only support normal object and dict.
     We push peer info into request when received data be ready in twisted's transport.
 '''
+
+
 def need_peer_info(found_var_name):
     def _need_peer_info(func):
         def __need_peer_info(self, *args, **kwargs):

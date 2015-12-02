@@ -63,6 +63,15 @@ class Middleware(object):
         from twisted.internet.defer import succeed
         return succeed({})
 
+    def process_response(self, response):
+        """Do whatever you'd like to the response."""
+        return response
+
+    def __call__(self, req):
+        d = self.process_request(req)
+        d.addCallback(lambda res: self.process_response(res))
+        return d
+
 
 class RPCTranServer(RabbitAMQP, Crypto):
     CONNECTION_CLASS = twisted_connection.TwistedProtocolConnection
@@ -77,7 +86,7 @@ class RPCTranServer(RabbitAMQP, Crypto):
         self.middleware = middleware
 
     def process_request(self, request):
-        self.middleware.process_request(request)
+        return self.middleware.process_request(request)
 
     def _connect(self):
         cc = protocol.ClientCreator(reactor, 
@@ -136,7 +145,7 @@ class RPCTranServer(RabbitAMQP, Crypto):
     def on_channel(self, channel):
         queue_object, consumer_tag = yield channel.basic_consume(queue=self.bind_queue, no_ack=False)
         l = yield task.LoopingCall(lambda: self.on_request(queue_object))
-        l.start(0.001)
+        l.start(0.0001)
 
     @defer.inlineCallbacks
     def on_connect(self):

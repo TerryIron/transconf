@@ -10,6 +10,11 @@ from transconf.model import Model
 
 class ShellTargetNotFound(Exception):
     """Raised when target can not found"""
+    def __init__(self, target_name):
+        self.target_name = target_name
+
+    def __str__(self):
+        return "{0} cannot be found".format(self.target_name)
 
 
 class ModelShell(NameBus):

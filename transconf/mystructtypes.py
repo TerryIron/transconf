@@ -7,9 +7,17 @@ from transconf.common.reg import get_reg_target
 
 
 __all__ = [
-'IsString', 'IsList', 'IsDict', 'IsNodeInterface',
-'IsPrivateInterface', 'IsPublicInterface', 'IsProperty',
+    'IsString', 'IsList', 'IsDict', 'IsNodeInterface',
+    'IsPrivateInterface', 'IsPublicInterface', 'IsProperty',
 ]
+
+
+class BaseTypeError(Exception):
+    def __init__(self, string):
+        self.string = string
+
+    def __str__(self):
+        return "Item:{0} should be mod:NAME:METHOD".format(self.string)
 
 
 # Use these BaseType class to define static value
@@ -50,15 +58,18 @@ class IsInterface(BaseType):
 
     """
     def check(self, key, value):
-        _key = value[0]
-        typ, name, val = value[1].split(':')
-        obj = get_reg_target(typ, name) if name != 'self' else key
-        if not obj:
-            return
-        if hasattr(obj, val):
-            _method = getattr(obj, val)
-            if callable(_method):
-                return _key, self, _method
+        _key, _val = value
+        try:
+            typ, name, val = _val.split(':')
+            obj = get_reg_target(typ, name) if name != 'self' else key
+            if not obj:
+                return
+            if hasattr(obj, val):
+                _method = getattr(obj, val)
+                if callable(_method):
+                    return _key, self, _method
+        except:
+            raise BaseTypeError(value[1])
 
 
 class IsPrivateInterface(IsInterface):
@@ -94,13 +105,15 @@ class IsProperty(BaseType):
 
     """
     def check(self, key, value):
-        _key = value[0]
-        typ, name, val = value[1].split(':')
-        obj = get_reg_target(typ, name) if name != 'self' else key
-        if not obj:
-            return
-        if hasattr(obj, val):
-            _property = getattr(obj, val)
-            if not callable(_property):
-                return _key, self, _property
-
+        _key, _val = value
+        try:
+            typ, name, val = _val.split(':')
+            obj = get_reg_target(typ, name) if name != 'self' else key
+            if not obj:
+                return
+            if hasattr(obj, val):
+                _property = getattr(obj, val)
+                if not callable(_property):
+                    return _key, self, _property
+        except:
+            raise BaseTypeError(value[1])
