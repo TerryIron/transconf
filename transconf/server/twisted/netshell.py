@@ -95,14 +95,14 @@ class NetShell(ModelShell):
         model = super(NetShell, self).preload_model(model_class, config)
         return model
 
-    def run(self, target_name, method_name, *args, **kwargs):
+    def run(self, _target_name, _method_name, *args, **kwargs):
         try:
-            ret = super(NetShell, self).run(target_name, method_name, *args, **kwargs)
+            ret = super(NetShell, self).run(_target_name, _method_name, *args, **kwargs)
             return ret
         except Exception, e:
             LOG.error(e)
 
-    def _run(self, model, name, method, *args, **kwargs):
+    def _run(self, _model, _name, _method, *args, **kwargs):
         d = defer.succeed({})
-        d.addCallback(lambda r: model.run(name, method, *args, **kwargs))
+        d.addCallback(lambda r: _model.run(_name, _method, *args, **kwargs))
         return d

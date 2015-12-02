@@ -85,7 +85,7 @@ class Model(BaseModel):
             return True
         return False
 
-    def run(self, target_name, method_name, *args, **kwargs):
+    def run(self, _target_name, _method_name, *args, **kwargs):
         """
         运行内置方法
 
@@ -100,16 +100,18 @@ class Model(BaseModel):
 
         """
         # Check node instance is available ?
-        real_name, inst_name, typ = self._build_nodename(target_name)
-        m_inst = self.get(real_name) or {}
-        _type, meth = m_inst.get(method_name)
-        if meth and isinstance(_type, typ):
-            if callable(meth):
+        real_name, inst_name, typ = self._build_nodename(_target_name)
+        m_inst = self.get(real_name) or None
+        if not m_inst:
+            return
+        _type, _meth = m_inst.get(_method_name)
+        if _meth and isinstance(_type, typ):
+            if callable(_meth):
                 if not inst_name:
-                    return meth(*args, **kwargs)
+                    return _meth(*args, **kwargs)
                 else:
-                    return meth(inst_name, *args, **kwargs)
+                    return _meth(inst_name, *args, **kwargs)
             else:
-                return meth
+                return _meth
         else:
-            raise ModelInternalStuctErr('Can not loading method name:{0} of {1}'.format(method_name, target_name))
+            raise ModelInternalStuctErr('Can not loading method name:{0} of {1}'.format(_method_name, _target_name))

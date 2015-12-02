@@ -32,38 +32,48 @@ class URLMiddleware(Middleware):
 
 class NetShell(ModelShell):
     SPLIT_DOT = '/'
-    RE = re.compile('<(.*)>')
+    RE = re.compile('{(.*)}')
 
     def _parse_url(self, pre, cur, length):
         kw = dict()
+        _path = list()
         for i in range(length):
             g = self.RE.match(cur[i])
             if g:
-                item = str(g.groups()[0])
-                kw[item.strip()] = pre
-            elif pre[i] != cur[i]:
-                return False, kw
-        return True, kw
+                item = str(g.groups()[0]).strip()
+                kw[item] = pre[i]
+                _path.append('{' + item + '}')
+            else:
+                if pre[i] != cur[i]:
+                    return False, kw, _path
+                else:
+                    _path.append(pre[i])
+        return True, kw, _path
 
-    def run(self, target_name, method_name, *args, **kwargs):
+    def preload_model(self, model_class, config=None):
+        model =super(NetShell, self).preload_model(model_class, config)
+        model.split = self.split
+        return model
+
+    def run(self, _target_name, _method_name, *args, **kwargs):
         try:
-            path_info = [path for path in target_name.split(self.split) if path != ""]
+            path_info = [path for path in _target_name.split(self.split) if path != ""]
             path_len = len(path_info)
             for key, model in self.all().items():
                 key_info = key.split(self.split)
                 if len(key_info) == path_len:
-                    ret, kwargs = self._parse_url(path_info, key_info, path_len)
+                    ret, kwargs, real_path = self._parse_url(path_info, key_info, path_len)
                     if ret:
-                        return self._run(model, tuple(path_info), method_name, **kwargs)
-            raise ShellTargetNotFound(target_name)
+                        return self._run(model, tuple(real_path), _method_name, *args, **kwargs)
+            raise ShellTargetNotFound(_target_name)
         except Exception as e:
             LOG.error(e)
 
-    def _run(self, model, name, method, *args, **kwargs):
+    def _run(self, _model, _name, _method, *args, **kwargs):
         def process_result(result):
             return [] if result is None else result
 
         d = defer.succeed({})
-        d.addCallback(lambda r: model.run(name, method, *args, **kwargs))
+        d.addCallback(lambda r: _model.run(_name, _method, *args, **kwargs))
         d.addCallback(lambda r: process_result(r))
         return d

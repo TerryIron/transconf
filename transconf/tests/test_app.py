@@ -13,13 +13,13 @@ from transconf.model import Model
 
 class TestModel(Model):
     FORM = [
-        {'node': 'helloworld',
+        {'node': 'helloworld/{name}',
          'public': ['GET', 'mod:self:test']
          }
     ]
 
-    def test(self):
-        return ['helloworld']
+    def test(self, name):
+        return ['helloworld', name]
 
 
 class TestHandler(URLMiddleware):
