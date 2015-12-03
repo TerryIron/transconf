@@ -90,8 +90,8 @@ class Model(BaseModel):
         运行内置方法
 
         Args:
-            target_name: 内置对象名
-            method_name: 内置方法名
+            _target_name: 内置对象名
+            _method_name: 内置方法名
             *args: 列表参数
             **kwargs: 字典参数
 

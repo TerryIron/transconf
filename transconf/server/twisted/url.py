@@ -51,7 +51,7 @@ class NetShell(ModelShell):
         return True, kw, _path
 
     def preload_model(self, model_class, config=None):
-        model =super(NetShell, self).preload_model(model_class, config)
+        model = super(NetShell, self).preload_model(model_class, config)
         model.split = self.split
         return model
 
