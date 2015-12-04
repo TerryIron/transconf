@@ -7,6 +7,7 @@ import functools
 
 from transconf.utils import from_config, from_config_option, as_config, import_class
 from transconf.common.reg import get_local_cmd
+from transconf.utils import Exception
 
 
 class Command(object):

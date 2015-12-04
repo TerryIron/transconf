@@ -8,25 +8,25 @@ from twisted.internet import defer
 from transconf.shell import ModelShell
 from transconf.server.twisted.service import Middleware
 from transconf.server.request import Request
-from transconf.utils import SimpleModel
+from transconf.utils import SimpleModel, Exception as _Exception
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)
 
 
-class BadRequest(Exception):
+class BadRequest(_Exception):
     """Raised when request comming with invalid data """
 
 
-class NoHandlerFound(Exception):
+class NoHandlerFound(_Exception):
     """Raised when no handler to process request"""
 
 
 class ShellRequest(Request):
 
     def __init__(self, target_name, method_name, version, *args, **kwargs):
-        d = dict(target_name=target_name,
-                 method_name=method_name,
+        d = dict(target=target_name,
+                 method=method_name,
                  version=version,
                  args=args,
                  kwargs=kwargs)
@@ -36,9 +36,9 @@ class ShellRequest(Request):
         if not context:
             context = {}
 
-        context['shell_command'] = dict(
-            target_name=self['target_name'],
-            method_name=self['method_name'],
+        context['execute'] = dict(
+            target=self['target'],
+            method=self['method'],
             version=self['version'],
             args=self['args'],
             kwargs=self['kwargs'],
@@ -70,21 +70,24 @@ class ActionRequest(ShellRequest):
 
 class ShellMiddleware(Middleware):
     def process_request(self, context):
-        if not hasattr(self.handler, 'run'):
-            raise NoHandlerFound()
-        shell_req = context.get('shell_command', None)
-        if shell_req:
-            target_name = shell_req.get('target_name', None)
-            method_name = shell_req.get('method_name', None)
-            if target_name and method_name:
-                args = shell_req.get('args', None)
-                kwargs = shell_req.get('kwargs', None)
-                cb = functools.partial(self.handler.run,
-                                       target_name, 
-                                       method_name, *args, **kwargs)
-                return cb()
-            else:
-                raise BadRequest(context)
+        try:
+            if not hasattr(self.handler, 'run'):
+                raise NoHandlerFound()
+            shell_req = context.get('execute', None)
+            if shell_req:
+                target_name = shell_req.get('target', None)
+                method_name = shell_req.get('method', None)
+                if target_name and method_name:
+                    args = shell_req.get('args', None)
+                    kwargs = shell_req.get('kwargs', None)
+                    cb = functools.partial(self.handler.run,
+                                           target_name,
+                                           method_name, *args, **kwargs)
+                    return cb()
+                else:
+                    raise BadRequest(context)
+        except Exception as e:
+            LOG.error(e)
 
 
 class NetShell(ModelShell):
@@ -106,3 +109,4 @@ class NetShell(ModelShell):
         d = defer.succeed({})
         d.addCallback(lambda r: _model.run(_name, _method, *args, **kwargs))
         return d
+

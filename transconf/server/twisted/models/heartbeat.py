@@ -14,6 +14,7 @@ from transconf.server.twisted import CONF as global_conf
 from transconf.server.twisted import get_sql_engine 
 from transconf.server.twisted.netshell import ActionRequest
 from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
+from transconf.utils import Exception as _Exception
 
 
 LOG = getLogger(__name__)
@@ -27,12 +28,12 @@ BACKEND = HeartBeatCollectionBackend(sql_engine)
 CONF_BACKEND = HeartBeatIsEnabledBackend(sql_engine)
 
 
-class HeartBeatNotFound(Exception):
+class HeartBeatNotFound(_Exception):
     def __str__(self, group_name, group_type):
         return 'Group name:{0}, Group type:{1} can not found.'.format(group_name, group_type)
 
 
-class HeartRateErr(Exception):
+class HeartRateErr(_Exception):
     def __str__(self, group_name, group_type):
         return 'Group name:{0}, Group type:{1} got a invalid heartrate.'.format(group_name, group_type)
 

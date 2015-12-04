@@ -3,6 +3,9 @@
 __author__ = 'chijun'
 
 
+from transconf.utils import Exception
+
+
 class RequestTimeout(Exception):
     """Raised when comming request is over-time."""
 

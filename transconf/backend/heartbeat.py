@@ -3,6 +3,7 @@
 __author__ = 'chijun'
 
 from transconf.common.model_driver import *
+from transconf.utils import Exception
 
 
 class InvalidData(Exception):

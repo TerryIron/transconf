@@ -1,7 +1,7 @@
 __version__ = (0, 1, 0)
 
 from transconf.server.twisted.netshell import NetShell
-from transconf.utils import from_config_option, import_class
+from transconf.utils import from_config_option, import_class, Exception
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)

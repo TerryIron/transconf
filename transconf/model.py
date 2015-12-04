@@ -5,6 +5,7 @@ __author__ = 'chijun'
 from transconf.common.model import BaseModel
 from transconf.mystruct import NodeStructV1
 from transconf.mystructtypes import *
+from transconf.utils import Exception
 
 
 class ModelInternalStuctErr(Exception):

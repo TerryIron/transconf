@@ -96,9 +96,9 @@ class RPCMap(DictMixin):
                 ',\n  '.join(map(repr, matches)))
         else:
             extra = ''
-        extra += '\nSHELL_COMMAND: %r' % environ.get('shell_command')
+        extra += '\nEXECUTE: %r' % environ.get('execute')
         app = rpcexceptions.RPCNotFound(
-            environ['shell_command'],
+            environ['execute'],
             comment=cgi.escape(extra)).wsgi_application
         return app(environ, start_response) 
 
@@ -145,7 +145,7 @@ class RPCMap(DictMixin):
         return [app_rpcline for app_rpcline, app in self.applications]
 
     def __call__(self, environ, start_response=None):
-        if not environ.get('shell_command', None):
+        if not environ.get('execute', None):
             return 
         for app_rpc, app in self.applications:
             app_rpc_dict = pickle.loads(app_rpc)

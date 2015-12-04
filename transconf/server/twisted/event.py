@@ -10,6 +10,7 @@ from transconf.server.twisted.internet import get_private_client
 from transconf.server.twisted.netshell import ShellMiddleware
 from transconf.server.request import Request, RequestTimeout, InvalidRequest
 from transconf.server.twisted.log import getLogger
+from transconf.utils import Exception
 
 LOG = getLogger(__name__)
 

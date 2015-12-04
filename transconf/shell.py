@@ -6,6 +6,7 @@ __author__ = 'chijun'
 from transconf.common.namebus import NameBus
 from transconf.parse_form import FormParser
 from transconf.model import Model
+from transconf.utils import Exception
 
 
 class ShellTargetNotFound(Exception):

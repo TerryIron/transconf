@@ -2,6 +2,8 @@
 
 __author__ = 'chijun'
 
+from transconf.utils import Exception
+
 
 class FormUnitTypeError(Exception):
     """Raised when unit type error"""

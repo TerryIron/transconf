@@ -4,6 +4,7 @@ __author__ = 'chijun'
 
 from transconf.common.basetype import BaseType
 from transconf.common.reg import get_reg_target
+from transconf.utils import Exception
 
 
 __all__ = [

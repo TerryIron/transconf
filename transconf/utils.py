@@ -8,8 +8,16 @@ from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 from transconf.common.reg import get_model
 
 __all__ = ['as_config', 'from_config', 'from_config_option',
-           'as_model_action', 'from_model_option',
+           'as_model_action', 'from_model_option', 'Exception'
           ]
+
+
+class Exception(Exception):
+    def __init__(self, string=''):
+        self.string = string
+
+    def __str__(self):
+        return '<{0}> {1}'.format(self.__class__, self.string)
 
 
 def import_class(class_name):

@@ -5,6 +5,9 @@ __author__ = 'chijun'
 __all__ = ['NodeItemNotFound', 'NodeItemTypeNotSupport', 'NodeItemStructError', 'NodeStruct']
 
 
+from transconf.utils import Exception
+
+
 class NodeItemNotFound(Exception):
     """ Raised when value name not found"""
 

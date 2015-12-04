@@ -17,17 +17,20 @@ LOG = getLogger(__name__)
 
 class URLMiddleware(Middleware):
     def process_request(self, context):
-        if not hasattr(self.handler, 'run'):
-            raise NoHandlerFound()
-        target_name = context.get('PATH_INFO', None)
-        method_name = context.get('REQUEST_METHOD', 'GET')
-        if target_name and method_name:
-            cb = functools.partial(self.handler.run,
-                                   target_name,
-                                   method_name)
-            return cb()
-        else:
-            raise BadRequest(context)
+        try:
+            if not hasattr(self.handler, 'run'):
+                raise NoHandlerFound()
+            target_name = context.get('PATH_INFO', None)
+            method_name = context.get('REQUEST_METHOD', 'GET')
+            if target_name and method_name:
+                cb = functools.partial(self.handler.run,
+                                       target_name,
+                                       method_name)
+                return cb()
+            else:
+                raise BadRequest(context)
+        except Exception as e:
+            LOG.error(e)
 
 
 class NetShell(ModelShell):
@@ -77,3 +80,4 @@ class NetShell(ModelShell):
         d.addCallback(lambda r: _model.run(_name, _method, *args, **kwargs))
         d.addCallback(lambda r: process_result(r))
         return d
+
