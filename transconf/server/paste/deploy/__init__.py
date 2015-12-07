@@ -78,7 +78,7 @@ class _APP(_App):
                        ['platform', 'pf'],
                        ['shell', 'sh'],
                        ['composite', 'composit'],
-                       'pipeline', 'filter-app', 'model'
+                       'pipeline', 'filter-app', 'model',
                       ]
 
     def invoke(self, context):

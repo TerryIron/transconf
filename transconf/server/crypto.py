@@ -5,6 +5,10 @@ __author__ = 'chijun'
 import rsa
 import zlib
 import os.path
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 from transconf.utils import from_config_option
 from transconf.server.twisted import CONF as global_conf
@@ -155,6 +159,7 @@ class Crypto(object):
         return global_conf
 
     def _encode_crypto_ssl(self, body):
+        body = pickle.dumps(body)
         body = zlib.compress(body, 9)
         LOG.debug('Pickle encode length:{0}'.format(len(body)))
         body = rsa.encrypt(body, self.local_public_pem)
@@ -165,7 +170,7 @@ class Crypto(object):
         body = rsa.decrypt(body, self.local_private_pem)
         signature = rsa.sign(body, self.local_private_pem, 'SHA-1')
         v = rsa.verify(body, signature, self.local_public_pem)
-        return zlib.decompress(body) if v else None
+        return pickle.loads(zlib.decompress(body)) if v else None
 
     def _get_enables(self):
         enables = [i.split('enable_crypto_')[1] for i in dir(self)

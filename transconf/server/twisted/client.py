@@ -10,13 +10,12 @@ from twisted.internet import defer, reactor, protocol
 from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
 from transconf.utils import from_config_option
 from transconf.server.response import Response
-from transconf.server.crypto import Crypto
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)
 
 
-class BaseClient(BaseSyncClient, Crypto):
+class BaseClient(BaseSyncClient):
     CONNECTION_CLASS = twisted_connection.TwistedProtocolConnection
 
     def init(self):
@@ -62,7 +61,6 @@ class BaseClient(BaseSyncClient, Crypto):
         if queue_object:
             ch, method, properties, body = yield queue_object.get()
             if self.corr_id == properties.correlation_id:
-                body = yield self.decode(body)
                 body = yield self.packer.unpack(body)
                 result = yield Response.from_dict(body)
                 yield defer.returnValue(result)
@@ -80,25 +78,26 @@ class BaseClient(BaseSyncClient, Crypto):
     def publish(self, context):
         if not self.reply_to: 
             result = yield self.channel.queue_declare(exclusive=True, auto_delete=True)
-            self.reply_to = result.method.queue
-        body = context[0]
-        body = yield self.packer.pack(body)
-        body = yield self.encode(body)
-        yield self.channel.basic_publish(exchange=context[1],
-                                         routing_key=context[2],
-                                         properties=pika.BasicProperties(
-                                             reply_to=self.reply_to,
-                                             correlation_id=self.corr_id,
-                                             delivery_mode=self.delivery_mode,
-                                             timestamp=time.time(),
-                                         ),
-                                         body=body)
+            setattr(self, 'reply_to', result.method.queue)
+        body = yield self.packer.pack(context[0])
+        properties = yield pika.BasicProperties(reply_to=self.reply_to,
+                                                correlation_id=self.corr_id,
+                                                delivery_mode=self.delivery_mode,
+                                                timestamp=time.time())
+        yield self.publish_context(self.channel, context[1], context[2], body, properties=properties)
+
+    @staticmethod
+    def publish_context(channel, exchange, routing_key, body, properties=None):
+        return channel.basic_publish(exchange=exchange,
+                                     routing_key=routing_key,
+                                     properties=properties,
+                                     body=body)
 
     @defer.inlineCallbacks
     def close(self):
         if self.connection:
             yield self.connection.close()
-            self.connection = None
+            setattr(self, 'connection', None)
 
     """
         Publish an async message, return None

@@ -6,6 +6,7 @@ __all__ = ['BaseModel']
 
 
 from transconf.common.namebus import NameBus
+from transconf.common.reg import register_model_target
 
 
 class BaseModel(NameBus):
@@ -25,6 +26,7 @@ class BaseModel(NameBus):
         self._struct = self.STRUCT
         self.split = self.SPLIT_DOT
         self.member_split = self.MEMBER_SPLIT_DOT
+        self.register()
 
     def _build_real_nodename(self, lst):
         """
@@ -86,6 +88,9 @@ class BaseModel(NameBus):
         """
         real_name = self._build_real_nodename(name_lst)
         return self.get(real_name)
+
+    def register(self):
+        register_model_target(self)
 
     def run(self, target_name, method_name, *args, **kwargs):
         """

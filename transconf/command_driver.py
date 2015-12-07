@@ -6,7 +6,7 @@ import os
 import functools
 
 from transconf.utils import from_config, from_config_option, as_config, import_class
-from transconf.common.reg import get_local_cmd
+from transconf.common.reg import get_cmd, register_cmd_target
 from transconf.utils import Exception
 
 
@@ -28,6 +28,7 @@ class Command(object):
         self.enabled_method = []
         self.exp = {}
         self.init()
+        self.register()
 
     def init(self):
         """
@@ -66,6 +67,9 @@ class Command(object):
             self._default_setup()
         else:
             self._conf_setup()
+
+    def register(self):
+        register_cmd_target(self)
 
     def _default_setup(self):
         for em in self.enabled_method:
@@ -141,8 +145,8 @@ def command(target_name, method_name, **kwargs):
         命令结果
 
     """
-    target = get_local_cmd(target_name)
-    if not target:
+    target = get_cmd(target_name)
+    if not isinstance(target, Command):
         raise CommandNotRegister(target_name)
     meth = target[method_name]
     if callable(meth):

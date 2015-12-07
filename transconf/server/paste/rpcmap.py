@@ -62,6 +62,17 @@ def platform_factory(loader, global_conf, **local_conf):
     return platform
 
 
+def pipeline_factory(loader, global_conf, **local_conf):
+    assert 'pipeline' in local_conf, 'please install pipeline config as pipeline=x'
+    conf = as_config(global_conf['__file__'])
+    twisted.CONF = conf
+    pipe = []
+    for p in local_conf['pipeline'].split():
+        app = loader.get_app(p, global_conf=global_conf)
+        pipe.append(app)
+    return tuple(pipe)
+
+
 def rpcmap_factory(loader, global_conf, **local_conf):
     if 'not_found_app' in local_conf:
         not_found_app = local_conf.pop('not_found_app')

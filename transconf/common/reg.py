@@ -83,7 +83,11 @@ def get_reg_target(reg_type, name):
 LibReg = Registry('lib')
 
 
-def register_local_lib(cls):
+def register_lib_target(obj):
+    CmdReg.register('__is_lib__' + str(obj.name), obj)
+
+
+def register_lib(cls):
     """
     注册本地库(装饰器)
 
@@ -91,14 +95,14 @@ def register_local_lib(cls):
         object: 库对象
 
     """
-    def __register_local_lib(*_args, **_kwargs):
+    def __register_lib(*_args, **_kwargs):
         obj = cls(*_args, **_kwargs)
-        CmdReg.register('__is_lib__' + str(obj.name), obj)
+        register_lib_target(obj)
         return obj
-    return __register_local_lib
+    return __register_lib
 
 
-def get_local_lib(name=None):
+def get_lib(name=None):
     """
     获取本地注册库对象
 
@@ -115,6 +119,11 @@ def get_local_lib(name=None):
 ModelReg = Registry('model')
 
 
+def register_model_target(obj):
+    for single in obj.FORM:
+        ModelReg.register('__is_model__' + str(single['node']), obj)
+
+
 def register_model(cls):
     """
     注册本地模型(装饰器)
@@ -125,8 +134,7 @@ def register_model(cls):
     """
     def __register_model(*_args, **_kwargs):
         obj = cls(*_args, **_kwargs)
-        for single in obj.FORM:
-            ModelReg.register('__is_model__' + str(single['node']), obj)
+        register_model_target(obj)
         return obj
     return __register_model
 
@@ -148,7 +156,11 @@ def get_model(name):
 CmdReg = Registry('cmd')
 
 
-def register_local_cmd(cls):
+def register_cmd_target(obj):
+    CmdReg.register('__is_cmd__' + str(obj.name), obj)
+
+
+def register_cmd(cls):
     """
     注册本地命令对象(装饰器)
 
@@ -156,14 +168,14 @@ def register_local_cmd(cls):
         object: 命令对象
 
     """
-    def __register_local_cmd(*_args, **_kwargs):
+    def __register_cmd(*_args, **_kwargs):
         obj = cls(*_args, **_kwargs)
-        CmdReg.register('__is_cmd__' + str(obj.name), obj)
+        register_cmd_target(obj)
         return obj
-    return __register_local_cmd
+    return __register_cmd
 
 
-def get_local_cmd(name):
+def get_cmd(name):
     """
     获取本地注册命令对象
 
@@ -175,5 +187,3 @@ def get_local_cmd(name):
 
     """
     return CmdReg.get('__is_cmd__' + str(name))
-
-
