@@ -3,10 +3,7 @@ __author__ = 'chijun'
 import werkzeug.http
 import paste.urlmap
 
-from transconf.server.twisted.url import NetShell
 from transconf.server.paste import rpcmap
-
-rpcmap.SHELL_CLASS = NetShell
 
 
 def shell_factory(loader, global_conf, **local_conf):

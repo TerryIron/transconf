@@ -103,8 +103,8 @@ class RPCTranServer(RabbitAMQP):
     @defer.inlineCallbacks
     def _result_back(self, ch, properties, result):
         LOG.debug('Result back to queue:{0}, result:{1}'.format(properties.reply_to, result))
-        result = self.packer.pack(result)
         # If not result, some unexpected errors happened
+        result = self.packer.pack(result)
         yield ch.basic_publish(exchange='',
                                routing_key=properties.reply_to,
                                properties=pika.BasicProperties(
@@ -121,20 +121,19 @@ class RPCTranServer(RabbitAMQP):
         yield defer.returnValue(Response.fail(err))
 
     def _process_request(self, ch, properties, body):
-        LOG.debug('Ready to process request, body:{0}'.format(body))
-        if isinstance(body, dict):
-            body = self.process_request(body)
-            if body:
-                body.addCallbacks(lambda result: self.success(result),
-                                  errback=lambda err: self.failed(err))
-                body.addBoth(lambda ret: self._result_back(ch, properties, ret))
+        LOG.debug('Ready to process request, body length:{0}'.format(len(body)))
+        body = self.process_request(body)
+        if isinstance(body, defer.Deferred):
+            body.addCallbacks(lambda result: self.success(result),
+                              errback=lambda err: self.failed(err))
+        else:
+            body = self.failed(body)
+        body.addBoth(lambda ret: self._result_back(ch, properties, ret))
 
     @defer.inlineCallbacks
     def on_request(self, queue_object):
         ch, method, properties, body = yield queue_object.get()
         yield ch.basic_ack(delivery_tag=method.delivery_tag)
-        # LOG.debug('ch: {0}, method:{1}, properties:{2}, body length:{3}'.format(ch, method, properties, len(body)))
-        body = self.packer.unpack(body)
         yield self._process_request(ch, properties, body)
         yield queue_object.close(None)
 

@@ -82,6 +82,7 @@ class RPCError(RPCException):
     typically results in the 400's and 500's.
     """
 
+
 class RPCRedirection(RPCException):
     """
     base class for 300's status code (redirections)

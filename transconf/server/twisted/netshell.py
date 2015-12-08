@@ -109,4 +109,3 @@ class NetShell(ModelShell):
         d = defer.succeed({})
         d.addCallback(lambda r: _model.run(_name, _method, *args, **kwargs))
         return d
-

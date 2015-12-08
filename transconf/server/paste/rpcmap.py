@@ -13,12 +13,8 @@ except ImportError:
     from collections import MutableMapping as DictMixin
 
 import transconf.server.paste.rpcexceptions as rpcexceptions
-from transconf.server.twisted.netshell import NetShell
 from transconf.utils import as_config, import_class
 from transconf.server import twisted
-
-
-SHELL_CLASS = NetShell
 
 
 def _load_factory(factory_line, global_conf, **local_conf):
@@ -37,10 +33,12 @@ def _load_factory(factory_line, global_conf, **local_conf):
 
 def shell_factory(loader, global_conf, **local_conf):
     assert 'paste.app_factory' in local_conf, 'please install model config as paste.app_factory=x'
+    assert 'shell_class' in local_conf, 'please install model config as shell_class=x'
     assert 'shell' in local_conf, 'please install model config as shell=x'
     conf = as_config(global_conf['__file__'])
     twisted.CONF = conf
-    sh = SHELL_CLASS()
+    shell_class = local_conf.pop('shell_class')
+    sh = import_class(shell_class)()
     for model in local_conf['shell'].split():
         model = loader.get_app(model, global_conf=global_conf)
         mod = import_class(model)
@@ -60,6 +58,12 @@ def platform_factory(loader, global_conf, **local_conf):
         app = loader.get_app(pf, global_conf=global_conf)
         platform[pf] = app
     return platform
+
+
+def filter_factory(loader, global_conf, **local_conf):
+    _filter_factory = local_conf.pop('paste.filter_factory')
+    _filter = _load_factory(_filter_factory, global_conf, **local_conf)
+    return _filter
 
 
 def pipeline_factory(loader, global_conf, **local_conf):
@@ -89,7 +93,10 @@ def rpcmap_factory(loader, global_conf, **local_conf):
 
 
 def parse_rpcline_expression(rpcline):
-    return pickle.dumps(dict([item.split('|', 1) for item in rpcline.split(',')]))
+    try:
+        return pickle.dumps(dict([item.split('|', 1) for item in rpcline.split(',')]))
+    except:
+        return rpcline
     
 
 class RPCMap(DictMixin):
@@ -100,18 +107,19 @@ class RPCMap(DictMixin):
         self.not_found_application = not_found_app
 
     def not_found_app(self, environ, start_response=None):
-        mapper = environ.get('paste.rpcmap_object')
+        environ_is_dict = isinstance(environ, dict)
+        mapper = environ.get('paste.rpcmap_object') if environ_is_dict else None
         if mapper:
             matches = [p for p, a in mapper.applications]
             extra = 'defined apps: %s' % (
                 ',\n  '.join(map(repr, matches)))
         else:
             extra = ''
-        extra += '\nEXECUTE: %r' % environ.get('execute')
+        excute = environ.get('execute') if environ_is_dict else None
+        extra += '\nEXECUTE: %r' % excute
         app = rpcexceptions.RPCNotFound(
-            environ['execute'],
-            comment=cgi.escape(extra)).wsgi_application
-        return app(environ, start_response) 
+            excute, comment=cgi.escape(extra))
+        return app.wsgi_application(app.message, start_response)
 
     def sort_apps(self):
         self.applications.sort()
@@ -148,24 +156,47 @@ class RPCMap(DictMixin):
                     "No application with the rpcline %r" % (rpc,))
 
     def normalize_rpc(self, rpc):
-        _rpc = pickle.loads(rpc)
-        assert isinstance(_rpc, dict), 'RPC request format error.'
-        return rpc
+        try:
+            _rpc = pickle.loads(rpc)
+            assert isinstance(_rpc, dict), 'RPC request format error.'
+            return rpc
+        except:
+            return rpc
 
     def keys(self):
-        return [app_rpcline for app_rpcline, app in self.applications]
+        return [app_rpc for app_rpc, app in self.applications if app_rpc != 'transport']
+
+    def items(self):
+        return [(pickle.loads(app_rpc), app) for app_rpc, app in self.applications if app_rpc != 'transport']
+
+    def transports(self):
+        return [app for app_rpc, app in self.applications if app_rpc == 'transport']
+
+    @staticmethod
+    def _check_rpc_exist(rpc, environ):
+        app_is_found = True
+        for k, v in rpc.items():
+            if (k not in environ) or environ[k] != v:
+                app_is_found = False
+                break
+        return app_is_found
+
+    @staticmethod
+    def _is_environ_dict(environ):
+        return isinstance(environ, dict)
 
     def __call__(self, environ, start_response=None):
-        if not environ.get('execute', None):
-            return 
-        for app_rpc, app in self.applications:
-            app_rpc_dict = pickle.loads(app_rpc)
-            app_is_found = True
-            for k, v in app_rpc_dict.items():
-                if (k not in environ) or environ[k] != v:
-                    app_is_found = False
-                    break
-            if app_is_found:
-                return app(environ, start_response)
-        environ['paste.rpcmap_object'] = self
+        is_environ_dict = self._is_environ_dict(environ)
+        while not is_environ_dict:
+            for _app in self.transports():
+                environ = _app(environ, start_response)
+                is_environ_dict = self._is_environ_dict(environ)
+            break
+        for app_rpc_dict, app in self.items():
+            if is_environ_dict and self._check_rpc_exist(app_rpc_dict, environ):
+                for _app in app:
+                    environ = _app(environ, start_response)
+                return environ
+        if is_environ_dict:
+            environ['paste.rpcmap_object'] = self
         return self.not_found_application(environ, start_response)

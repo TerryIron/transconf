@@ -110,7 +110,7 @@ class HeartBeat(Model):
 class RSAHeartBeat(HeartBeat):
     def _build_heartbeat_event(self, client, local_name, local_uuid, local_type):
         def publish_context(channel, exchange, routing_key, body, properties=None):
-            if hasattr(self, 'crypto', None):
+            if hasattr(self, 'crypto'):
                 setattr(self, 'crypto', Crypto())
             body = getattr(self, 'crypto', Crypto()).encode(body)
             return channel.basic_publish(exchange=exchange,

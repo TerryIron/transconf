@@ -14,6 +14,6 @@ class RSACheckout(TranMiddleware, Crypto):
     def process_request(self, context):
         context = self.decode(context)
         if context:
-            return super(RSACheckout, self).process_request(context)
+            return context
         else:
             raise RSAAuthorizeFailed()

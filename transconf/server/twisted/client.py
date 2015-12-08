@@ -72,19 +72,18 @@ class BaseClient(BaseSyncClient):
             self.channel = yield self.connection.channel()
             if self.exchange_type:
                 yield self.channel.exchange_declare(exchange=exchange,
-                                           type=self.exchange_type)
+                                                    type=self.exchange_type)
 
     @defer.inlineCallbacks
     def publish(self, context):
         if not self.reply_to: 
             result = yield self.channel.queue_declare(exclusive=True, auto_delete=True)
             setattr(self, 'reply_to', result.method.queue)
-        body = yield self.packer.pack(context[0])
         properties = yield pika.BasicProperties(reply_to=self.reply_to,
                                                 correlation_id=self.corr_id,
                                                 delivery_mode=self.delivery_mode,
                                                 timestamp=time.time())
-        yield self.publish_context(self.channel, context[1], context[2], body, properties=properties)
+        yield self.publish_context(self.channel, context[1], context[2], context[0], properties=properties)
 
     @staticmethod
     def publish_context(channel, exchange, routing_key, body, properties=None):

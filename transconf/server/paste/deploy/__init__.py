@@ -68,33 +68,31 @@ MODEL = _Model()
 
 class _APP(_App):
     egg_protocols = ['paste.app_factory',
-                     'paste.composit_factory',
-                     'paste.composite_factory',
                      'paste.platform_factory',
                      'paste.model_factory',
                      'paste.shell_factory',
+                     'paste.filter_factory',
+                     'paste.composit_factory',
+                     'paste.composite_factory',
                      ]
-    config_prefixes = [['app', 'application'],
-                       ['platform', 'pf'],
-                       ['shell', 'sh'],
-                       ['composite', 'composit'],
-                       'pipeline', 'filter-app', 'model',
+    config_prefixes = [
+                        ['app', 'application'],
+                        ['platform', 'pf'],
+                        ['shell', 'sh'],
+                        ['composite', 'composit'],
+                        'pipeline', 'filter-app',
+                        'model', 'filter',
                       ]
 
     def invoke(self, context):
-        if context.protocol == 'paste.platform_factory':
-            return fix_call(context.object,
-                            context.loader, context.global_conf,
-                            **context.local_conf)
-        elif context.protocol == 'paste.shell_factory':
-            return fix_call(context.object,
-                            context.loader, context.global_conf,
-                            **context.local_conf)
-        elif context.protocol == 'paste.model_factory':
-            return fix_call(context.object,
-                            context.loader, context.global_conf,
-                            **context.local_conf)
-        elif context.protocol == 'paste.app_factory':
+        supports = [
+            'paste.app_factory',
+            'paste.platform_factory',
+            'paste.shell_factory',
+            'paste.model_factory',
+            'paste.filter_factory',
+        ]
+        if context.protocol in supports:
             return fix_call(context.object,
                             context.loader, context.global_conf,
                             **context.local_conf)

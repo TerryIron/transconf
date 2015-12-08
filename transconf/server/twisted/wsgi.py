@@ -22,10 +22,7 @@ class WSGIMiddleware(object):
     @classmethod
     def factory(cls, global_config, **local_config):
         twisted.CONF = as_config(global_config['__file__'])
-        if 'shell' in local_config:
-            sh = local_config.pop('shell')
-        else:
-            sh = None
+        sh = local_config.pop('shell') if 'shell' in local_config else None
 
         def _factory(app, start_response=None):
             c = cls(app, **local_config)
@@ -33,7 +30,10 @@ class WSGIMiddleware(object):
                 c.handler = sh
             if callable(start_response):
                 start_response('200 OK', [('Content-type', 'text/html'), ])
-            return c
+            if hasattr(c, 'process_request'):
+                return c.process_request(app)
+            else:
+                return c
         return _factory
 
 
@@ -51,9 +51,14 @@ class TranWSGIServer(object):
         self.middleware = middleware
 
     def process_request(self, request):
-        d = self.middleware(request)
-        if d:
-            return d.process_request(request)
+        try:
+            d = self.middleware(request)
+            if hasattr(d, 'process_request'):
+                return d.process_request(request)
+            else:
+                return d
+        except Exception as e:
+            LOG.error(e)
 
 
 class RPCTranServer(TranWSGIServer, _RPCTranServer):
