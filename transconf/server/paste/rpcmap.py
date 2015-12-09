@@ -1,6 +1,7 @@
 __author__ = 'chijun'
 
 import cgi
+import copy
 
 try:
     import cpickle as pickle
@@ -187,16 +188,20 @@ class RPCMap(DictMixin):
 
     def __call__(self, environ, start_response=None):
         is_environ_dict = self._is_environ_dict(environ)
+        _environ = None
         while not is_environ_dict:
+            copy_environ = copy.copy(environ)
             for _app in self.transports():
-                environ = _app(environ, start_response)
-                is_environ_dict = self._is_environ_dict(environ)
+                _environ = _app(copy_environ, start_response)
+                is_environ_dict = self._is_environ_dict(_environ)
             break
+        if not _environ:
+            _environ = environ
         for app_rpc_dict, app in self.items():
-            if is_environ_dict and self._check_rpc_exist(app_rpc_dict, environ):
+            if is_environ_dict and self._check_rpc_exist(app_rpc_dict, _environ):
                 for _app in app:
-                    environ = _app(environ, start_response)
-                return environ
+                    _environ = _app(_environ, start_response)
+                return _environ
         if is_environ_dict:
-            environ['paste.rpcmap_object'] = self
-        return self.not_found_application(environ, start_response)
+            _environ['paste.rpcmap_object'] = self
+        return self.not_found_application(_environ, start_response)
