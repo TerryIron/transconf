@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 
 __author__ = 'chijun'
 
@@ -8,14 +8,14 @@ from transconf.server.twisted.log import getLogger
 from transconf.common.reg import get_model
 from transconf.model import Model
 from transconf.configration import Configuration
-from transconf.server.twisted.internet import get_public_client
+from transconf.server.twisted.client import RSAClient
+from transconf.server.twisted.internet import new_public_client
 from transconf.server.twisted.event import Task, EventDispatcher
 from transconf.server.twisted import CONF as global_conf
 from transconf.server.twisted import get_sql_engine 
 from transconf.server.twisted.netshell import ActionRequest
 from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
 from transconf.utils import Exception as _Exception
-from transconf.server.crypto import Crypto
 
 
 LOG = getLogger(__name__)
@@ -80,7 +80,7 @@ class HeartBeat(Model):
         self.heartbeat(int(CONFIG.slaver.heartrate))
 
     def _build_heartbeat_event(self, client, local_name, local_uuid, local_type):
-        req = ActionRequest('heartcond.checkin:0.1.0',
+        req = ActionRequest('heartcond.checkin',
                              dict(group_name=local_name,
                                   uuid=local_uuid,
                                   group_type=local_type))
@@ -92,7 +92,7 @@ class HeartBeat(Model):
         local_uuid = CONFIG.manage.group_uuid
         if local_name and local_type and local_uuid:
             for g_name, typ, is_enabled in self._get_fanout_members():
-                client = get_public_client(g_name, typ, local_uuid, type='fanout')
+                client = new_public_client(g_name, typ, local_uuid, type='fanout')
                 # TODO by chijun
                 # Action Request version can not be supported by server.
                 event = self._build_heartbeat_event(client, local_name, local_uuid, local_type)
@@ -109,15 +109,7 @@ class HeartBeat(Model):
 
 class RSAHeartBeat(HeartBeat):
     def _build_heartbeat_event(self, client, local_name, local_uuid, local_type):
-        def publish_context(channel, exchange, routing_key, body, properties=None):
-            if hasattr(self, 'crypto'):
-                setattr(self, 'crypto', Crypto())
-            body = getattr(self, 'crypto', Crypto()).encode(body)
-            return channel.basic_publish(exchange=exchange,
-                                         routing_key=routing_key,
-                                         properties=properties,
-                                         body=body)
-        setattr(client, 'publish_context', publish_context)
+        client = RSAClient(client)
         return super(RSAHeartBeat, self)._build_heartbeat_event(client, local_name, local_uuid, local_type)
 
 

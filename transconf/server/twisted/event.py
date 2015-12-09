@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 
 __author__ = 'chijun'
 
@@ -6,7 +6,7 @@ import time
 import functools
 from twisted.internet import task, reactor, defer
 
-from transconf.server.twisted.internet import get_private_client
+from transconf.server.twisted.internet import new_public_client
 from transconf.server.twisted.netshell import ShellMiddleware
 from transconf.server.request import Request, RequestTimeout, InvalidRequest
 from transconf.server.twisted.log import getLogger
@@ -211,17 +211,21 @@ class EventMiddleware(ShellMiddleware):
                 cost_time = float(time.time()) - float(timestamp)
                 if cost_time > float(timeout):
                     raise RequestTimeout('Call {0} timeout.'.format(eventloop))
+
                 def call(cli, text, ret):
-                    client = get_private_client(cli['group'], cli['type'],
-                                                group_uuid=cli['uuid'],
-                                                type=cli['cls'])
+                    client = new_public_client(cli['group'], cli['type'],
+                                               group_uuid=cli['uuid'],
+                                               type=cli['cls'])
                     text['result'] = ret
                     client.callBase(text)
+                    client.close()
+
                 def if_success(ret):
                     cli = event_context.get('success_cli', None)
                     text = event_context.get('success', None)
                     if cli and text:
                         return call(cli, text, ret)
+
                 def if_failed(ret):
                     cli = event_context.get('failed_cli', None)
                     text = event_context.get('failed', None)

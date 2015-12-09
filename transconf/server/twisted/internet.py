@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 
 __author__ = 'chijun'
 
@@ -156,28 +156,25 @@ def get_client_list():
     return client_list
 
 
-def get_public_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
-    name = group_name + group_type + str(group_uuid) + type
-    if name not in CLIENT_POOL:
-        c = _get_client(get_client_list(), type, amqp_url)
-        if not c: 
-            return 
-        c.config(group_name, group_type, group_uuid)
-        CLIENT_POOL[name] = c
-    LOG.debug('Get client:{0}, groupname:{1}, grouptype:{2}, groupuuid:{3}'.format(CLIENT_POOL[name],
-                                                                                   group_name,
-                                                                                   group_type,
-                                                                                   group_uuid))
-    return CLIENT_POOL[name]
+def _client_name(group_name, group_type, group_uuid, type):
+    return str(group_name) + str(group_type) + str(group_uuid) + str(type)
 
 
-def get_private_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
+def _new_client(group_name, group_type, group_uuid, type, amqp_url):
     c = _get_client(get_client_list(), type, amqp_url)
-    if not c: 
-        return 
+    if not c:
+        return
     c.config(group_name, group_type, group_uuid)
-    LOG.debug('Get client:{0}, groupname:{1}, grouptype:{2}, groupuuid:{3}'.format(c,
-                                                                                   group_name,
-                                                                                   group_type,
-                                                                                   group_uuid))
     return c
+
+
+def new_public_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
+    return _new_client(group_name, group_type, group_uuid, type, amqp_url)
+
+
+def get_public_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
+    # Do not use it.
+    name = _client_name(group_name, group_type, group_uuid, type)
+    if name not in CLIENT_POOL:
+        return CLIENT_POOL[name]
+    return _new_client(group_name, group_type, group_uuid, type, amqp_url)

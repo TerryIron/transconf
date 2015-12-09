@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 
 __author__ = 'chijun'
 
@@ -10,6 +10,7 @@ from twisted.internet import defer, reactor, protocol
 from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
 from transconf.utils import from_config_option
 from transconf.server.response import Response
+from transconf.server.crypto import Crypto
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)
@@ -46,8 +47,9 @@ class BaseClient(BaseSyncClient):
             d.addCallback(lambda ret: result_back())
         return d
 
-    def _ready(self, context, exchange, routing_key):
-        return [context, exchange, routing_key]
+    @staticmethod
+    def _ready(context, exchange, routing_key):
+        return (context, exchange, routing_key)
 
     @defer.inlineCallbacks
     def on_response(self):
@@ -185,3 +187,15 @@ class FanoutTranClient(BaseClient):
                                                     fanout_exchange,
                                                     '')
 
+
+def RSAClient(client):
+    crypto = Crypto()
+
+    def publish_context(channel, exchange, routing_key, body, properties=None):
+        body = crypto.encode(body)
+        return channel.basic_publish(exchange=exchange,
+                                     routing_key=routing_key,
+                                     properties=properties,
+                                     body=body)
+    setattr(client, 'publish_context', publish_context)
+    return client
