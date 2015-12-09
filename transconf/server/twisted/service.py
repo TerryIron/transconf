@@ -180,17 +180,13 @@ class _WSGIResponse(WSGIResponse):
                         self.request.finish()
                 self.reactor.callFromThread(wsgiFinish, self.started)
 
-            middleware = self.application(self.environ, self.startResponse)
-            if middleware:
-                if isinstance(middleware, list):
-                    _write_response(middleware)
-                    _wsgi_finish()
-                else:
-                    LOG.debug('Middleware: {0}, ready to process request.'.format(middleware))
-                    d = middleware.process_request(self.environ)
-                    if d:
-                        d.addCallback(lambda _appIterator: _write_response(_appIterator))
-                        d.addCallback(lambda r: _wsgi_finish())
+            d = self.application(self.environ, self.startResponse)
+            if isinstance(d, defer.Deferred):
+                d.addCallback(lambda _appIterator: _write_response(_appIterator))
+                d.addCallback(lambda r: _wsgi_finish())
+            else:
+                _write_response(d)
+                _wsgi_finish()
         except:
             def wsgiError(started, type, value, traceback):
                 err(Failure(value, type, traceback), "WSGI application error")
