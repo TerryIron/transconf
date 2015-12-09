@@ -32,6 +32,14 @@ def _load_factory(factory_line, global_conf, **local_conf):
         return func(global_conf, **local_conf)
 
 
+def _get_shell_kwargs(local_conf):
+    d = dict()
+    for key in local_conf.keys():
+        if key.startswith('shell_class_'):
+            d[key.split('shell_class_')[1]] = local_conf.pop(key)
+    return d
+
+
 def shell_factory(loader, global_conf, **local_conf):
     assert 'paste.app_factory' in local_conf, 'please install model config as paste.app_factory=x'
     assert 'shell_class' in local_conf, 'please install model config as shell_class=x'
@@ -39,7 +47,8 @@ def shell_factory(loader, global_conf, **local_conf):
     conf = as_config(global_conf['__file__'])
     twisted.CONF = conf
     shell_class = local_conf.pop('shell_class')
-    sh = import_class(shell_class)()
+    shell_class_kw = _get_shell_kwargs(local_conf)
+    sh = import_class(shell_class)(**shell_class_kw)
     for model in local_conf['shell'].split():
         model = loader.get_app(model, global_conf=global_conf)
         mod = import_class(model)
