@@ -10,7 +10,6 @@ class PeerRequest(Request):
     def to_dict(self):
         return dict(peer_host=self.peer_host,
                     peer_port=self.peer_port)
-                            
 
     @staticmethod
     def is_peer_request(request_info):

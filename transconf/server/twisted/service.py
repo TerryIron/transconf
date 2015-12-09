@@ -163,14 +163,15 @@ class _WSGIResponse(WSGIResponse):
     def run(self):
         try:
             def _write_response(appIterator):
-                for elem in appIterator:
-                    if elem:
-                        self.write(elem)
-                    if self._requestFinished:
-                        break
-                close = getattr(appIterator, 'close', None)
-                if close is not None:
-                    close()
+                if appIterator:
+                    for elem in appIterator:
+                        if elem:
+                            self.write(elem)
+                        if self._requestFinished:
+                            break
+                    close = getattr(appIterator, 'close', None)
+                    if close is not None:
+                        close()
 
             def _wsgi_finish():
                 def wsgiFinish(started):
@@ -184,9 +185,6 @@ class _WSGIResponse(WSGIResponse):
             if isinstance(d, defer.Deferred):
                 d.addCallback(lambda _appIterator: _write_response(_appIterator))
                 d.addCallback(lambda r: _wsgi_finish())
-            else:
-                _write_response(d)
-                _wsgi_finish()
         except:
             def wsgiError(started, type, value, traceback):
                 err(Failure(value, type, traceback), "WSGI application error")

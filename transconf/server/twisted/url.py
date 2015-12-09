@@ -2,6 +2,7 @@
 
 __author__ = 'chijun'
 
+import os.path
 import re
 import functools
 from twisted.internet import defer
@@ -37,6 +38,10 @@ class NetShell(ModelShell):
     SPLIT_DOT = '/'
     RE = re.compile('{(.*)}')
 
+    def __init__(self, document_path='/'):
+        super(NetShell, self).__init__(LOG)
+        self.document_path = document_path
+
     def _parse_url(self, pre, cur, length):
         kw = dict()
         _path = list()
@@ -62,12 +67,22 @@ class NetShell(ModelShell):
         try:
             path_info = [path for path in _target_name.split(self.split) if path != ""]
             path_len = len(path_info)
+            # Check is inline method ?
             for key, model in self.all().items():
                 key_info = key.split(self.split)
                 if len(key_info) == path_len:
                     ret, kwargs, real_path = self._parse_url(path_info, key_info, path_len)
                     if ret:
                         return self._run(model, tuple(real_path), _method_name, *args, **kwargs)
+            # Check is URI ?
+            path = os.path.join(os.path.abspath(self.document_path), _target_name)
+            if os.path.isfile(path):
+                def read_file(file_path):
+                    with open(file_path) as f:
+                        return f.readlines()
+                d = defer.succeed({})
+                d.addCallback(lambda ret: read_file(path))
+                return d
             raise ShellTargetNotFound(_target_name)
         except Exception as e:
             LOG.error(e)
@@ -80,4 +95,3 @@ class NetShell(ModelShell):
         d.addCallback(lambda r: _model.run(_name, _method, *args, **kwargs))
         d.addCallback(lambda r: process_result(r))
         return d
-

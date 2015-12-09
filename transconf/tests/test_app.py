@@ -15,11 +15,20 @@ class TestModel(Model):
     FORM = [
         {'node': 'helloworld/{name}',
          'public': ['GET', 'mod:self:test']
+         },
+        {'node': 'stock/{name}',
+         'public': ['GET', 'mod:self:stock']
          }
     ]
 
     def test(self, name):
         return ['helloworld', name]
+
+    def stock(self, name):
+        if name == 'sh':
+            with open('/mnt/echarts/shstock.html', 'r') as f:
+                data = f.readlines()
+                return data
 
 
 class TestHandler(URLMiddleware):
