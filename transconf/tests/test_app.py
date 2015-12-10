@@ -18,7 +18,13 @@ class TestModel(Model):
          },
         {'node': 'stock/{name}',
          'public': ['GET', 'mod:self:stock']
-         }
+         },
+        {'node': 'abb/ccc/{name}',
+         'public': ['GET', 'mod:self:stock']
+         },
+        {'node': 'a/c/b/{name}',
+         'public': ['GET', 'mod:self:stock']
+         },
     ]
 
     def test(self, name):
