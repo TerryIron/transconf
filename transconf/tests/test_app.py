@@ -55,6 +55,6 @@ if __name__ == '__main__':
                   relative_to=here)
     server = TranServer()
     server.setup_mq(app['mainrpc'])
-    server.setup_url(app['mainurl'])
+    server.setup_app(app['mainurl'])
     server.start()
 

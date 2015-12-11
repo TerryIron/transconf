@@ -85,7 +85,7 @@ class TranServer(object):
             serve.setup(app)
             serve.register()
 
-    def setup_url(self, app, port=9889):
+    def setup_app(self, app, port=9889):
         serve = URLTranServer(app)
         serve.register(port)
 
