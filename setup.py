@@ -131,6 +131,8 @@ setup(
         'PasteScript>=1.7.5',
         'Mako>=0.5.0',
         'Tempita>=0.5.1',
+        'werkzeug==0.9.4',
+        'zope.mimetype==2.0',
     ],
     extras_require={
         'genshi': ['Genshi>=0.6'],

@@ -2,6 +2,7 @@ __author__ = 'chijun'
 
 import werkzeug.http
 import paste.urlmap
+from zope.mimetype import typegetter
 
 from transconf.server.paste import rpcmap
 
@@ -161,7 +162,11 @@ class URLMap(paste.urlmap.URLMap):
 
         if app:
             environ['transconf.best_content_type'] = mime_type
-            return app(environ, start_response)
+            val = app(environ, start_response)
+            if callable(start_response):
+                mime_type = typegetter.mimeTypeGuesser(name=path_info)
+                start_response('200 OK', [('Content-type', mime_type), ])
+            return val
 
         environ['paste.urlmap_object'] = self
         return self.not_found_application(environ, start_response)

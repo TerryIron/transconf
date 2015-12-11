@@ -28,8 +28,6 @@ class WSGIMiddleware(object):
             c = cls(app, **local_config)
             if sh:
                 c.handler = sh
-            if callable(start_response):
-                start_response('200 OK', [('Content-type', 'text/html'), ])
             if hasattr(c, 'process_request'):
                 return c.process_request(app)
             else:
