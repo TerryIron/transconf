@@ -79,7 +79,7 @@ class TranServer(object):
     def __init__(self, pool_size=1000):
         self.pool_size = pool_size
 
-    def setup_rpc(self, app):
+    def setup_mq(self, app):
         for s in (RPCTranServer, TopicTranServer, FanoutTranServer):
             serve = s()
             serve.setup(app)
