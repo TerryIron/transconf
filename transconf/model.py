@@ -29,10 +29,17 @@ class Model(BaseModel):
         self.is_pri_rule = self.IS_PRIVATE_METHOD
         self.is_pub_rule = self.IS_PUBLIC_METHOD 
         self.is_node_rule = self.IS_NODE_METHOD
-        self.node_rules = {}
+        self.node_rules = dict()
+        self.__items__ = dict()
         if self.STRUCT_CLASS:
             self.STRUCT = self.STRUCT_CLASS(self)
         super(Model, self).__init__()
+
+    def __getitem__(self, item):
+        return self.__items__.get(item, None)
+
+    def __setitem__(self, key, value):
+        self.__items__[key] = value
 
     def _build_nodename(self, lst):
         def name(self, n, sub_name):

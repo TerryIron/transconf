@@ -16,13 +16,7 @@ class TestModel(Model):
         {'node': 'helloworld/{name}',
          'public': ['GET', 'mod:self:test']
          },
-        {'node': 'stock/{name}',
-         'public': ['GET', 'mod:self:stock']
-         },
-        {'node': 'abb/ccc/{name}',
-         'public': ['GET', 'mod:self:stock']
-         },
-        {'node': 'a/c/b/{name}',
+        {'node': 'stackoff',
          'public': ['GET', 'mod:self:stock']
          },
     ]
@@ -30,11 +24,10 @@ class TestModel(Model):
     def test(self, name):
         return ['helloworld', name]
 
-    def stock(self, name):
-        if name == 'sh':
-            with open('/mnt/echarts/shstock.html', 'r') as f:
-                data = f.readlines()
-                return data
+    def stock(self):
+        with open('{0}/index.html'.format(self['document_path']), 'r') as f:
+            data = f.readlines()
+            return data
 
 
 class TestHandler(URLMiddleware):
