@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp" class="no-js">
+<head>
+  <title>StackOff</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="//cdn.bootcss.com/normalize/3.0.0/normalize.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/web-starter-kit/0.2.0-beta/styles/main.min.css">
+  <link rel="stylesheet" href="app.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.0-rc.0/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.0-rc.0/angular-route.js"></script>
+  <script src="app.js"></script>
+  <script src="stock/stock.js"></script>
+</head>
+<body>
+  <ul class="menu">
+    <li><a href="#/stock">stock</a></li>
+  </ul>
+  <div ng-view></div>
+
+  <!--<div>Angular seed app: v<span app-version></span></div>-->
+</body>
+</html>
