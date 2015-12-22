@@ -8,8 +8,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/web-starter-kit/0.2.0-beta/styles/main.min.css">
-  <link rel="stylesheet" href="app.css">
-  <!--<script src="http://echarts.baidu.com/build/dist/echarts.js"></script>-->
+  <script src="http://code.jquery.com/jquery.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.6/cerulean/bootstrap.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.0-rc.0/angular.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.0-rc.0/angular-route.js"></script>
@@ -17,11 +17,21 @@
   <script src="stock/stock.js"></script>
 </head>
 <body>
-  <ul class="menu">
-    <li><a href="#/stock">stock</a></li>
-  </ul>
-  <div ng-view id="main" style="height:400px"></div>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <ul class="nav">
+          <a href="#/stock">stock</a>
+        </ul>
+      </div>
+    </div>
+  <form class="form-search">
+    <div ng-controller="StockCtrl">
+      <input type="text" ng-model="search" class="input-medium search-query"/>
+      <button type="submit" ng-click="init()" class="btn">搜索</button>
+    </div>
+  </form>
 
-  <!--<div>Angular seed app: v<span app-version></span></div>-->
+  <div ng-view></div>
+
 </body>
 </html>

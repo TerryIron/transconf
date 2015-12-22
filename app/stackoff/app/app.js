@@ -10,7 +10,6 @@ angular.module('myApp', [
     $routeProvider.otherwise('/stock')
 }]);
 
-
 function GetHttpRequest()
 {
     if ( window.XMLHttpRequest ) // Gecko
@@ -18,7 +17,6 @@ function GetHttpRequest()
     else if ( window.ActiveXObject ) // IE
         return new ActiveXObject("MsXml2.XmlHttp") ;
 }
-
 
 function loadJS(sId, url){
     ajaxPage(sId, url);
@@ -32,7 +30,6 @@ function ajaxPage(sId, url){
     includeJS(sId, oXmlHttp.responseText);
 }
 
-
 function includeJS(sId, source)
 {
     if ( ( source != null ) && ( !document.getElementById( sId ) ) ){
@@ -43,4 +40,252 @@ function includeJS(sId, source)
         oScript.text = source;
         oHead.appendChild( oScript );
     }
+}
+
+function diffLines(a, b) {
+    while (a.length > b.length) {
+        a.pop();
+    }
+    b = b.slice(0, a.length - 1);
+    return [a, b]
+}
+
+function buildKLineOptions(name, datelines, datalines)
+{
+    return {
+        title: {
+            text: name
+        },
+        tooltip: {
+            trigger: 'axis',
+            showDelay: 0,             // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
+            formatter: function (params) {
+                var res = params[0].name;
+                res += '<br/>' + params[0].seriesName;
+                res += '<br/>  开盘 : ' + params[0].value[0] + '  最高 : ' + params[0].value[3];
+                res += '<br/>  收盘 : ' + params[0].value[1] + '  最低 : ' + params[0].value[2];
+                return res;
+            }
+        },
+        legend: {
+            data: []
+        },
+        toolbox: {
+            show: true,
+            feature: {
+                mark: {show: true},
+                dataZoom: {show: true},
+                magicType: {show: true, type: ['line', 'bar']},
+                restore: {show: true},
+                saveAsImage: {show: true}
+            }
+        },
+        dataZoom: {
+            y: 250,
+            show: true,
+            realtime: true,
+            start: 50,
+            end: 100
+        },
+        grid: {
+            x: 80,
+            y: 40,
+            x2: 20,
+            y2: 25
+        },
+        xAxis: [
+            {
+                type: 'category',
+                boundaryGap : true,
+                axisTick: {onGap:false},
+                splitLine: {show:false},
+                data: datelines
+            }
+        ],
+        yAxis: [
+            {
+                type: 'value',
+                scale: true,
+                boundaryGap: [0.05, 0.05],
+                splitArea: {show : true}
+            }
+        ],
+        series: [
+            {
+                name: name,
+                type: 'k',// 开盘，收盘，最低，最高
+                data: datalines
+            }
+        ]
+    };
+}
+
+function pluginAverageOptions(datelines, datalines)
+{
+    return {
+        tooltip : {
+            trigger: 'axis',
+            showDelay: 0             // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
+        },
+        legend: {
+            y : -30,
+            data:[]
+        },
+        toolbox: {
+            y : -30,
+            show : true,
+            feature : {
+                mark : {show: true},
+                dataZoom : {show: true},
+                dataView : {show: true, readOnly: false},
+                magicType : {show: true, type: ['line', 'bar']},
+                restore : {show: true},
+                saveAsImage : {show: true}
+            }
+        },
+        dataZoom : {
+            show : true,
+            realtime: true,
+            start : 50,
+            end : 100
+        },
+        grid: {
+            x: 80,
+            y:5,
+            x2:20,
+            y2:40
+        },
+        xAxis : [
+            {
+                type : 'category',
+                position:'top',
+                boundaryGap : true,
+                axisLabel:{show:false},
+                axisTick: {onGap:false},
+                splitLine: {show:false},
+                data : datelines
+            }
+        ],
+        yAxis : [
+            {
+                type : 'value',
+                scale:true,
+                splitNumber: 3,
+                boundaryGap: [0.05, 0.05],
+                axisLabel: {
+                    formatter: function (v) {
+                        return Math.round(v/10000) + ' 万'
+                    }
+                },
+                splitArea : {show : true}
+            }
+        ],
+        series : [
+            {
+                name:'成交金额(万)',
+                type:'line',
+                symbol: 'none',
+                data: datalines,
+                markLine : {
+                    symbol : 'none',
+                    itemStyle : {
+                        normal : {
+                            color:'#1e90ff',
+                            label : {
+                                show:false
+                            }
+                        }
+                    },
+                    data : [
+                        {type : 'average', name: '平均值'}
+                    ]
+                }
+            }
+        ]
+    };
+}
+
+function pluginSizeOptions(datelines, datalines)
+{
+    return {
+        tooltip : {
+            trigger: 'axis',
+            showDelay: 0             // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
+        },
+        legend: {
+            y : -30,
+            data:[]
+        },
+        toolbox: {
+            y : -30,
+            show : true,
+            feature : {
+                mark : {show: true},
+                dataZoom : {show: true},
+                dataView : {show: true, readOnly: false},
+                magicType : {show: true, type: ['line', 'bar']},
+                restore : {show: true},
+                saveAsImage : {show: true}
+            }
+        },
+        dataZoom : {
+            y:200,
+            show : true,
+            realtime: true,
+            start : 50,
+            end : 100
+        },
+        grid: {
+            x: 80,
+            y:5,
+            x2:20,
+            y2:30
+        },
+        xAxis : [
+            {
+                type : 'category',
+                position:'bottom',
+                boundaryGap : true,
+                axisTick: {onGap:false},
+                splitLine: {show:false},
+                data: datelines
+            }
+        ],
+        yAxis : [
+            {
+                type : 'value',
+                scale:true,
+                splitNumber:3,
+                boundaryGap: [0.05, 0.05],
+                axisLabel: {
+                    formatter: function (v) {
+                        return Math.round(v/10000) + ' 万'
+                    }
+                },
+                splitArea : {show : true}
+            }
+        ],
+        series : [
+            {
+                name:'虚拟数据',
+                type:'bar',
+                symbol: 'none',
+                data: datalines,
+                markLine : {
+                    symbol : 'none',
+                    itemStyle : {
+                        normal : {
+                            color:'#1e90ff',
+                            label : {
+                                show:false
+                            }
+                        }
+                    },
+                    data : [
+                        {type : 'average', name: '平均值'}
+                    ]
+                }
+            }
+        ]
+    };
 }

@@ -8,11 +8,11 @@
 }
 
 .menu:before {
-  content: "[";
+  /*content: "[";*/
 }
 
 .menu:after {
-  content: "]";
+  /*content: "]";*/
 }
 
 .menu > li {
