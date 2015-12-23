@@ -44,6 +44,7 @@ class NetShell(ModelShell):
         self.document_path = document_path
         self.cache_mem = {}
         self.uri_list = []
+        self.not_found = []
         LOG.debug('Setting document path:{0}'.format(self.document_path))
 
     def _update_cache(self, key, value):
@@ -141,8 +142,15 @@ class NetShell(ModelShell):
                 if os.path.isfile(path):
                     return self._get_resource(path)
             raise ShellTargetNotFound(real_target_paths)
+
         except Exception as e:
             LOG.error(e)
+
+            def _not_found():
+                return self.not_found
+            d = defer.fail(e)
+            d.addErrback(lambda e: _not_found())
+            return d
 
     def _run(self, _model, _name, _method, *args, **kwargs):
         def process_result(result):
