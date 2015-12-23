@@ -1,35 +1,58 @@
 <!DOCTYPE html>
 <html lang="en" ng-app="myApp" class="no-js" >
 <head>
-  <title>StackOff</title>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="description" content="">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/web-starter-kit/0.2.0-beta/styles/main.min.css">
-  <script src="http://code.jquery.com/jquery.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.6/cerulean/bootstrap.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.0-rc.0/angular.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.0-rc.0/angular-route.js"></script>
-  <script src="app.js"></script>
-  <script src="stock/stock.js"></script>
+    <title>StackOff</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="//cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="app.css">
+    <link href="//cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.css" rel="stylesheet">
+    <script src="//cdn.bootcss.com/modernizr/2.8.3/modernizr.min.js"></script>
+    <script src="//cdn.bootcss.com/angular.js/1.5.0-rc.0/angular.min.js"></script>
+    <script src="//cdn.bootcss.com/angular.js/1.5.0-rc.0/angular-route.min.js"></script>
+    <script src="app.js"></script>
+    <script src="stock/stock.js"></script>
+    <style>
+        ul {
+            list-style-type:none;
+            margin:0;
+            padding:0;
+            overflow:hidden;
+        }
+
+        li {
+            display:inline;
+        }
+    </style>
 </head>
-<body>
-    <div class="navbar">
-      <div class="navbar-inner">
-        <ul class="nav">
-          <a href="#/stock">stock</a>
-        </ul>
-      </div>
+<body class="nav-body">
+    <div class="collapse navbar-collapse">
+        <div class="container">
+            <div class="navbar navbar-inverse navbar-fixed-top">
+                <div class="navbar-inner">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="#">Stackoff</a>
+                    <ul class="nav">
+                        <li class="active">
+                            <a href="#/stock">stock</a>
+                        </li>
+                        <li>
+                            <form class="navbar-search pull-left" ng-controller="StockCtrl">
+                                <input type="text" ng-model="search" class="search-query" placeholder="Search">
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
-  <form class="form-search">
-    <div ng-controller="StockCtrl">
-      <input type="text" ng-model="search" class="input-medium search-query"/>
-      <button type="submit" ng-click="init()" class="btn">搜索</button>
-    </div>
-  </form>
+
 
   <div ng-view></div>
 

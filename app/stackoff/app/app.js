@@ -58,7 +58,7 @@ function buildKLineOptions(name, datelines, datalines)
         },
         tooltip: {
             trigger: 'axis',
-            showDelay: 0,             // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
+            showDelay: 0,  // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
             formatter: function (params) {
                 var res = params[0].name;
                 res += '<br/>' + params[0].seriesName;
@@ -125,7 +125,7 @@ function pluginAverageOptions(datelines, datalines)
     return {
         tooltip : {
             trigger: 'axis',
-            showDelay: 0             // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
+            showDelay: 0   // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
         },
         legend: {
             y : -30,
@@ -210,7 +210,7 @@ function pluginSizeOptions(datelines, datalines)
     return {
         tooltip : {
             trigger: 'axis',
-            showDelay: 0             // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
+            showDelay: 0   // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
         },
         legend: {
             y : -30,
@@ -288,4 +288,39 @@ function pluginSizeOptions(datelines, datalines)
             }
         ]
     };
+}
+
+function parseStockCode() {
+    var cd = code.concat();
+
+    if (cd.substring(0, 1) == '0') {
+        cd = cd + '.SZ'
+    } else if (cd.substring(0, 1) == '6') {
+        cd = cd + '.SS'
+    }
+
+    return cd
+}
+
+function parseDateFormat(y, m, d) {
+    return y + '-' + m + '-' + d
+}
+
+function getStockCurData(code)
+{
+    var cd = parseStockCode(code);
+    var json_url = 'http://query.yahooapis.com/v1/public/yql?q=' + 'select%20*%20from%20yahoo.finance.quotes' +
+        '%20where%20symbol%20in%20(%22' + cd + '%22)&format=json&env=store://datatables.org/alltableswithkeys'
+}
+
+function getStockHistoryData(code, sy, sm, sd, ey, em, ed)
+{
+    var cd = parseStockCode(code);
+    var sdate = parseDateFormat(sy, sm, sd);
+    var edate = parseDateFormat(ey, em, ed);
+    var json_url = 'http://query.yahooapis.com/v1/public/yql?q=' + 'select%20*%20from%20yahoo.finance.historicaldata' +
+        '%20where%20symbol%20in%20(%22' + cd + '%22)%20' +
+        'and%20startDate%3d%22' + sdate + '%22%20and%20endDate%20%3d%20%22' +
+         edate + '%22&format=json&env=store://datatables.org/alltableswithkeys'
+
 }
