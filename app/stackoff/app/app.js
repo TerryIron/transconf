@@ -10,19 +10,18 @@ angular.module('myApp', [
     $routeProvider.otherwise('/stock')
 }]);
 
-function GetHttpRequest()
-{
+function GetHttpRequest() {
     if ( window.XMLHttpRequest ) // Gecko
         return new XMLHttpRequest() ;
     else if ( window.ActiveXObject ) // IE
         return new ActiveXObject("MsXml2.XmlHttp") ;
 }
 
-function loadJS(sId, url){
+function loadJS(sId, url) {
     ajaxPage(sId, url);
 }
 
-function ajaxPage(sId, url){
+function ajaxPage(sId, url) {
     var oXmlHttp = GetHttpRequest() ;
     oXmlHttp.open('GET', url, false);//同步操作
     oXmlHttp.setRequestHeader("Access-Control-Allow-Origin", "*");
@@ -30,8 +29,7 @@ function ajaxPage(sId, url){
     includeJS(sId, oXmlHttp.responseText);
 }
 
-function includeJS(sId, source)
-{
+function includeJS(sId, source) {
     if ( ( source != null ) && ( !document.getElementById( sId ) ) ){
         var oHead = document.getElementsByTagName('HEAD').item(0);
         var oScript = document.createElement( "script" );
@@ -50,8 +48,7 @@ function diffLines(a, b) {
     return [a, b]
 }
 
-function buildKLineOptions(name, datelines, datalines)
-{
+function buildKLineOptions(name, datelines, datalines) {
     return {
         title: {
             text: name
@@ -61,7 +58,6 @@ function buildKLineOptions(name, datelines, datalines)
             showDelay: 0,  // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
             formatter: function (params) {
                 var res = params[0].name;
-                res += '<br/>' + params[0].seriesName;
                 res += '<br/>  开盘 : ' + params[0].value[0] + '  最高 : ' + params[0].value[3];
                 res += '<br/>  收盘 : ' + params[0].value[1] + '  最低 : ' + params[0].value[2];
                 return res;
@@ -120,8 +116,7 @@ function buildKLineOptions(name, datelines, datalines)
     };
 }
 
-function pluginAverageOptions(datelines, datalines)
-{
+function pluginAverageOptions(datelines, datalines) {
     return {
         tooltip : {
             trigger: 'axis',
@@ -205,12 +200,14 @@ function pluginAverageOptions(datelines, datalines)
     };
 }
 
-function pluginSizeOptions(datelines, datalines)
-{
+function pluginVolumeOptions(datelines, datalines) {
     return {
         tooltip : {
             trigger: 'axis',
-            showDelay: 0   // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
+            showDelay: 0,   // 显示延迟，添加显示延迟可以避免频繁切换，单位ms
+            formatter: function(params) {
+                return '<br/>  量值 : ' + Math.round(params[0].value/10000) + '万';
+            }
         },
         legend: {
             y : -30,
@@ -267,7 +264,7 @@ function pluginSizeOptions(datelines, datalines)
         ],
         series : [
             {
-                name:'虚拟数据',
+                name:'量值',
                 type:'bar',
                 symbol: 'none',
                 data: datalines,
@@ -290,15 +287,26 @@ function pluginSizeOptions(datelines, datalines)
     };
 }
 
-function parseStockCode() {
+function CurrentTime() {
+    var cur_date = new Date();
+    return {
+        'year': cur_date.getFullYear(),
+        'month': cur_date.getMonth() + 1,
+        'date': cur_date.getDate(),
+        'hour': cur_date.getHours(),
+        'minute': cur_date.getMinutes(),
+        'second': cur_date.getSeconds()
+    };
+}
+
+function parseStockCode(code) {
+    code = String(code);
     var cd = code.concat();
-
     if (cd.substring(0, 1) == '0') {
-        cd = cd + '.SZ'
+        cd = cd + '.SZ';
     } else if (cd.substring(0, 1) == '6') {
-        cd = cd + '.SS'
+        cd = cd + '.SS';
     }
-
     return cd
 }
 
@@ -306,21 +314,59 @@ function parseDateFormat(y, m, d) {
     return y + '-' + m + '-' + d
 }
 
-function getStockCurData(code)
-{
-    var cd = parseStockCode(code);
-    var json_url = 'http://query.yahooapis.com/v1/public/yql?q=' + 'select%20*%20from%20yahoo.finance.quotes' +
-        '%20where%20symbol%20in%20(%22' + cd + '%22)&format=json&env=store://datatables.org/alltableswithkeys'
+function parseStockData(data){
+    var json_obj = JSON.parse(data);
+    return json_obj['query']['results']
 }
 
-function getStockHistoryData(code, sy, sm, sd, ey, em, ed)
-{
+function StockStructure() {
+    return {
+        'name': [],
+        'datelines': [],
+        'cline': {},
+        'kline': [],
+        'volume': []
+    }
+}
+
+function getStockCurDataURL(code) {
+    var cd = parseStockCode(code);
+    return 'http://query.yahooapis.com/v1/public/yql?q=' + 'select%20*%20from%20yahoo.finance.quotes' +
+        '%20where%20symbol%20in%20(%22' + cd + '%22)&format=json&env=store://datatables.org/alltableswithkeys';
+}
+
+function processStockCurData(data) {
+    var elements = parseStockData(data);
+    elements = elements['quote'];
+    alert(JSON.stringify(elements));
+    var stock_data = StockStructure();
+    stock_data['name'] = elements['Name'];
+    stock_data['cline']['preclose'] = elements['PreviousClose'];
+    stock_data['cline']['open'] = elements['Open'];
+    stock_data['cline']['close'] = elements['Ask'];
+    stock_data['cline']['range'] = elements['DaysRange'];
+    return stock_data;
+}
+
+function getStockHistoryDataURL(code, sy, sm, sd, ey, em, ed) {
     var cd = parseStockCode(code);
     var sdate = parseDateFormat(sy, sm, sd);
     var edate = parseDateFormat(ey, em, ed);
-    var json_url = 'http://query.yahooapis.com/v1/public/yql?q=' + 'select%20*%20from%20yahoo.finance.historicaldata' +
+    return 'http://query.yahooapis.com/v1/public/yql?q=' + 'select%20*%20from%20yahoo.finance.historicaldata' +
         '%20where%20symbol%20in%20(%22' + cd + '%22)%20' +
         'and%20startDate%3d%22' + sdate + '%22%20and%20endDate%20%3d%20%22' +
-         edate + '%22&format=json&env=store://datatables.org/alltableswithkeys'
+         edate + '%22&format=json&env=store://datatables.org/alltableswithkeys';
+}
 
+function processStockHistoryData(data){
+    var elements = parseStockData(data);
+    elements = elements['quote'];
+    var stock_data = StockStructure();
+    for (var i=0;i<elements.length;i++) {
+        var j = elements.length - i -1;
+        stock_data['datelines'].push(elements[j]['Date']);
+        stock_data['kline'].push([elements[j]['Open'], elements[j]['Close'], elements[j]['Low'], elements[j]['High']]);
+        stock_data['volume'].push(elements[j]['Volume'])
+    }
+    return stock_data;
 }
