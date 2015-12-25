@@ -315,8 +315,12 @@ function parseDateFormat(y, m, d) {
 }
 
 function parseStockData(data){
-    var json_obj = JSON.parse(data);
-    return json_obj['query']['results']
+    if (angular.isObject(data)) {
+        return data['query']['results']['quote'];
+    } else {
+        var json_obj = JSON.parse(data);
+        return json_obj['query']['results']['quote'];
+    }
 }
 
 function StockStructure() {
@@ -337,14 +341,17 @@ function getStockCurDataURL(code) {
 
 function processStockCurData(data) {
     var elements = parseStockData(data);
-    elements = elements['quote'];
-    alert(JSON.stringify(elements));
     var stock_data = StockStructure();
     stock_data['name'] = elements['Name'];
     stock_data['cline']['preclose'] = elements['PreviousClose'];
     stock_data['cline']['open'] = elements['Open'];
-    stock_data['cline']['close'] = elements['Ask'];
-    stock_data['cline']['range'] = elements['DaysRange'];
+    stock_data['cline']['current'] = elements['Bid'];
+    stock_data['cline']['average'] = elements['Ask'];
+    stock_data['cline']['high'] = elements['DaysHigh'];
+    stock_data['cline']['low'] = elements['DaysLow'];
+    stock_data['cline']['changerange'] = elements['Change'];
+    stock_data['cline']['changeperrange'] = elements['PercentChange'];
+    stock_data['cline']['volume'] = elements['Volume'];
     return stock_data;
 }
 
@@ -360,7 +367,6 @@ function getStockHistoryDataURL(code, sy, sm, sd, ey, em, ed) {
 
 function processStockHistoryData(data){
     var elements = parseStockData(data);
-    elements = elements['quote'];
     var stock_data = StockStructure();
     for (var i=0;i<elements.length;i++) {
         var j = elements.length - i -1;

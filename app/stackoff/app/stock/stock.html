@@ -1,4 +1,17 @@
-<div id="stock_c" style="height: 60px;"></div>
+<!--<div id="stock_c" style="height: 60px;"></div>-->
+<table ng-controller="StockCtrl" class="table table-condensed">
+<tr>
+    <th>现价：{{ current }}</th>
+    <th>价格变动：{{ changerange }}</th>
+    <th>涨幅：{{ changeperrange }}</th>
+    <th>最高：{{ high }}</th>
+    <th>最低：{{ low }}</th>
+    <th>均价：{{ average }}</th>
+    <th>昨日收盘：{{ preclose }}</th>
+    <th>今日开盘：{{ open }}</th>
+    <th>放量：{{ volume }}</th>
+</tr>
+</table>
 <div id="stock_k" style="height: 220px;"></div>
 <div id="stock_v" style="height: 140px;"></div>
 <div id="stock_s" style="height: 140px;"></div>

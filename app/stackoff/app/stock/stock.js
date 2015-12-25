@@ -9,13 +9,27 @@ angular.module('myApp.stock', ['ngRoute'])
   });
 }])
 
-.controller('StockCtrl', ['$scope', function($scope) {// 路径配置
+.controller('StockCtrl', ['$scope', '$http', '$timeout', function($scope, $http, $timeout) {// 路径配置
 
     loadJS('echarts', 'echarts.js');
 
     var cur_time = CurrentTime();
-    $scope.code = '000001';
-    $scope.name = null;
+
+    function reset_stock_info($scope) {
+        $scope.code = '000001';
+        $scope.name = null;
+        $scope.current = null;
+        $scope.high = null;
+        $scope.low = null;
+        $scope.volume = null;
+        $scope.average = null;
+        $scope.preclose = null;
+        $scope.open = null;
+        $scope.changerange = null;
+        $scope.changeperrange = null;
+    }
+
+    reset_stock_info($scope);
 
     require.config({
         paths: {
@@ -55,16 +69,21 @@ angular.module('myApp.stock', ['ngRoute'])
         ],
         function (ec) {
             var current_url = getStockCurDataURL(code);
-            var current_httpcli = GetHttpRequest();
-            current_httpcli.onreadystatechange = function () {
-                if (current_httpcli.readyState == 4 && current_httpcli.status == 200) {
-                    var result = processStockCurData(current_httpcli.responseText);
-                    $scope.name = result['name']
-                }
-
-            };
-            current_httpcli.open('GET', current_url, true);
-            current_httpcli.send(null);
+            $timeout(function() {
+                $http.get(current_url).success(function (data, status, headers, config) {
+                    var result = processStockCurData(data);
+                    $scope.name = result['name'];
+                    $scope.current = result['cline']['current'];
+                    $scope.high = result['cline']['high'];
+                    $scope.low = result['cline']['low'];
+                    $scope.volume = Math.round(result['cline']['volume']/ 1000) + '万';
+                    $scope.average = result['cline']['average'];
+                    $scope.preclose = result['cline']['preclose'];
+                    $scope.open = result['cline']['open'];
+                    $scope.changerange = result['cline']['changerange'];
+                    $scope.changeperrange = result['cline']['changeperrange'];
+                }, 3000);
+            });
 
             var history_url = getStockHistoryDataURL(code,
                                                      cur_time['year']-1,
@@ -78,7 +97,8 @@ angular.module('myApp.stock', ['ngRoute'])
                 if (history_httpcli.readyState == 4 && history_httpcli.status == 200) {
                     var result = processStockHistoryData(history_httpcli.responseText);
                     var myChart_k = ec.init(document.getElementById('stock_k'));
-                    var option_k = buildKLineOptions($scope.name, result['datelines'], result['kline']);
+                    var title = $scope.name;
+                    var option_k = buildKLineOptions(title, result['datelines'], result['kline']);
                     myChart_k.setOption(option_k);
                     var myChart_v = ec.init(document.getElementById('stock_v'));
                     var option_v = pluginVolumeOptions(result['datelines'], result['volume']);
@@ -87,8 +107,6 @@ angular.module('myApp.stock', ['ngRoute'])
             };
             history_httpcli.open('GET', history_url, true);
             history_httpcli.send(null);
-
-
         }
         );
     }
