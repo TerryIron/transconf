@@ -351,6 +351,8 @@ function processStockCurData(data) {
     stock_data['cline']['low'] = elements['DaysLow'];
     stock_data['cline']['changerange'] = elements['Change'];
     stock_data['cline']['changeperrange'] = elements['PercentChange'];
+    stock_data['cline']['yearchangerange'] = elements['ChangeFromYearLow'];
+    stock_data['cline']['yearchangeperrange'] = elements['PercentChangeFromYearLow'];
     stock_data['cline']['volume'] = elements['Volume'];
     return stock_data;
 }

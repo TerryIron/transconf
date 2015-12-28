@@ -1,15 +1,72 @@
-<!--<div id="stock_c" style="height: 60px;"></div>-->
-<table ng-controller="StockCtrl" class="table table-condensed">
+<style>
+    .navbar .brand{
+        display: inline-block;
+    }
+</style>
+
+<div class="collapse navbar-collapse">
+    <div class="container">
+        <div class="navbar navbar-inverse navbar-fixed-top">
+            <div class="navbar-inner">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="#">Stackoff</a>
+                <ul class="nav">
+                    <li class="active">
+                        <a href="#/stock">stock</a>
+                    </li>
+                    <li>
+                        <form class="navbar-search pull-left" ng-controller="StockCtrl">
+                            <input type="text" ng-keypress="Search($event)" ng-model="search" class="search-query" placeholder="Search">
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="collapse navbar-collapse">
+    <div class="container">
+        <div class="navbar navbar-inverse navbar-fixed-top">
+            <div class="navbar-inner">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="#">Stackoff</a>
+                <ul class="nav">
+                    <li class="active">
+                        <a href="#/stock">stock</a>
+                    </li>
+                    <li>
+                        <form class="navbar-search pull-left">
+                            <input type="text" ng-keypress="Search($event)" ng-model="search" class="search-query" placeholder="Search">
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table  class="table table-condensed">
 <tr>
-    <th>现价：{{ current }}</th>
-    <th>价格变动：{{ changerange }}</th>
-    <th>涨幅：{{ changeperrange }}</th>
-    <th>最高：{{ high }}</th>
-    <th>最低：{{ low }}</th>
-    <th>均价：{{ average }}</th>
-    <th>昨日收盘：{{ preclose }}</th>
-    <th>今日开盘：{{ open }}</th>
-    <th>放量：{{ volume }}</th>
+    <th>现价：{{ data.current }}</th>
+    <th>价格年变动：{{ data.yearchangerange }}</th>
+    <th>年涨幅：{{ data.yearchangeperrange }}</th>
+    <th>价格变动：{{ data.changerange }}</th>
+    <th>涨幅：{{ data.changeperrange }}</th>
+    <th>最高：{{ data.high }}</th>
+    <th>最低：{{ data.low }}</th>
+    <th>均价：{{ data.average }}</th>
+    <th>昨日收盘：{{ data.preclose }}</th>
+    <th>今日开盘：{{ data.open }}</th>
+    <th>放量：{{ data.volume }}</th>
 </tr>
 </table>
 <div id="stock_k" style="height: 220px;"></div>

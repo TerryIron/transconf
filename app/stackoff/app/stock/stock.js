@@ -3,33 +3,15 @@
 angular.module('myApp.stock', ['ngRoute'])
 
 .config(['$routeProvider', function($routeProvider) {
-  $routeProvider.when('/stock', {
-    templateUrl: 'stock/stock.html',
-    controller: 'StockCtrl'
-  });
+    $routeProvider.when('/stock', {
+        templateUrl: 'stock/stock.html',
+        controller: 'StockCtrl'
+    });
 }])
 
 .controller('StockCtrl', ['$scope', '$http', '$timeout', function($scope, $http, $timeout) {// 路径配置
 
     loadJS('echarts', 'echarts.js');
-
-    var cur_time = CurrentTime();
-
-    function reset_stock_info($scope) {
-        $scope.code = '000001';
-        $scope.name = null;
-        $scope.current = null;
-        $scope.high = null;
-        $scope.low = null;
-        $scope.volume = null;
-        $scope.average = null;
-        $scope.preclose = null;
-        $scope.open = null;
-        $scope.changerange = null;
-        $scope.changeperrange = null;
-    }
-
-    reset_stock_info($scope);
 
     require.config({
         paths: {
@@ -69,21 +51,26 @@ angular.module('myApp.stock', ['ngRoute'])
         ],
         function (ec) {
             var current_url = getStockCurDataURL(code);
-            $timeout(function() {
-                $http.get(current_url).success(function (data, status, headers, config) {
+
+            function updateStockInfo() {
+                $http.get(current_url).success(function (data) {
                     var result = processStockCurData(data);
-                    $scope.name = result['name'];
-                    $scope.current = result['cline']['current'];
-                    $scope.high = result['cline']['high'];
-                    $scope.low = result['cline']['low'];
-                    $scope.volume = Math.round(result['cline']['volume']/ 1000) + '万';
-                    $scope.average = result['cline']['average'];
-                    $scope.preclose = result['cline']['preclose'];
-                    $scope.open = result['cline']['open'];
-                    $scope.changerange = result['cline']['changerange'];
-                    $scope.changeperrange = result['cline']['changeperrange'];
-                }, 3000);
-            });
+                    $scope.data.current = result['cline']['current'];
+                    $scope.data.high = result['cline']['high'];
+                    $scope.data.low = result['cline']['low'];
+                    $scope.data.volume = Math.round(result['cline']['volume'] / 1000) + '万';
+                    $scope.data.average = result['cline']['average'];
+                    $scope.data.preclose = result['cline']['preclose'];
+                    $scope.data.open = result['cline']['open'];
+                    $scope.data.changerange = result['cline']['changerange'];
+                    $scope.data.changeperrange = result['cline']['changeperrange'];
+                    $scope.data.yearchangerange = result['cline']['yearchangerange'];
+                    $scope.data.yearchangeperrange = result['cline']['yearchangeperrange'];
+                    $scope.data.name = result['name'];
+                });
+            }
+            updateStockInfo();
+            $scope.stocktimer = setInterval(updateStockInfo, 10 * 1000);
 
             var history_url = getStockHistoryDataURL(code,
                                                      cur_time['year']-1,
@@ -97,7 +84,7 @@ angular.module('myApp.stock', ['ngRoute'])
                 if (history_httpcli.readyState == 4 && history_httpcli.status == 200) {
                     var result = processStockHistoryData(history_httpcli.responseText);
                     var myChart_k = ec.init(document.getElementById('stock_k'));
-                    var title = $scope.name;
+                    var title = $scope.data.name;
                     var option_k = buildKLineOptions(title, result['datelines'], result['kline']);
                     myChart_k.setOption(option_k);
                     var myChart_v = ec.init(document.getElementById('stock_v'));
@@ -111,13 +98,18 @@ angular.module('myApp.stock', ['ngRoute'])
         );
     }
 
+
+    $scope.data = {};
+
     $scope.Search = function(e) {
         var keycode = window.event?e.keyCode:e.which;
         if (keycode == 13) {
+            clearInterval($scope.stocktimer);
             $scope.code = $scope.search;
-            DrawAll($scope.code, cur_time);
+            DrawAll($scope.code, CurrentTime());
         }
     };
 
-    DrawAll($scope.code, cur_time);
+    $scope.code = '000001';
+    DrawAll($scope.code, CurrentTime());
 }]);
