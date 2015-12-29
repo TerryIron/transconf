@@ -9,7 +9,7 @@ angular.module('myApp.stock', ['ngRoute'])
     });
 }])
 
-.controller('StockCtrl', ['$scope', '$http', '$timeout', function($scope, $http, $timeout) {// 路径配置
+.controller('StockCtrl', ['$scope', '$http', function($scope, $http) {// 路径配置
 
     loadJS('echarts', 'echarts.js');
 
@@ -67,10 +67,12 @@ angular.module('myApp.stock', ['ngRoute'])
                     $scope.data.yearchangerange = result['cline']['yearchangerange'];
                     $scope.data.yearchangeperrange = result['cline']['yearchangeperrange'];
                     $scope.data.name = result['name'];
+                    console.log($scope.data);
                 });
             }
             updateStockInfo();
-            $scope.stocktimer = setInterval(updateStockInfo, 10 * 1000);
+            $scope.stocktimer = setInterval(updateStockInfo, 4 * 1000);
+            console.log('set timer:' + $scope.stocktimer);
 
             var history_url = getStockHistoryDataURL(code,
                                                      cur_time['year']-1,
@@ -104,6 +106,7 @@ angular.module('myApp.stock', ['ngRoute'])
     $scope.Search = function(e) {
         var keycode = window.event?e.keyCode:e.which;
         if (keycode == 13) {
+            console.log('clear timer:' + $scope.stocktimer);
             clearInterval($scope.stocktimer);
             $scope.code = $scope.search;
             DrawAll($scope.code, CurrentTime());
@@ -111,5 +114,6 @@ angular.module('myApp.stock', ['ngRoute'])
     };
 
     $scope.code = '000001';
+    console.log('main drawall');
     DrawAll($scope.code, CurrentTime());
 }]);
