@@ -2,7 +2,7 @@
 
 angular.module('myApp.stock', ['ngRoute'])
 
-.config(['$routeProvider', function($routeProvider) {
+.config(['$routeProvider', '$httpProvider', function($routeProvider, $httpProvider) {
     $routeProvider.when('/stock', {
         templateUrl: 'stock/stock.html',
         controller: 'StockCtrl'
@@ -50,11 +50,13 @@ angular.module('myApp.stock', ['ngRoute'])
             needMap() ? 'echarts/chart/map' : 'echarts'
         ],
         function (ec) {
-            var current_url = getStockCurDataURL(code);
+            //var current_url = getStockCurDataURL(code);
+            var current_url = getStockCurDataURLfromSina(code);
 
             function updateStockInfo() {
-                $http.get(current_url).success(function (data) {
-                    var result = processStockCurData(data);
+                $http.jsonp(current_url + '?callback=parseSinaData').success(function (data) {
+                    //var result = processStockCurData(data);
+                    var result = processStockCurDatafromSina(data);
                     $scope.data.current = result['cline']['current'];
                     $scope.data.high = result['cline']['high'];
                     $scope.data.low = result['cline']['low'];

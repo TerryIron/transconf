@@ -333,10 +333,37 @@ function StockStructure() {
     }
 }
 
+function getStockCurDataURLfromSina(code) {
+    var cd = code.concat();
+    if (cd.substring(0, 1) == '0') {
+        return 'http://hq.sinajs.cn/list=' + 'sz' + cd;
+    } else if (cd.substring(0, 1) == '6') {
+        return 'http://hq.sinajs.cn/list=' + 'sh' + cd;
+    }
+}
+
 function getStockCurDataURL(code) {
     var cd = parseStockCode(code);
     return 'http://query.yahooapis.com/v1/public/yql?q=' + 'select%20*%20from%20yahoo.finance.quotes' +
         '%20where%20symbol%20in%20(%22' + cd + '%22)&format=json&env=store://datatables.org/alltableswithkeys';
+}
+
+function parseSinaData(data) {
+    console.log(data);
+}
+
+function processStockCurDatafromSina(data) {
+    var new_data = data.split('=')[1].split(',');
+    var stock_data = StockStructure();
+    stock_data['name'] = new_data[0];
+    stock_data['cline']['open'] = new_data[1];
+    stock_data['cline']['preclose'] = new_data[2];
+    stock_data['cline']['current'] = new_data[3];
+    stock_data['cline']['high'] = new_data[4];
+    stock_data['cline']['low'] = new_data[5];
+    stock_data['cline']['volume'] = new_data[8];
+
+    return stock_data;
 }
 
 function processStockCurData(data) {
