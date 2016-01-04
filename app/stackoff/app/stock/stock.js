@@ -58,6 +58,7 @@ angular.module('myApp.stock', ['ngRoute'])
                 $http.jsonp(current_url).success(function (data) {
                     //var result = processStockCurData(data);
                     //var result = processStockCurDatafromSina(data);
+                    console.log(data);
                     var result = processStockCurDatafromLocal(data);
                     $scope.data.current = result['cline']['current'];
                     $scope.data.high = result['cline']['high'];
@@ -74,13 +75,12 @@ angular.module('myApp.stock', ['ngRoute'])
                     console.log($scope.data);
                 });
             }
-            updateStockInfo();
-            $scope.stocktimer = setInterval(updateStockInfo, 4 * 1000);
+            $scope.stocktimer = setInterval(updateStockInfo, 10 * 1000);
             console.log('set timer:' + $scope.stocktimer);
 
             var history_url = getStockHistoryDataURL(code,
                                                      cur_time['year']-1,
-                                                     cur_time['month'],
+                                                     (cur_time['month']+9) % 12,
                                                      cur_time['date'],
                                                      cur_time['year'],
                                                      cur_time['month'],
@@ -98,6 +98,7 @@ angular.module('myApp.stock', ['ngRoute'])
                     myChart_v.setOption(option_v);
                 }
             };
+            console.log(history_url);
             history_httpcli.open('GET', history_url, true);
             history_httpcli.send(null);
         }

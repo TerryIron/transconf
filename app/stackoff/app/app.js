@@ -80,7 +80,7 @@ function buildKLineOptions(name, datelines, datalines) {
             y: 250,
             show: true,
             realtime: true,
-            start: 50,
+            start: 0,
             end: 100
         },
         grid: {
@@ -141,7 +141,7 @@ function pluginAverageOptions(datelines, datalines) {
         dataZoom : {
             show : true,
             realtime: true,
-            start : 50,
+            start : 0,
             end : 100
         },
         grid: {
@@ -229,7 +229,7 @@ function pluginVolumeOptions(datelines, datalines) {
             y:200,
             show : true,
             realtime: true,
-            start : 50,
+            start : 0,
             end : 100
         },
         grid: {
@@ -344,7 +344,7 @@ function getStockCurDataURLfromSina(code) {
 
 function getStockCurDataURLfromLocal(code) {
     var cd = code.concat();
-    return '//v1/stackoff/get?code=' + cd
+    return '//localhost:9889/v1/stackoff/get?code=' + cd
 }
 
 function getStockCurDataURL(code) {
