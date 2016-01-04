@@ -106,7 +106,6 @@ class NetShell(ModelShell):
         def process_error(err):
             LOG.error(err)
             raise Exception(err.value)
-        print 1111, _name, _method, kwargs
         d = defer.succeed({})
         d.addCallback(lambda r: _model.run(_name, _method, **kwargs))
         d.addErrback(lambda e: process_error(e))
