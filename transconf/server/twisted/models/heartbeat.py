@@ -81,9 +81,9 @@ class HeartBeat(Model):
 
     def _build_heartbeat_event(self, client, local_name, local_uuid, local_type):
         req = ActionRequest('heartcond.checkin',
-                             **dict(group_name=local_name,
-                                    uuid=local_uuid,
-                                    group_type=local_type))
+                            **dict(group_name=local_name,
+                                   uuid=local_uuid,
+                                   group_type=local_type))
         return EventDispatcher(client, req, need_close=False)
 
     def _heartbeat(self, timeout):

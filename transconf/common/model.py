@@ -89,6 +89,23 @@ class BaseModel(NameBus):
         real_name = self._build_real_nodename(name_lst)
         return self.get(real_name)
 
+    def route(self, target, method, **kwargs):
+        if not self._form:
+            self._form = list()
+
+        def _wrapper(f):
+            if kwargs.get('is_public', False):
+                self._form.append(dict(node=target,
+                                       public=[method, "mod:self:{0}".format(f.__name__)]))
+            else:
+                self._form.append(dict(node=target,
+                                       private=[method, "mod:self:{0}".format(f.__name__)]))
+
+            def __wrapper(_self, *_args, **_kwargs):
+                return f(_self, *_args, **_kwargs)
+            return __wrapper
+        return _wrapper
+
     def register(self):
         register_model_target(self)
 

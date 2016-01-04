@@ -97,7 +97,7 @@ class ModelShell(NameBus):
         """
         # Check node name is exist ?
         def translate():
-            model = model_class()
+            model = model_class() if callable(model_class) else model_class
             model.init(config)
             self.parser.translate(model)
             return model
