@@ -51,12 +51,14 @@ angular.module('myApp.stock', ['ngRoute'])
         ],
         function (ec) {
             //var current_url = getStockCurDataURL(code);
-            var current_url = getStockCurDataURLfromSina(code);
+            //var current_url = getStockCurDataURLfromSina(code);
+            var current_url = getStockCurDataURLfromLocal(code);
 
             function updateStockInfo() {
-                $http.jsonp(current_url + '?callback=parseSinaData').success(function (data) {
+                $http.jsonp(current_url).success(function (data) {
                     //var result = processStockCurData(data);
-                    var result = processStockCurDatafromSina(data);
+                    //var result = processStockCurDatafromSina(data);
+                    var result = processStockCurDatafromLocal(data);
                     $scope.data.current = result['cline']['current'];
                     $scope.data.high = result['cline']['high'];
                     $scope.data.low = result['cline']['low'];

@@ -342,6 +342,11 @@ function getStockCurDataURLfromSina(code) {
     }
 }
 
+function getStockCurDataURLfromLocal(code) {
+    var cd = code.concat();
+    return '//v1/stackoff/get?code=' + cd
+}
+
 function getStockCurDataURL(code) {
     var cd = parseStockCode(code);
     return 'http://query.yahooapis.com/v1/public/yql?q=' + 'select%20*%20from%20yahoo.finance.quotes' +
@@ -349,6 +354,10 @@ function getStockCurDataURL(code) {
 }
 
 function parseSinaData(data) {
+    console.log(data);
+}
+
+function processStockCurDatafromLocal(data) {
     console.log(data);
 }
 
