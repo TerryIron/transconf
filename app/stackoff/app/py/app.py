@@ -98,6 +98,7 @@ class Stock(object):
             content['list'].append((('+' + i, self.buylist['+' + i]), ('-' + i, self.salelist['-' + i])))
         return content
 
+
 STOCK = Stock()
 
 
@@ -125,6 +126,7 @@ class TestModel(Model):
             elif stock_code.startswith('0'):
                 stock_code = 'sz' + stock_code
             stocks.append(stock_code)
+        code = ','.join(stocks)
         d = client.getPage('http://hq.sinajs.cn/list={0}'.format(code))
         d.addCallback(lambda content: STOCK(code, content))
         return d
