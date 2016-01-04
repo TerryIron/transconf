@@ -92,14 +92,13 @@ class BaseModel(NameBus):
     def register(self):
         register_model_target(self)
 
-    def run(self, target_name, method_name, *args, **kwargs):
+    def run(self, target_name, method_name, **kwargs):
         """
         运行节点对象
 
         Args:
             target_name(str): 对象名
             method_name(str): 方法名
-            *args(list): 方法列表参数
             **kwargs(dict): 方法字典参数
 
         Returns:

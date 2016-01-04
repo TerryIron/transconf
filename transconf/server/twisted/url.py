@@ -25,9 +25,11 @@ class URLMiddleware(Middleware):
             target_name = context.get('PATH_INFO', None)
             method_name = context.get('REQUEST_METHOD', 'GET')
             if target_name and method_name:
+                kwargs = context.get('REQUEST_KWARGS', {})
                 cb = functools.partial(self.handler.run,
                                        target_name,
-                                       method_name)
+                                       method_name,
+                                       **kwargs)
                 return cb()
             else:
                 raise BadRequest(context)
@@ -120,7 +122,7 @@ class NetShell(ModelShell):
         self.uri_list.sort()
         return model
 
-    def run(self, _target_name, _method_name, *args, **kwargs):
+    def run(self, _target_name, _method_name, **kwargs):
         try:
             LOG.debug('Lookup target:{0}, method:{1}'.format(_target_name, _method_name))
             path_info = [path for path in _target_name.split(self.split) if path != ""]
@@ -128,11 +130,11 @@ class NetShell(ModelShell):
             # Check is API in model bus ?
             for key_info, model in self.all().items():
                 if len(key_info) == path_len:
-                    ret, kwargs, real_path = self._parse_url(path_info, key_info, path_len)
+                    ret, _kwargs, _real_path = self._parse_url(path_info, key_info, path_len)
                     if ret:
                         self._update_cache(_target_name, model)
                         model['document_path'] = self.document_path
-                        return self._run(model, tuple(real_path), _method_name, *args, **kwargs)
+                        return self._run(model, tuple(_real_path), _method_name, **kwargs)
             # Check is URI ?
             real_target_paths = self._parse_path(path_info, path_len)
             for real_target_path in real_target_paths:
@@ -152,11 +154,11 @@ class NetShell(ModelShell):
             d.addErrback(lambda e: _not_found())
             return d
 
-    def _run(self, _model, _name, _method, *args, **kwargs):
+    def _run(self, _model, _name, _method, **kwargs):
         def process_result(result):
             return [] if result is None else result
 
         d = defer.succeed({})
-        d.addCallback(lambda r: _model.run(_name, _method, *args, **kwargs))
+        d.addCallback(lambda r: _model.run(_name, _method, **kwargs))
         d.addCallback(lambda r: process_result(r))
         return d

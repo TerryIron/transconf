@@ -1,6 +1,7 @@
 __author__ = 'chijun'
 
 import werkzeug.http
+import urlparse
 import paste.urlmap
 from zope.mimetype import typegetter
 
@@ -162,6 +163,10 @@ class URLMap(paste.urlmap.URLMap):
 
         if app:
             environ['transconf.best_content_type'] = mime_type
+            if 'QUERY_STRING' in environ:
+                environ['REQUEST_KWARGS'] = dict()
+                for k, v in urlparse.parse_qs(environ['QUERY_STRING']).items():
+                    environ['REQUEST_KWARGS'][k] = v[0]
             val = app(environ, start_response)
             if callable(start_response):
                 mime_type = typegetter.mimeTypeGuesser(name=path_info)

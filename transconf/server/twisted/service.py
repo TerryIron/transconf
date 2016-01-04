@@ -2,6 +2,8 @@
 
 __author__ = 'chijun'
 
+import json
+
 try:
     from twisted.internet import epollreactor
     epollreactor.install()
@@ -164,11 +166,15 @@ class _WSGIResponse(WSGIResponse):
         try:
             def _write_response(appIterator):
                 if appIterator:
-                    for elem in appIterator:
-                        if elem:
-                            self.write(elem)
-                        if self._requestFinished:
-                            break
+                    if isinstance(appIterator, dict):
+                        elem = json.dumps(appIterator)
+                        self.write(elem)
+                    else:
+                        for elem in appIterator:
+                            if elem:
+                                self.write(elem)
+                            if self._requestFinished:
+                                break
                     close = getattr(appIterator, 'close', None)
                     if close is not None:
                         close()

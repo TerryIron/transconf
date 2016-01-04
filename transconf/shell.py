@@ -30,17 +30,16 @@ class ModelShell(NameBus):
         self.environ = {}
         self.parser = FormParser(log)
 
-    def _run(self, model, name, method, *args, **kwargs):
-        return model.run(name, method, *args, **kwargs)
+    def _run(self, model, name, method, **kwargs):
+        return model.run(name, method, **kwargs)
 
-    def run(self, target_name, method_name, *args, **kwargs):
+    def run(self, target_name, method_name, **kwargs):
         """
         运行命令
 
         Args:
             target_name: 命令对象
             method_name: 方法名
-            *args: 列表参数
             **kwargs: 字典参数
 
         Returns:
@@ -52,7 +51,7 @@ class ModelShell(NameBus):
             model_name = name_lst[0]
             model = self.get(model_name)
             if isinstance(model, Model):
-                return self._run(model, tuple(name_lst), method_name, *args, **kwargs)
+                return self._run(model, tuple(name_lst), method_name, **kwargs)
             return False
         else:
             raise ShellTargetNotFound(target_name)

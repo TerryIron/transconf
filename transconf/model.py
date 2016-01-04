@@ -93,14 +93,13 @@ class Model(BaseModel):
             return True
         return False
 
-    def run(self, _target_name, _method_name, *args, **kwargs):
+    def run(self, _target_name, _method_name, **kwargs):
         """
         运行内置方法
 
         Args:
             _target_name: 内置对象名
             _method_name: 内置方法名
-            *args: 列表参数
             **kwargs: 字典参数
 
         Returns:
@@ -116,9 +115,9 @@ class Model(BaseModel):
         if _meth and isinstance(_type, typ):
             if callable(_meth):
                 if not inst_name:
-                    return _meth(*args, **kwargs)
+                    return _meth(**kwargs)
                 else:
-                    return _meth(inst_name, *args, **kwargs)
+                    return _meth(inst_name, **kwargs)
             else:
                 return _meth
         else:
