@@ -81,9 +81,9 @@ class HeartBeat(Model):
 
     def _build_heartbeat_event(self, client, local_name, local_uuid, local_type):
         req = ActionRequest('heartcond.checkin',
-                             dict(group_name=local_name,
-                                  uuid=local_uuid,
-                                  group_type=local_type))
+                             **dict(group_name=local_name,
+                                    uuid=local_uuid,
+                                    group_type=local_type))
         return EventDispatcher(client, req, need_close=False)
 
     def _heartbeat(self, timeout):
@@ -198,10 +198,7 @@ class HeartCondition(Model):
         else:
             self.buf_group_target[group_name + '_' + group_type] = False
 
-    def checkin(self, context, heartrate=60):
-        group_name = context.get('group_name', None)
-        group_type = context.get('group_type', None)
-        uuid = context.get('uuid', None)
+    def checkin(self, group_name, group_type, uuid, heartrate=60):
         LOG.debug('Got a heartbeat from group:{0}, type:{1}, uuid:{2}'.format(group_name,
                                                                               group_type,
                                                                               uuid))

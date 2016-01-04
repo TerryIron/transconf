@@ -24,11 +24,10 @@ class NoHandlerFound(_Exception):
 
 class ShellRequest(Request):
 
-    def __init__(self, target_name, method_name, version, *args, **kwargs):
+    def __init__(self, target_name, method_name, version, **kwargs):
         d = dict(target=target_name,
                  method=method_name,
                  version=version,
-                 args=args,
                  kwargs=kwargs)
         super(ShellRequest, self).__init__(**d)
 
@@ -40,7 +39,6 @@ class ShellRequest(Request):
             target=self['target'],
             method=self['method'],
             version=self['version'],
-            args=self['args'],
             kwargs=self['kwargs'],
         )
         return context
@@ -78,11 +76,10 @@ class ShellMiddleware(Middleware):
                 target_name = shell_req.get('target', None)
                 method_name = shell_req.get('method', None)
                 if target_name and method_name:
-                    args = shell_req.get('args', None)
                     kwargs = shell_req.get('kwargs', None)
                     cb = functools.partial(self.handler.run,
                                            target_name,
-                                           method_name, *args, **kwargs)
+                                           method_name, **kwargs)
                     return cb()
                 else:
                     raise BadRequest(context)
@@ -106,6 +103,11 @@ class NetShell(ModelShell):
             LOG.error(e)
 
     def _run(self, _model, _name, _method, **kwargs):
+        def process_error(err):
+            LOG.error(err)
+            raise Exception(err.value)
+        print 1111, _name, _method, kwargs
         d = defer.succeed({})
         d.addCallback(lambda r: _model.run(_name, _method, **kwargs))
+        d.addErrback(lambda e: process_error(e))
         return d

@@ -57,7 +57,7 @@ class Response(object):
             dict: 处理后结果
 
         """
-        r = cls(cls.FAIL, err_msg=str(err))
+        r = cls(cls.FAIL, err_msg=str(err.value))
         return r.as_dict()
 
     @classmethod
