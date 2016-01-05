@@ -111,7 +111,7 @@ class Model(BaseModel):
         m_inst = self.get(real_name) or None
         if not m_inst:
             return
-        _type, _meth = m_inst.get(_method_name)
+        _type, _meth = m_inst.get(_method_name, (None, None))
         if _meth and isinstance(_type, typ):
             if callable(_meth):
                 if not inst_name:
