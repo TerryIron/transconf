@@ -168,7 +168,10 @@ class URLMap(paste.urlmap.URLMap):
             if callable(start_response):
                 mime_type = typegetter.mimeTypeGuesser(name=path_info)
                 if not mime_type:
-                    mime_type = 'application/json'
+                    if isinstance(val.result, dict):
+                        mime_type = 'application/json'
+                    elif not isinstance(val.result, list):
+                        mime_type = 'application/xml'
                 start_response('200 OK', [('Content-type', mime_type), ])
             return val
 
