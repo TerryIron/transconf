@@ -152,9 +152,6 @@ class URLMap(paste.urlmap.URLMap):
             if possible_app and not app:
                 app = possible_app
 
-        if not mime_type:
-            mime_type = 'application/json'
-
         if not app:
             # Didn't match a particular version, probably matches default
             app, app_url = self._match(host, port, path_info)
@@ -170,6 +167,8 @@ class URLMap(paste.urlmap.URLMap):
             val = app(environ, start_response)
             if callable(start_response):
                 mime_type = typegetter.mimeTypeGuesser(name=path_info)
+                if not mime_type:
+                    mime_type = 'application/json'
                 start_response('200 OK', [('Content-type', mime_type), ])
             return val
 
