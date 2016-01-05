@@ -58,6 +58,7 @@ angular.module('myApp.stock', ['ngRoute'])
                 $http.jsonp(current_url).success(function (data) {
                     //var result = processStockCurData(data);
                     //var result = processStockCurDatafromSina(data);
+                    data = JSON.parse(data);
                     console.log(data);
                     var result = processStockCurDatafromLocal(data);
                     $scope.data.current = result['cline']['current'];
