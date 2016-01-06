@@ -29,40 +29,45 @@
     </div>
 </div>
 
-<table  class="table-condensed" style="width: 650px;">
-    <tr>
-        <th style="width: 1px;"></th>
-        <th>现价：<br/>{{ data.current }}</th>
-        <th>涨幅：<br/>{{ data.changeper }}</th>
-        <th>最高：<br/>{{ data.high }}</th>
-        <th>最低：<br/>{{ data.low }}</th>
-        <th>昨日收盘：<br/>{{ data.preclose }}</th>
-        <th>开盘：<br/>{{ data.open }}</th>
-        <th>量比：<br/>{{ data.volumeper }}</th>
-        <th>换手率：<br/>{{ data.tradechange }}</th>
-        <th>市盈率：<br/>{{ data.tradeper }}</th>
-        <th>市值：<br/>{{ data.marketprice }}</th>
-    </tr>
-    <tr>
-        <th class="pull-left" style="width: 1px;">{{ data.name }}</th>
-        <th colspan="10">
-            <div class="pull-left">
-                <div id="stock_k" style="height: 160px;width: 600px;"></div>
-                <div id="stock_v" style="height: 140px;width: 600px;"></div>
-                <div id="stock_s" style="height: 20px;width: 600px;"></div>
-            </div>
-        </th>
-        <th>
-            <p style=font-size:9px>卖五：{{ data.tradeout5 }}</p>
-            <p style=font-size:9px>卖四：{{ data.tradeout4 }}</p>
-            <p style=font-size:9px>卖三：{{ data.tradeout3 }}</p>
-            <p style=font-size:9px>卖二：{{ data.tradeout2 }}</p>
-            <p style=font-size:9px>卖一：{{ data.tradeout1 }}</p>
-            <p style=font-size:9px>买一：{{ data.tradein1 }}</p>
-            <p style=font-size:9px>买二：{{ data.tradein2 }}</p>
-            <p style=font-size:9px>买三：{{ data.tradein3 }}</p>
-            <p style=font-size:9px>买四：{{ data.tradein4 }}</p>
-            <p style=font-size:9px>买五：{{ data.tradein5 }}</p>
-        </th>
-    </tr>
-</table>
+<div style="margin-left: auto;margin-right: auto;width: 100%;">
+    <div ng-repeat="item in code.items" id="{{item}}" style="display: none;">
+        {{ DrawAll(item) }}
+        <table class="table-condensed pull-left" style="width: 50%;float: left;" >
+            <tr>
+                <th style="width: 1px;"></th>
+                <th>现价：<br/>{{ data[item].current }}</th>
+                <th>涨幅：<br/>{{ data[item].changeper }}</th>
+                <th>最高：<br/>{{ data[item].high }}</th>
+                <th>最低：<br/>{{ data[item].low }}</th>
+                <th>昨日收盘：<br/>{{ data[item].preclose }}</th>
+                <th>开盘：<br/>{{ data[item].open }}</th>
+                <th>量比：<br/>{{ data[item].volumeper }}</th>
+                <th>换手率：<br/>{{ data[item].tradechange }}</th>
+                <th>市盈率：<br/>{{ data[item].tradeper }}</th>
+                <th>市值：<br/>{{ data[item].marketprice }}</th>
+            </tr>
+            <tr>
+                <th class="pull-left" style="width: 1px;">{{ data[item].name }}</th>
+                <th colspan="10">
+                    <div class="pull-left">
+                        <div id="stock_k{{item}}" style="height: 160px;width: 600px;"></div>
+                        <div id="stock_v{{item}}" style="height: 140px;width: 600px;"></div>
+                        <div id="stock_s{{item}}" style="height: 20px;width: 600px;"></div>
+                    </div>
+                </th>
+                <th>
+                    <p style=font-size:9px>卖五：{{ data[item].tradeout5 }}</p>
+                    <p style=font-size:9px>卖四：{{ data[item].tradeout4 }}</p>
+                    <p style=font-size:9px>卖三：{{ data[item].tradeout3 }}</p>
+                    <p style=font-size:9px>卖二：{{ data[item].tradeout2 }}</p>
+                    <p style=font-size:9px>卖一：{{ data[item].tradeout1 }}</p>
+                    <p style=font-size:9px>买一：{{ data[item].tradein1 }}</p>
+                    <p style=font-size:9px>买二：{{ data[item].tradein2 }}</p>
+                    <p style=font-size:9px>买三：{{ data[item].tradein3 }}</p>
+                    <p style=font-size:9px>买四：{{ data[item].tradein4 }}</p>
+                    <p style=font-size:9px>买五：{{ data[item].tradein5 }}</p>
+                </th>
+            </tr>
+        </table>
+    </div>
+</div>
