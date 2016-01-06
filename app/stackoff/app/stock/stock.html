@@ -29,21 +29,40 @@
     </div>
 </div>
 
-<table  class="table table-condensed">
-<tr>
-    <th>现价：{{ data.current }}</th>
-    <th>价格年变动：{{ data.yearchangerange }}</th>
-    <th>年涨幅：{{ data.yearchangeperrange }}</th>
-    <th>价格变动：{{ data.changerange }}</th>
-    <th>涨幅：{{ data.changeperrange }}</th>
-    <th>最高：{{ data.high }}</th>
-    <th>最低：{{ data.low }}</th>
-    <th>均价：{{ data.average }}</th>
-    <th>昨日收盘：{{ data.preclose }}</th>
-    <th>今日开盘：{{ data.open }}</th>
-    <th>放量：{{ data.volume }}</th>
-</tr>
+<table  class="table-condensed" style="width: 650px;">
+    <tr>
+        <th style="width: 1px;"></th>
+        <th>现价：<br/>{{ data.current }}</th>
+        <th>涨幅：<br/>{{ data.changeper }}</th>
+        <th>最高：<br/>{{ data.high }}</th>
+        <th>最低：<br/>{{ data.low }}</th>
+        <th>昨日收盘：<br/>{{ data.preclose }}</th>
+        <th>开盘：<br/>{{ data.open }}</th>
+        <th>量比：<br/>{{ data.volumeper }}</th>
+        <th>换手率：<br/>{{ data.tradechange }}</th>
+        <th>市盈率：<br/>{{ data.tradeper }}</th>
+        <th>市值：<br/>{{ data.marketprice }}</th>
+    </tr>
+    <tr>
+        <th class="pull-left" style="width: 1px;">{{ data.name }}</th>
+        <th colspan="10">
+            <div class="pull-left">
+                <div id="stock_k" style="height: 160px;width: 600px;"></div>
+                <div id="stock_v" style="height: 140px;width: 600px;"></div>
+                <div id="stock_s" style="height: 20px;width: 600px;"></div>
+            </div>
+        </th>
+        <th>
+            <p style=font-size:9px>卖五：{{ data.tradeout5 }}</p>
+            <p style=font-size:9px>卖四：{{ data.tradeout4 }}</p>
+            <p style=font-size:9px>卖三：{{ data.tradeout3 }}</p>
+            <p style=font-size:9px>卖二：{{ data.tradeout2 }}</p>
+            <p style=font-size:9px>卖一：{{ data.tradeout1 }}</p>
+            <p style=font-size:9px>买一：{{ data.tradein1 }}</p>
+            <p style=font-size:9px>买二：{{ data.tradein2 }}</p>
+            <p style=font-size:9px>买三：{{ data.tradein3 }}</p>
+            <p style=font-size:9px>买四：{{ data.tradein4 }}</p>
+            <p style=font-size:9px>买五：{{ data.tradein5 }}</p>
+        </th>
+    </tr>
 </table>
-<div id="stock_k" style="height: 220px;"></div>
-<div id="stock_v" style="height: 140px;"></div>
-<div id="stock_s" style="height: 140px;"></div>

@@ -2,7 +2,7 @@
 
 angular.module('myApp.stock', ['ngRoute'])
 
-.config(['$routeProvider', '$httpProvider', function($routeProvider, $httpProvider) {
+.config(['$routeProvider', '$httpProvider', function($routeProvider) {
     $routeProvider.when('/stock', {
         templateUrl: 'stock/stock.html',
         controller: 'StockCtrl'
@@ -11,6 +11,7 @@ angular.module('myApp.stock', ['ngRoute'])
 
 .controller('StockCtrl', ['$scope', '$http', function($scope, $http) {// 路径配置
 
+    loadJS('stock_lib', 'stock/stock_lib.js');
     loadJS('echarts', 'echarts.js');
 
     require.config({
@@ -50,35 +51,7 @@ angular.module('myApp.stock', ['ngRoute'])
             needMap() ? 'echarts/chart/map' : 'echarts'
         ],
         function (ec) {
-            //var current_url = getStockCurDataURL(code);
-            //var current_url = getStockCurDataURLfromSina(code);
             var current_url = getStockCurDataURLfromLocal(code);
-
-            function updateStockInfo() {
-                $http.jsonp(current_url).success(function (data) {
-                    //var result = processStockCurData(data);
-                    //var result = processStockCurDatafromSina(data);
-                    data = JSON.parse(data);
-                    console.log(data);
-                    var result = processStockCurDatafromLocal(data);
-                    $scope.data.current = result['cline']['current'];
-                    $scope.data.high = result['cline']['high'];
-                    $scope.data.low = result['cline']['low'];
-                    $scope.data.volume = Math.round(result['cline']['volume'] / 1000) + '万';
-                    $scope.data.average = result['cline']['average'];
-                    $scope.data.preclose = result['cline']['preclose'];
-                    $scope.data.open = result['cline']['open'];
-                    $scope.data.changerange = result['cline']['changerange'];
-                    $scope.data.changeperrange = result['cline']['changeperrange'];
-                    $scope.data.yearchangerange = result['cline']['yearchangerange'];
-                    $scope.data.yearchangeperrange = result['cline']['yearchangeperrange'];
-                    $scope.data.name = result['name'];
-                    console.log($scope.data);
-                });
-            }
-            $scope.stocktimer = setInterval(updateStockInfo, 10 * 1000);
-            console.log('set timer:' + $scope.stocktimer);
-
             var history_url = getStockHistoryDataURL(code,
                                                      cur_time['year']-1,
                                                      (cur_time['month']+9) % 12,
@@ -87,39 +60,69 @@ angular.module('myApp.stock', ['ngRoute'])
                                                      cur_time['month'],
                                                      cur_time['date']);
             var history_httpcli = GetHttpRequest();
-            history_httpcli.onreadystatechange = function () {
-                if (history_httpcli.readyState == 4 && history_httpcli.status == 200) {
-                    var result = processStockHistoryData(history_httpcli.responseText);
-                    var myChart_k = ec.init(document.getElementById('stock_k'));
-                    var title = $scope.data.name;
-                    var option_k = buildKLineOptions(title, result['datelines'], result['kline']);
-                    myChart_k.setOption(option_k);
-                    var myChart_v = ec.init(document.getElementById('stock_v'));
-                    var option_v = pluginVolumeOptions(result['datelines'], result['volume']);
-                    myChart_v.setOption(option_v);
+
+            function updateStockInfo() {
+                $http.get(current_url).success(function (data) {
+                    var result = processStockCurDatafromLocal(data);
+                    $scope.data.current = result['cline']['current'];
+                    $scope.data.high = result['cline']['high'];
+                    $scope.data.low = result['cline']['low'];
+                    $scope.data.volumeper = result['cline']['volumeper'];
+                    $scope.data.preclose = result['cline']['preclose'];
+                    $scope.data.open = result['cline']['open'];
+                    $scope.data.change = result['cline']['change'];
+                    $scope.data.changeper = result['cline']['changeper'];
+                    $scope.data.tradechange = result['cline']['tradechange'];
+                    $scope.data.tradeper = result['cline']['tradeper'];
+                    $scope.data.marketprice = result['cline']['marketprice'];
+                    $scope.data.name = result['name'];
+                    $scope.data.tradein1 = result['cline']['tradein_1'];
+                    $scope.data.tradein2 = result['cline']['tradein_2'];
+                    $scope.data.tradein3 = result['cline']['tradein_3'];
+                    $scope.data.tradein4 = result['cline']['tradein_4'];
+                    $scope.data.tradein5 = result['cline']['tradein_5'];
+                    $scope.data.tradeout1 = result['cline']['tradeout_1'];
+                    $scope.data.tradeout2 = result['cline']['tradeout_2'];
+                    $scope.data.tradeout3 = result['cline']['tradeout_3'];
+                    $scope.data.tradeout4 = result['cline']['tradeout_4'];
+                    $scope.data.tradeout5 = result['cline']['tradeout_5'];
+                });
+                if (history_httpcli != null) {
+                    history_httpcli.onreadystatechange = function () {
+                        if (history_httpcli.readyState == 4 && history_httpcli.status == 200) {
+                            var result = processStockHistoryData(history_httpcli.responseText);
+                            var myChart_k = ec.init(document.getElementById('stock_k'));
+                            var option_k = buildKLineOptions(result['datelines'], result['kline']);
+                            myChart_k.setOption(option_k);
+                            var myChart_v = ec.init(document.getElementById('stock_v'));
+                            var option_v = pluginVolumeOptions(result['datelines'], result['volume']);
+                            myChart_v.setOption(option_v);
+                            history_httpcli = null;
+                        }
+                    };
+                    history_httpcli.open('GET', history_url, true);
+                    history_httpcli.send(null);
                 }
-            };
-            console.log(history_url);
-            history_httpcli.open('GET', history_url, true);
-            history_httpcli.send(null);
+            }
+            $scope.stocktimer = setInterval(updateStockInfo, 5 * 1000);
         }
         );
     }
 
 
     $scope.data = {};
+    $scope.items = [];
 
     $scope.Search = function(e) {
         var keycode = window.event?e.keyCode:e.which;
         if (keycode == 13) {
-            console.log('clear timer:' + $scope.stocktimer);
             clearInterval($scope.stocktimer);
             $scope.code = $scope.search;
             DrawAll($scope.code, CurrentTime());
         }
     };
 
+    //$scope.code = ['000001', '000002', '000003', '000004', '000005'];
     $scope.code = '000001';
-    console.log('main drawall');
     DrawAll($scope.code, CurrentTime());
 }]);
