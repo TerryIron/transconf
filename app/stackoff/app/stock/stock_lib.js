@@ -301,34 +301,38 @@ function getStockCurDataURL(code) {
 
 function processStockCurDatafromLocal(data) {
     var stock_data = StockStructure();
-    stock_data['name'] = data['base']['name'];
-    stock_data['cline']['open'] = data['base']['todayStart'];
-    stock_data['cline']['preclose'] = data['base']['lastEnd'];
-    stock_data['cline']['current'] = data['base']['current'];
-    stock_data['cline']['high'] = data['base']['high'];
-    stock_data['cline']['low'] = data['base']['low'];
-    stock_data['cline']['change'] = data['base']['change'];
-    stock_data['cline']['changeper'] = data['base']['changePer'];
-    stock_data['cline']['trade'] = data['base']['trade'];
-    stock_data['cline']['tradechange'] = data['base']['tradeChange'];
-    stock_data['cline']['tradeper'] = data['base']['tradePer'];
-    stock_data['cline']['volume'] = data['base']['volume'];
-    stock_data['cline']['volumeper'] = data['base']['volumePer'];
-    stock_data['cline']['marketprice'] = data['base']['marketPrice'] + '亿';
-    stock_data['cline']['yearhigh'] = data['base']['yearHigh'];
-    stock_data['cline']['yearlow'] = data['base']['yearLow'];
-    stock_data['cline']['tradein_1'] = data['trade']['tradeIn_1'][0] + ':' + data['trade']['tradeIn_1'][1];
-    stock_data['cline']['tradein_2'] = data['trade']['tradeIn_2'][0] + ':' + data['trade']['tradeIn_2'][1];
-    stock_data['cline']['tradein_3'] = data['trade']['tradeIn_3'][0] + ':' + data['trade']['tradeIn_3'][1];
-    stock_data['cline']['tradein_4'] = data['trade']['tradeIn_4'][0] + ':' + data['trade']['tradeIn_4'][1];
-    stock_data['cline']['tradein_5'] = data['trade']['tradeIn_5'][0] + ':' + data['trade']['tradeIn_5'][1];
-    stock_data['cline']['tradeout_1'] = data['trade']['tradeOut_1'][0] + ':' + data['trade']['tradeOut_1'][1];
-    stock_data['cline']['tradeout_2'] = data['trade']['tradeOut_2'][0] + ':' + data['trade']['tradeOut_2'][1];
-    stock_data['cline']['tradeout_3'] = data['trade']['tradeOut_3'][0] + ':' + data['trade']['tradeOut_3'][1];
-    stock_data['cline']['tradeout_4'] = data['trade']['tradeOut_4'][0] + ':' + data['trade']['tradeOut_4'][1];
-    stock_data['cline']['tradeout_5'] = data['trade']['tradeOut_5'][0] + ':' + data['trade']['tradeOut_5'][1];
+    if (data['base'] != "" && data['trade'] != "") {
+        stock_data['name'] = data['base']['name'];
+        stock_data['cline']['open'] = data['base']['todayStart'];
+        stock_data['cline']['preclose'] = data['base']['lastEnd'];
+        stock_data['cline']['current'] = data['base']['current'];
+        stock_data['cline']['high'] = data['base']['high'];
+        stock_data['cline']['low'] = data['base']['low'];
+        stock_data['cline']['change'] = data['base']['change'];
+        stock_data['cline']['changeper'] = data['base']['changePer'];
+        stock_data['cline']['trade'] = data['base']['trade'];
+        stock_data['cline']['tradechange'] = data['base']['tradeChange'];
+        stock_data['cline']['tradeper'] = data['base']['tradePer'];
+        stock_data['cline']['volume'] = data['base']['volume'];
+        stock_data['cline']['volumeper'] = data['base']['volumePer'];
+        stock_data['cline']['marketprice'] = data['base']['marketPrice'] + '亿';
+        stock_data['cline']['yearhigh'] = data['base']['yearHigh'];
+        stock_data['cline']['yearlow'] = data['base']['yearLow'];
+        stock_data['cline']['tradein_1'] = data['trade']['tradeIn_1'][0] + ':' + data['trade']['tradeIn_1'][1];
+        stock_data['cline']['tradein_2'] = data['trade']['tradeIn_2'][0] + ':' + data['trade']['tradeIn_2'][1];
+        stock_data['cline']['tradein_3'] = data['trade']['tradeIn_3'][0] + ':' + data['trade']['tradeIn_3'][1];
+        stock_data['cline']['tradein_4'] = data['trade']['tradeIn_4'][0] + ':' + data['trade']['tradeIn_4'][1];
+        stock_data['cline']['tradein_5'] = data['trade']['tradeIn_5'][0] + ':' + data['trade']['tradeIn_5'][1];
+        stock_data['cline']['tradeout_1'] = data['trade']['tradeOut_1'][0] + ':' + data['trade']['tradeOut_1'][1];
+        stock_data['cline']['tradeout_2'] = data['trade']['tradeOut_2'][0] + ':' + data['trade']['tradeOut_2'][1];
+        stock_data['cline']['tradeout_3'] = data['trade']['tradeOut_3'][0] + ':' + data['trade']['tradeOut_3'][1];
+        stock_data['cline']['tradeout_4'] = data['trade']['tradeOut_4'][0] + ':' + data['trade']['tradeOut_4'][1];
+        stock_data['cline']['tradeout_5'] = data['trade']['tradeOut_5'][0] + ':' + data['trade']['tradeOut_5'][1];
 
-    return stock_data
+        return stock_data
+    } else {
+        return null
+    }
 }
 
 function processStockCurDatafromSina(data) {

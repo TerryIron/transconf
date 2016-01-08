@@ -30,42 +30,42 @@
 </div>
 
 <div style="margin-left: auto;margin-right: auto;width: 100%;">
-    <div ng-repeat="item in code.items" id="{{item}}" style="display: none;">
-        {{ DrawAll(item) }}
-        <table class="table-condensed pull-left" style="width: 50%;float: left;" >
+    <div ng-repeat="(key, val) in data" id="{{key}}" ng-if="val.showData">
+        {{ DrawAll(key) }}
+        <table class="table-condensed pull-left" style="width: 50%;float: left;">
             <tr>
                 <th style="width: 1px;"></th>
-                <th>现价：<br/>{{ data[item].current }}</th>
-                <th>涨幅：<br/>{{ data[item].changeper }}</th>
-                <th>最高：<br/>{{ data[item].high }}</th>
-                <th>最低：<br/>{{ data[item].low }}</th>
-                <th>昨日收盘：<br/>{{ data[item].preclose }}</th>
-                <th>开盘：<br/>{{ data[item].open }}</th>
-                <th>量比：<br/>{{ data[item].volumeper }}</th>
-                <th>换手率：<br/>{{ data[item].tradechange }}</th>
-                <th>市盈率：<br/>{{ data[item].tradeper }}</th>
-                <th>市值：<br/>{{ data[item].marketprice }}</th>
+                <th>现价：<br/>{{ val.current }}</th>
+                <th>涨幅：<br/>{{ val.changeper }}</th>
+                <th>最高：<br/>{{ val.high }}</th>
+                <th>最低：<br/>{{ val.low }}</th>
+                <th>昨日收盘：<br/>{{ val.preclose }}</th>
+                <th>开盘：<br/>{{ val.open }}</th>
+                <th>量比：<br/>{{ val.volumeper }}</th>
+                <th>换手率：<br/>{{ val.tradechange }}</th>
+                <th>市盈率：<br/>{{ val.tradeper }}</th>
+                <th>市值：<br/>{{ val.marketprice }}</th>
             </tr>
             <tr>
-                <th class="pull-left" style="width: 1px;">{{ data[item].name }}</th>
+                <th class="pull-left" style="width: 1px;">{{ val.name }}</th>
                 <th colspan="10">
-                    <div class="pull-left">
-                        <div id="stock_k{{item}}" style="height: 160px;width: 600px;"></div>
-                        <div id="stock_v{{item}}" style="height: 140px;width: 600px;"></div>
-                        <div id="stock_s{{item}}" style="height: 20px;width: 600px;"></div>
+                    <div class="pull-left" DrawAll>
+                        <div id="stock_k{{key}}" style="height: 160px;width: 600px;"></div>
+                        <div id="stock_v{{key}}" style="height: 140px;width: 600px;"></div>
+                        <div id="stock_s{{key}}" style="height: 20px;width: 600px;"></div>
                     </div>
                 </th>
                 <th>
-                    <p style=font-size:9px>卖五：{{ data[item].tradeout5 }}</p>
-                    <p style=font-size:9px>卖四：{{ data[item].tradeout4 }}</p>
-                    <p style=font-size:9px>卖三：{{ data[item].tradeout3 }}</p>
-                    <p style=font-size:9px>卖二：{{ data[item].tradeout2 }}</p>
-                    <p style=font-size:9px>卖一：{{ data[item].tradeout1 }}</p>
-                    <p style=font-size:9px>买一：{{ data[item].tradein1 }}</p>
-                    <p style=font-size:9px>买二：{{ data[item].tradein2 }}</p>
-                    <p style=font-size:9px>买三：{{ data[item].tradein3 }}</p>
-                    <p style=font-size:9px>买四：{{ data[item].tradein4 }}</p>
-                    <p style=font-size:9px>买五：{{ data[item].tradein5 }}</p>
+                    <p style=font-size:9px>卖五：{{ val.tradeout5 }}</p>
+                    <p style=font-size:9px>卖四：{{ val.tradeout4 }}</p>
+                    <p style=font-size:9px>卖三：{{ val.tradeout3 }}</p>
+                    <p style=font-size:9px>卖二：{{ val.tradeout2 }}</p>
+                    <p style=font-size:9px>卖一：{{ val.tradeout1 }}</p>
+                    <p style=font-size:9px>买一：{{ val.tradein1 }}</p>
+                    <p style=font-size:9px>买二：{{ val.tradein2 }}</p>
+                    <p style=font-size:9px>买三：{{ val.tradein3 }}</p>
+                    <p style=font-size:9px>买四：{{ val.tradein4 }}</p>
+                    <p style=font-size:9px>买五：{{ val.tradein5 }}</p>
                 </th>
             </tr>
         </table>
