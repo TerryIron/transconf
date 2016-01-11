@@ -9,20 +9,74 @@ from transconf.common.namebus import NameBus
 from transconf.common.reg import register_model_target
 
 
-class BaseModel(NameBus):
+class BaseResource(NameBus):
+    FORM = None
+
+    def __init__(self):
+        NameBus.__init__(self)
+        self._form = self.FORM
+
+    def build_rule(self, target, method, func, **kwargs):
+        raise NotImplementedError()
+
+    def add_rule(self, target, method, func, **kwargs):
+        if not self._form:
+            self._form = list()
+
+        if callable(func):
+            rule = self.build_rule(target, method, func, **kwargs)
+            self._form.append(rule)
+        else:
+            _func = getattr(self, func)
+            if callable(_func):
+                rule = self.build_rule(target, method, _func, **kwargs)
+                self._form.append(rule)
+
+    @property
+    def form(self):
+        """
+
+        Returns:
+            list: 模型表
+
+        """
+        return self._form
+
+    def route(self, target, method, **kwargs):
+        """
+        路由装饰器
+
+        Args:
+            target: 路由对象名
+            method: 路由方法名
+            **kwargs: 字典参数
+
+        Returns:
+            运行结果
+
+        """
+
+        def _wrapper(f):
+            self.add_rule(target, method, f, **kwargs)
+
+            def __wrapper(*_args, **_kwargs):
+                return f(*_args, **_kwargs)
+            return __wrapper
+        return _wrapper
+
+
+class BaseModel(BaseResource):
     """
     基本底层模型对象
     支持基本操作run， init， start， stop
 
     """
     STRUCT = None
-    FORM = None
     SPLIT_DOT = '.'
     MEMBER_SPLIT_DOT = ':'
 
     def __init__(self):
-        NameBus.__init__(self)
-        self._form = self.FORM
+        BaseResource.__init__(self)
         self._struct = self.STRUCT
         self.split = self.SPLIT_DOT
         self.member_split = self.MEMBER_SPLIT_DOT
@@ -107,16 +161,6 @@ class BaseModel(NameBus):
         """
         raise NotImplementedError()
 
-    @property
-    def form(self):
-        """
-
-        Returns:
-            list: 模型表
-
-        """
-        return self._form
-        
     @property
     def struct(self):
         """

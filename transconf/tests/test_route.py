@@ -10,7 +10,7 @@ sys.path.insert(0, sys.path[0] + '/../..')
 here = os.path.dirname(os.path.abspath(__file__))
 
 from transconf.server.twisted.wsgi import TranMiddleware, TranServer, URLMiddleware
-from transconf.model import Model
+from transconf.model import Model, Resource
 
 
 class TestModel(Model):
@@ -27,15 +27,17 @@ def test(name):
     return [name]
 
 
-class Test2(object):
+class Test2(Resource):
     def __init__(self, value):
         self.value = value
+        super(Test2, self).__init__()
 
     def test_name(self, name):
         return [self.value, name]
 
 Test2 = Test2(10)
-TestModel.add_resource('helloworld2/{name}', 'GET', Test2, 'test_name')
+Test2.add_rule('helloworld2/{name}', 'GET', 'test_name')
+TestModel.add_resource(Test2)
 
 
 class TestHandler(URLMiddleware):

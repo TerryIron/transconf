@@ -2,7 +2,7 @@
 
 __author__ = 'chijun'
 
-from transconf.common.model import BaseModel
+from transconf.common.model import BaseModel, BaseResource
 from transconf.mystruct import NodeStructV1
 from transconf.mystructtypes import *
 from transconf.utils import Exception
@@ -10,6 +10,39 @@ from transconf.utils import Exception
 
 class ModelInternalStuctErr(Exception):
     """Raised when pointed node object's struct or its env struct being bad"""
+
+
+class Resource(BaseResource):
+    @staticmethod
+    def build_rule(target, method, func, **kwargs):
+        """
+        添加基本路由规则
+
+        Args:
+            target: 路由对象名
+            method: 路由方法名
+            func: 函数入口
+            **kwargs: 字典参数
+
+        """
+
+        _object = kwargs.get('from_obj', None)
+        if not _object:
+            _object = 'self'
+
+        _validate = kwargs.get('validate_method', None)
+        _public = kwargs.get('is_public', False)
+        if _validate and not _public:
+            _validate_obj = kwargs.get('validate_obj', 'self')
+            return dict(node=target,
+                        name=(_validate, ('mod',
+                                          '{0}'.format(_validate_obj),
+                                          '{1}'.format(_validate),
+                                          )),
+                        private=(method, ('mod', _object, func)))
+        else:
+            return dict(node=target,
+                        public=(method, ('mod', _object, func)))
 
 
 class Model(BaseModel):
@@ -123,78 +156,16 @@ class Model(BaseModel):
         else:
             raise ModelInternalStuctErr('Can not loading method name:{0} of {1}'.format(_method_name, _target_name))
 
-    def add_rule(self, target, method, func, **kwargs):
-        """
-        添加基本路由规则
+    def build_rule(self, target, method, func, **kwargs):
+        return Resource.build_rule(target, method, func, **kwargs)
 
-        Args:
-            target: 路由对象名
-            method: 路由方法名
-            func: 函数入口
-            **kwargs: 字典参数
-
-        Returns:
-            运行结果
-
-        """
-        if not self._form:
-            self._form = list()
-
-        _object = kwargs.get('from_obj', None)
-        if not _object:
-            _object = 'self'
-
-        _validate = kwargs.get('validate_method', None)
-        _public = kwargs.get('is_public', False)
-        if _validate and not _public:
-            _validate_obj = kwargs.get('validate_obj', 'self')
-            self._form.append(dict(node=target,
-                                   name=(_validate, ('mod',
-                                                     '{0}'.format(_validate_obj),
-                                                     '{1}'.format(_validate),
-                                                     )),
-                                   private=(method, ('mod', _object, func))))
-        else:
-            self._form.append(dict(node=target,
-                                   public=(method, ('mod', _object, func))))
-
-    def route(self, target, method, **kwargs):
-        """
-        路由装饰器
-
-        Args:
-            target: 路由对象名
-            method: 路由方法名
-            **kwargs: 字典参数
-
-        Returns:
-            运行结果
-
-        """
-
-        def _wrapper(f):
-            self.add_rule(target, method, f, **kwargs)
-
-            def __wrapper(*_args, **_kwargs):
-                return f(*_args, **_kwargs)
-            return __wrapper
-        return _wrapper
-
-    def add_resource(self, target, method, resource, callback, **kwargs):
+    def add_resource(self, resource):
         """
         添加资源规则
 
         Args:
-            target: 路由对象名
-            method: 路由方法名
             resource: 资源实例
-            callback: 资源回调入口
-            **kwargs: 字典参数
-
-        Returns:
-            运行结果
 
         """
-        _callable = getattr(resource, callback)
-        if callable(_callable):
-            self.add_rule(target, method, _callable, **kwargs)
+        if isinstance(resource, Resource):
+            self._form += resource.form
