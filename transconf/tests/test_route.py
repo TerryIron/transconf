@@ -20,7 +20,7 @@ TestModel = TestModel()
 
 
 @TestModel.route('helloworld/{name}', 'GET')
-def test(self, name):
+def test(name):
     return ['helloworld', name]
 
 
@@ -56,7 +56,7 @@ class AppUnitTest(unittest.TestCase):
         time.sleep(1)
         d = urllib.urlopen("http://127.0.0.1:9889/v1/helloworld/jack")
         text = d.read()
-        self.assertIn('helloworld', text)
+        self.assertIn('jack', text)
         os.kill(p.pid, 9)
 
 
