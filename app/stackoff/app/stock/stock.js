@@ -11,62 +11,69 @@ angular.module('myApp.stock', ['ngRoute'])
     loadJS('echarts', 'echarts.js');
 }])
 
-.directive('DrawAll', function (code) {
-    require.config({
-        paths: {
-            echarts: 'http://echarts.baidu.com/build/dist'
-        }
-    });
-
-    function needMap() {
-        var href = location.href;
-            return href.indexOf('map') != -1
-            || href.indexOf('mix3') != -1
-            || href.indexOf('mix5') != -1
-            || href.indexOf('dataRange') != -1;
-    }
-
-    console.log('DrawAll', code);
-    // 使用
-    require(
-    [
-        'echarts',
-        'echarts/chart/line',
-        'echarts/chart/bar',
-        'echarts/chart/scatter',
-        'echarts/chart/k',
-        'echarts/chart/pie',
-        'echarts/chart/radar',
-        'echarts/chart/force',
-        'echarts/chart/chord',
-        'echarts/chart/gauge',
-        'echarts/chart/funnel',
-        'echarts/chart/eventRiver',
-        'echarts/chart/venn',
-        'echarts/chart/treemap',
-        'echarts/chart/tree',
-        'echarts/chart/wordCloud',
-        'echarts/chart/heatmap',
-         needMap() ? 'echarts/chart/map' : 'echarts'
-    ],
-    function (ec) {
-        if ( $scope.data[code].view != null) {
-            var myChart_k = ec.init(document.getElementById('stock_k' + code));
-            var option_k = buildKLineOptions($scope.data[code].view['datelines'], $scope.data[code].view['kline']);
-            myChart_k.setOption(option_k);
-
-            var myChart_v = ec.init(document.getElementById('stock_v' + code));
-            var option_v = pluginVolumeOptions($scope.data[code].view['datelines'], $scope.data[code].view['volume']);
-            myChart_v.setOption(option_v);
-
-            $scope.data[code].showData = true;
-        }
-    });
-})
-
 .controller('StockCtrl', ['$scope', '$http', function($scope, $http) {// 路径配置
 
-    
+    function DrawAll (code) {
+        require.config({
+            paths: {
+                echarts: 'http://echarts.baidu.com/build/dist'
+            }
+        });
+
+        function needMap() {
+            var href = location.href;
+                return href.indexOf('map') != -1
+                || href.indexOf('mix3') != -1
+                || href.indexOf('mix5') != -1
+                || href.indexOf('dataRange') != -1;
+        }
+
+        console.log('DrawAll', code);
+        // 使用
+        require(
+        [
+            'echarts',
+            'echarts/chart/line',
+            'echarts/chart/bar',
+            'echarts/chart/scatter',
+            'echarts/chart/k',
+            'echarts/chart/pie',
+            'echarts/chart/radar',
+            'echarts/chart/force',
+            'echarts/chart/chord',
+            'echarts/chart/gauge',
+            'echarts/chart/funnel',
+            'echarts/chart/eventRiver',
+            'echarts/chart/venn',
+            'echarts/chart/treemap',
+            'echarts/chart/tree',
+            'echarts/chart/wordCloud',
+            'echarts/chart/heatmap',
+             needMap() ? 'echarts/chart/map' : 'echarts'
+        ],
+        function (ec) {
+            function Flesh() {
+                console.log('Flesh', code);
+                if ( $scope.data[code].view != null) {
+                    console.log('FleshOk', code);
+                    var myChart_k = ec.init(angular.element('#stock_k' + code));
+                    // var myChart_k = ec.init(document.getElementById('stock_k' + code));
+                    var option_k = buildKLineOptions($scope.data[code].view['datelines'], $scope.data[code].view['kline']);
+                    myChart_k.setOption(option_k);
+
+                    var myChart_v = ec.init(angular.element('#stock_v' + code));
+                    // var myChart_v = ec.init(document.getElementById('stock_v' + code));
+                    var option_v = pluginVolumeOptions($scope.data[code].view['datelines'], $scope.data[code].view['volume']);
+                    myChart_v.setOption(option_v);
+
+                    $scope.data[code].showData = true;
+                    clearInterval($scope.display[code]);
+                }
+            }
+            $scope.display[code] = setInterval(Flesh, 10 * 1000);
+        });
+    };
+
     function sleep(sleepTime) {
         for(var start = Date.now(); Date.now() - start <= sleepTime; ) { }
     }
@@ -157,6 +164,7 @@ angular.module('myApp.stock', ['ngRoute'])
                 $scope.data[i] = {"showData": false};
             }
             updateStockInfo(i);
+            DrawAll(i);
         }(item);
     });
-}]);
+}])

@@ -31,7 +31,6 @@
 
 <div style="margin-left: auto;margin-right: auto;width: 100%;">
     <div ng-repeat="(key, val) in data" id="{{key}}" ng-if="val.showData">
-        {{ DrawAll(key) }}
         <table class="table-condensed pull-left" style="width: 50%;float: left;">
             <tr>
                 <th style="width: 1px;"></th>
@@ -49,7 +48,7 @@
             <tr>
                 <th class="pull-left" style="width: 1px;">{{ val.name }}</th>
                 <th colspan="10">
-                    <div class="pull-left" DrawAll>
+                    <div class="pull-left" DrawAll({{key}})>
                         <div id="stock_k{{key}}" style="height: 160px;width: 600px;"></div>
                         <div id="stock_v{{key}}" style="height: 140px;width: 600px;"></div>
                         <div id="stock_s{{key}}" style="height: 20px;width: 600px;"></div>
