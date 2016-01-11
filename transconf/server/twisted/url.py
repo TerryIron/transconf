@@ -134,7 +134,7 @@ class NetShell(ModelShell):
                     if ret:
                         self._update_cache(_target_name, model)
                         model['document_path'] = self.document_path
-                        return self._run(model, tuple(_real_path), _method_name, **kwargs)
+                        return self._run(model, tuple(_real_path), _method_name, **_kwargs)
             # Check is URI ?
             real_target_paths = self._parse_path(path_info, path_len)
             for real_target_path in real_target_paths:

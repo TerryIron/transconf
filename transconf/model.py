@@ -122,3 +122,40 @@ class Model(BaseModel):
                 return _meth
         else:
             raise ModelInternalStuctErr('Can not loading method name:{0} of {1}'.format(_method_name, _target_name))
+
+    def route(self, target, method, **kwargs):
+        """
+        路由装饰器
+
+        Args:
+            target: 路由对象名
+            method: 路由方法名
+            **kwargs: 字典参数
+
+        Returns:
+            运行结果
+
+        """
+        if not self._form:
+            self._form = list()
+
+        _object = kwargs.get('from_obj', None)
+        if not _object:
+            _object = 'self'
+
+        def _wrapper(f):
+            _validate = kwargs.get('validate_method', None)
+            _public = kwargs.get('is_public', False)
+            if _validate and not _public:
+                _validate_obj = kwargs.get('validate_obj', 'self')
+                self._form.append(dict(node=target,
+                                       name=(_validate, "mod:{0}:{1}".format(_validate_obj, _validate)),
+                                       private=(method, "mod:{0}:{1}".format(_object, f.__name__))))
+            else:
+                self._form.append(dict(node=target,
+                                       public=(method, "mod:{0}:{1}".format(_object, f.__name__))))
+
+            def __wrapper(_self, *_args, **_kwargs):
+                return f(_self, *_args, **_kwargs)
+            return __wrapper
+        return _wrapper

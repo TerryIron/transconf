@@ -14,14 +14,14 @@ from transconf.model import Model
 
 
 class TestModel(Model):
-    FORM = [
-        {'node': 'helloworld/{name}',
-         'public': ['GET', 'mod:self:test']
-         },
-    ]
+    FORM = []
 
-    def test(self, name):
-        return ['helloworld', name]
+TestModel = TestModel()
+
+
+@TestModel.route('helloworld/{name}', 'GET')
+def test(self, name):
+    return ['helloworld', name]
 
 
 class TestHandler(URLMiddleware):
