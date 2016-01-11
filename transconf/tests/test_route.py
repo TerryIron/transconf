@@ -16,12 +16,26 @@ from transconf.model import Model
 class TestModel(Model):
     FORM = []
 
+    def __init__(self):
+        super(TestModel, self).__init__()
+
 TestModel = TestModel()
 
 
 @TestModel.route('helloworld/{name}', 'GET')
 def test(name):
-    return ['helloworld', name]
+    return [name]
+
+
+class Test2(object):
+    def __init__(self, value):
+        self.value = value
+
+    def test_name(self, name):
+        return [self.value, name]
+
+Test2 = Test2(10)
+TestModel.add_resource('helloworld2/{name}', 'GET', Test2, 'test_name')
 
 
 class TestHandler(URLMiddleware):
@@ -43,7 +57,7 @@ class AppUnitTest(unittest.TestCase):
         def start_app():
             from transconf.server.paste.deploy import loadapp
 
-            app = loadapp('config:test.ini',
+            app = loadapp('config:test_route.ini',
                           'main',
                           relative_to=here)
             server = TranServer()
@@ -53,11 +67,14 @@ class AppUnitTest(unittest.TestCase):
 
         p = Process(target=start_app)
         p.start()
-        time.sleep(1)
+        time.sleep(2)
         d = urllib.urlopen("http://127.0.0.1:9889/v1/helloworld/jack")
         text = d.read()
         self.assertIn('jack', text)
-        os.kill(p.pid, 9)
+        d = urllib.urlopen("http://127.0.0.1:9889/v1/helloworld2/jack")
+        text = d.read()
+        self.assertIn('jack', text)
+        os.kill(int(p.pid), 9)
 
 
 if __name__ == '__main__':

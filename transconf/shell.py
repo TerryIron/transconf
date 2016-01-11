@@ -103,7 +103,7 @@ class ModelShell(NameBus):
             return model
         model = translate()
         if model:
-            for single in model.FORM:
+            for single in model.form:
                 self.set(single['node'], model)
         return model
 

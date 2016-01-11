@@ -18,7 +18,7 @@ class BaseTypeError(Exception):
         self.string = string
 
     def __str__(self):
-        return "Item:{0} should be mod:NAME:METHOD".format(self.string)
+        return "Item:{0} should be (mod, NAME, METHOD)".format(self.string)
 
 
 # Use these BaseType class to define static value
@@ -61,10 +61,12 @@ class IsInterface(BaseType):
     def check(self, key, value):
         _key, _val = value
         try:
-            typ, name, val = _val.split(':')
+            typ, name, val = _val
             obj = get_reg_target(typ, name) if name != 'self' else key
             if not obj:
                 return
+            if callable(val):
+                return _key, self, val
             if hasattr(obj, val):
                 _method = getattr(obj, val)
                 if callable(_method):
@@ -108,10 +110,12 @@ class IsProperty(BaseType):
     def check(self, key, value):
         _key, _val = value
         try:
-            typ, name, val = _val.split(':')
+            typ, name, val = _val
             obj = get_reg_target(typ, name) if name != 'self' else key
             if not obj:
                 return
+            if callable(val):
+                return _key, self, val
             if hasattr(obj, val):
                 _property = getattr(obj, val)
                 if not callable(_property):

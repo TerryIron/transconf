@@ -172,7 +172,7 @@ class _WSGIResponse(WSGIResponse):
                     else:
                         for elem in appIterator:
                             if elem:
-                                self.write(elem)
+                                self.write(str(elem))
                             if self._requestFinished:
                                 break
                     close = getattr(appIterator, 'close', None)

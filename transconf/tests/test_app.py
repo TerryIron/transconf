@@ -16,7 +16,7 @@ from transconf.model import Model
 class TestModel(Model):
     FORM = [
         {'node': 'helloworld/{name}',
-         'public': ['GET', 'mod:self:test']
+         'public': ['GET', ['mod', 'self', 'test']]
          },
     ]
 

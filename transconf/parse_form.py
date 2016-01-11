@@ -38,7 +38,7 @@ class FormParser(object):
             if isinstance(unit_var[0], (list or tuple)):
                 for var in unit_var:
                     if isinstance(var, (list or tuple)):
-                        yield struct.check_input(unit_name, var) 
+                        yield struct.check_input(unit_name, var)
             else:
                 yield struct.check_input(unit_name, unit_var)
 
