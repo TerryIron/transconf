@@ -19,7 +19,7 @@ version = '.'.join(map(str, __version__))
         from transconf.common.reg import register_model
         from transconf.model import Model
         from transconf.shell import ModelShell
-        from transconf.server.twisted.internet import get_client
+        from transconf.server.twisted.internet import new_public_client
 
         @register_model
         class Ifconfig(Model):
@@ -55,7 +55,7 @@ version = '.'.join(map(str, __version__))
                                     'method': 'hw_addr',
                                    }
                             )
-                c = get_client('default_worker', 'default_type', type='rpc')
+                c = new_public_client('default_worker', 'default_type', type='rpc')
                 v = c.call(data)
                 return '1.1.1.1'
 

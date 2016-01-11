@@ -47,7 +47,7 @@ class NodeStructV1(NodeStruct):
             raise NodeItemNotFound('Can not found variable:{0}'.format(key))
         try:
             typ = self.get_type(key)
-            if key in ('private', 'public', 'property'):
+            if key in ('private', 'public', 'property', 'name'):
                 key = self.model
             return typ().check(key, value)
         except Exception as e:
