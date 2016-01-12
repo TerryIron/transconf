@@ -69,7 +69,7 @@ class AppUnitTest(unittest.TestCase):
 
         p = Process(target=start_app)
         p.start()
-        time.sleep(2)
+        time.sleep(5)
         d = urllib.urlopen("http://127.0.0.1:9889/v1/helloworld/jack")
         text = d.read()
         self.assertIn('jack', text)

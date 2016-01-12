@@ -125,8 +125,9 @@ setup(
     install_requires=[
         'twisted>=14.0',
         'pika>=0.9.14',
+        'rsa>=3.2.1',
         'SQLAlchemy>=0.7.8,!=0.9.5,<=0.9.99',
-        'MySQL-python==1.2.4',
+        'MySQL-python>=1.2.4',
         'PasteDeploy>=1.5.2',
         'PasteScript>=1.7.5',
         'Mako>=0.5.0',
