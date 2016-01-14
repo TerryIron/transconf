@@ -2,22 +2,26 @@
     .navbar .brand{
         display: inline-block;
     }
+    .navbar-inner .title {
+        line-height: 60px;
+        font-size: 18px
+    }
+    .navbar-inner .title a {
+        color: #BADDC3;
+    }
+    .navbar-inner .nav > li {
+        padding: 19px 0 0 26px;
+    }
 </style>
 
 <div class="collapse navbar-collapse">
     <div class="container">
         <div class="navbar navbar-inverse navbar-fixed-top">
-            <div class="navbar-inner">
-                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </a>
-                <a class="brand" href="#">Stackoff</a>
-                <ul class="nav">
-                    <li class="active">
-                        <a href="#/stock">stock</a>
-                    </li>
+            <div class="navbar-inner clearfix">
+                <div class="pull-left title">
+                    <a class="brand" href="#">Stackoff</a>
+                </div>
+                <ul class="nav pull-left">
                     <li>
                         <form class="navbar-search pull-left">
                             <input type="text" ng-keypress="Search($event)" ng-model="search" class="search-query" placeholder="Search">
@@ -30,7 +34,7 @@
 </div>
 
 <div style="margin-left: auto;margin-right: auto;width: 100%;">
-    <div ng-repeat="(key, val) in data" id="{{key}}" ng-if="val.showData">
+    <div ng-repeat="(key, val) in data" id="{{key}}" ng-show="val.showData">
         <table class="table-condensed pull-left" style="width: 50%;float: left;">
             <tr>
                 <th style="width: 1px;"></th>

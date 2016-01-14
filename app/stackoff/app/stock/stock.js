@@ -56,12 +56,13 @@ angular.module('myApp.stock', ['ngRoute'])
                 console.log('Flesh', code);
                 if ( $scope.data[code].view != null) {
                     console.log('FleshOk', code);
-                    var myChart_k = ec.init(angular.element('#stock_k' + code));
+                    console.log(document.getElementById('stock_k' + code));
+                    var myChart_k = ec.init(document.getElementById('stock_k' + code));
                     // var myChart_k = ec.init(document.getElementById('stock_k' + code));
                     var option_k = buildKLineOptions($scope.data[code].view['datelines'], $scope.data[code].view['kline']);
                     myChart_k.setOption(option_k);
 
-                    var myChart_v = ec.init(angular.element('#stock_v' + code));
+                    var myChart_v = ec.init(document.getElementById('stock_v' + code));
                     // var myChart_v = ec.init(document.getElementById('stock_v' + code));
                     var option_v = pluginVolumeOptions($scope.data[code].view['datelines'], $scope.data[code].view['volume']);
                     myChart_v.setOption(option_v);
