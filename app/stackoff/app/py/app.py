@@ -15,10 +15,10 @@ from exchange import getStockData
 class TestModel(Model):
     FORM = [
         {'node': 'stackoff',
-         'public': ['GET', 'mod:self:stock']
+         'public': ['GET', ('mod', 'self', 'stock')]
         },
         {'node': 'stackoff/get',
-         'public': ['GET', 'mod:self:getdata']
+         'public': ['GET', ('mod', 'self', 'getdata')]
         },
     ]
 
