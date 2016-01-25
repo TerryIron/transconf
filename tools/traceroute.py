@@ -8,8 +8,14 @@ import struct
 
 
 class Packet(object):
-    def __init__(self, offset_list, offset_defaults):
-        self.struct = struct.pack(''.join(offset_list), offset_defaults)
+    def __init__(self):
+        self.struct = None
+
+    def lazy_packs(self, datas):
+        return struct.pack(''.join([str(chr(len(i))) + 's' for i in lengths), *datas)
+
+    def packs(self, lengths, datas):
+        return struct.pack(''.join([str(chr(i)) + 's' for i in lengths), *datas)
 
     def pack(self, length, data):
         return struct.pack('{0}s'.format(length), str(data))
@@ -26,11 +32,31 @@ class Packet(object):
         return struct.unpack('{0}s{1}s'.format(length, len(packdata) - length), 
                              packdata)
 
+    def translate(self):
+        raise NotImplementedError()
+
 
 class IP_Packet(Packet):
-    def __init__(self, dest_ip, src_ip):
-        offset_list = ['4', '20', '20', '1500', '4']
-        self.struct = struct.pack(''.join(offset_list), offset_defaults)
+    def __init__(self, dest_ip, src_ip, version=4):
+        version = self.packs([1, 1, 2], [version, 4, 0xc0])
+        dest_ip = self.packs([1, 1, 1, 1], dest_ip.split('.'))
+        src_ip = self.packs([1, 1, 1, 1], src_ip.split('.'))
+        pass
+
+
+class TCP_Packet(Packet):
+    def __init__(self, dest_port, src_port):
+        pass
+
+
+class UDP_Packet(Packet):
+    def __init__(self, dest_port, src_port):
+        pass
+
+
+class ICMP_Packet(Packet):
+    def __init__(self, typ, code):
+        pass
 
 
 def traceroute(url):
