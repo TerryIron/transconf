@@ -1,0 +1,45 @@
+#!/usr/bin/expect -f
+
+set timeout 3
+
+set username [lindex $argv 0] 
+set password [lindex $argv 1] 
+set remhost [lindex $argv 2] 
+set port [lindex $argv 3] 
+set command [lindex $argv 4] 
+if { $username == "" } {
+    set username "root"
+}
+if { $remhost== "" } {
+    set remhost "180.153.223.253"
+    #set remhost "175.102.4.80"
+}
+if { $password == "" } {
+    set password "?:P)9ol.<KI*"
+    #set password "yovole@)!\$ZYgmZYd"
+}
+if { $port== "" } {
+    set port "15050"
+    #set port "20140"
+}
+spawn ssh -p $port $username@$remhost $command 
+
+expect { 
+    "*re you sure you want to continue connecting*" 
+    { 
+        send "yes\n" 
+        expect { 
+            -re "*assword*" 
+            { 
+                send "$password\r\n" 
+            } 
+        } 
+    } 
+    "*assword*" 
+    { 
+        send "$password\r\n" 
+    } 
+} 
+expect eof
+
+interact
