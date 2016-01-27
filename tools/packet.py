@@ -1,7 +1,34 @@
 #!/usr/bin/env python
 
 import struct
-from offset import offsetchat
+from offset import offset_chat, offset_split
+
+
+def lazy_packs(datas):
+    return struct.pack(''.join([str(chr(len(i))) + 's' for i in datas]), *datas)
+
+
+def packs(datas, lengths):
+    return struct.pack(''.join([str(chr(i)) + 's' for i in lengths]), *datas)
+
+
+def pack(data, length):
+    return struct.pack('{0}s'.format(length), str(data))
+
+
+def unpack(data, length):
+    return struct.unpack('{0}s'.format(length), data)[0]
+
+
+def append(old_packdata, packdata):
+    return struct.pack('{0}s{1}s'.format(len(old_packdata), len(packdata)),
+                       old_packdata,
+                       packdata)
+
+
+def pop(length, packdata):
+    return struct.unpack('{0}s{1}s'.format(length, len(packdata) - length),
+                         packdata)[0]
 
 
 class Packet(object):
@@ -25,28 +52,15 @@ class Packet(object):
             i += 1
         return False
 
-    def lazy_packs(self, datas):
-        return struct.pack(''.join([str(chr(len(i))) + 's' for i in datas]), *datas)
+    def pack(self):
+        raise NotImplementedError()
 
-    def packs(self, lengths, datas):
-        return struct.pack(''.join([str(chr(i)) + 's' for i in lengths]), *datas)
+    @classmethod
+    def force_unpack(cls, data):
+        raise NotImplementedError()
 
-    def pack(self, length, data):
-        return struct.pack('{0}s'.format(length), str(data))
-
-    def unpack(self, length, data):
-        return struct.unpack('{0}s'.format(length), data)[0]
-
-    def append(self, old_packdata, packdata):
-        return struct.pack('{0}s{1}s'.format(len(old_packdata), len(packdata)), 
-                           old_packdata, 
-                           packdata)
-
-    def pop(self, length, packdata):
-        return struct.unpack('{0}s{1}s'.format(length, len(packdata) - length), 
-                             packdata)
-
-    def translate(self):
+    @classmethod
+    def safe_unpack(cls, data):
         raise NotImplementedError()
 
 
@@ -72,7 +86,7 @@ class IP_Packet(Packet):
 
 i = IP_Packet('1.2.3.4', '4.4.4.4')
 i['version'] = 4
-offsetchat(i.struct)
+offset_chat(i.struct)
 
 
 class TCP_Packet(Packet):
