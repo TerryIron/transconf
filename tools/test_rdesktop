@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#rdesktop -g workarea -D -r clipboard:PRIMARYCLIPBOARD -a 16 -x lan 10.2.0.162:3389
+#rdesktop -g workarea -D -z -r clipboard:PRIMARYCLIPBOARD -r sound:remote -a 16 -u Administrator -p 000000 -x lan 10.2.0.162:3389
+#rdesktop -g workarea -D -r clipboard:PRIMARYCLIPBOARD -a 16 -x lan 10.3.3.107:3389
+#rdesktop -g workarea -D -z -r clipboard:PRIMARYCLIPBOARD -r sound:remote -a 16 -x lan 10.3.3.48:3389
+#rdesktop -g workarea -D -z -r clipboard:PRIMARYCLIPBOARD -r sound:remote -a 16 -x lan 180.153.223.253:23389
+#rdesktop -g workarea -D -z -r clipboard:PRIMARYCLIPBOARD -r sound:remote -a 16 -x lan 61.151.239.15:2222
+rdesktop -g workarea -D -e -z -r clipboard:PRIMARYCLIPBOARD -r sound:remote -a 16 -x lan 180.153.223.253:13389
+#rdesktop -g workarea -D -z -r clipboard:PRIMARYCLIPBOARD -r sound:remote -a 16 -x lan 10.2.0.153:3389
