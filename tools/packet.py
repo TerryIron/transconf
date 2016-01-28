@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import struct
-from offset import offset_chat, offset_split
+from offset import *
 
 
 def lazy_packs(datas):
@@ -86,6 +86,7 @@ class IP_Packet(Packet):
 
 i = IP_Packet('1.2.3.4', '4.4.4.4')
 i['version'] = 4
+i['header_length'] = 8
 offset_chat(i.struct)
 
 
