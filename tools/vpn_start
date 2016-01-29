@@ -3,7 +3,8 @@
 [ "$1" != "" ] && {
 	echo "c $1"
 	echo "c $1" > /var/run/xl2tpd/l2tp-control
-	sleep 5
-	ADDR=`ifconfig eth0 | sed -n 's/inet addr:\([^ ]*\)/\1/p' | awk -F'.' '{print $1"."$2"."$3".0"}'`
-	route add -net $ADDR netmask 255.255.255.0 dev ppp0
+	ip route add 175.102.130.254 via 10.2.0.5
+	#sleep 5
+	#ADDR=`ifconfig eth0 | sed -n 's/inet addr:\([^ ]*\)/\1/p' | awk -F'.' '{print $1"."$2"."$3".0"}'`
+	#route add -net $ADDR netmask 255.255.255.0 dev ppp0
 }

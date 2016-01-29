@@ -2,6 +2,7 @@
 
 [ "$1" != "" ] && {
 	echo "e $1"
+	ip route del 175.102.130.254 via 10.2.0.5
 	echo "e $1" > /var/run/xl2tpd/l2tp-control
 	echo "nameserver 8.8.8.8" >> /etc/resolv.conf
 }

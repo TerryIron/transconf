@@ -64,7 +64,7 @@ class Packet(object):
         raise NotImplementedError()
 
 
-class IP_Packet(Packet):
+class IP4_Packet(Packet):
     FORMAT = [
         ('version', 4),
         ('header_length', 4),
@@ -77,32 +77,82 @@ class IP_Packet(Packet):
         ('protocol', 8),
         ('checksum', 16),
         ('src_address', 32),
-        ('dest_address', 32),
+        ('dst_address', 32),
     ]
 
     def __init__(self, dest_ip, src_ip, version=4):
-        super(IP_Packet, self).__init__()
+        super(IP4_Packet, self).__init__()
         pass
 
-i = IP_Packet('1.2.3.4', '4.4.4.4')
+i = IP4_Packet('1.2.3.4', '4.4.4.4')
 i['version'] = 4
 i['header_length'] = 8
 offset_chat(i.struct)
 
 
+class IP6_Packet(Packet):
+    FORMAT = [
+        ('version', 4),
+        ('traffic_class', 8),
+        ('flow_label', 20),
+        ('payload_len', 16),
+        ('next_header', 8),
+        ('hop_limit', 8),
+        ('src_address0', 32),
+        ('src_address1', 32),
+        ('src_address2', 32),
+        ('src_address3', 32),
+        ('dst_address0', 32),
+        ('dst_address1', 32),
+        ('dst_address2', 32),
+        ('dst_address3', 32),
+    ]
+
+    def __init__(self, dest_ip, src_ip, version=6):
+        super(IP6_Packet, self).__init__()
+        pass
+
+
 class TCP_Packet(Packet):
+    FORMAT = [
+        ('src_port', 16),
+        ('dst_port', 16),
+        ('seq_num', 32),
+        ('ack_num', 32),
+        ('offset', 4),
+        ('reserved', 4),
+        ('flags', 8),
+        ('window', 8),
+        ('checksum', 16),
+        ('urgent_pointer', 16),
+    ]
+
     def __init__(self, dest_port, src_port):
         super(TCP_Packet, self).__init__()
         pass
 
 
 class UDP_Packet(Packet):
+    FORMAT = [
+        ('src_port', 16),
+        ('dst_port', 16),
+        ('length', 16),
+        ('checksum', 16),
+    ]
+
     def __init__(self, dest_port, src_port):
         super(UDP_Packet, self).__init__()
         pass
 
 
 class ICMP_Packet(Packet):
+    FORMAT = [
+        ('type', 8),
+        ('code', 8),
+        ('checksum', 16),
+        ('spec_info', 32),
+    ]
+
     def __init__(self, typ, code):
         super(ICMP_Packet, self).__init__()
         pass
