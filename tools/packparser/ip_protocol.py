@@ -10,18 +10,7 @@ import xml.etree.ElementTree as ET
 __all__ = ['parse_protocol']
 
 
-__target_file__ = os.path.join(os.path.dirname(__file__), 'ip_protocols.py')
-
-
-try:
-    IP_PROTOCOLS = pickle.load(open(__target_file__, 'r'))
-except:
-    IP_PROTOCOLS = dict()
-    update()
-
-
-def parse_protocol(val):
-    return IP_PROTOCOLS.get(val, None)
+__target_file__ = os.path.join(os.path.dirname(__file__), 'ip_protocols.pc')
 
 
 def update():
@@ -34,6 +23,17 @@ def update():
         pass
     with open(__target_file__, 'w') as f:
         pickle.dump(IP_PROTOCOLS, f)
+
+
+try:
+    IP_PROTOCOLS = pickle.load(open(__target_file__, 'r'))
+except:
+    IP_PROTOCOLS = dict()
+    update()
+
+
+def parse_protocol(val):
+    return IP_PROTOCOLS.get(val, None)
 
 
 if __name__ == '__main__':

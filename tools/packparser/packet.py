@@ -34,7 +34,6 @@ def pop(length, packdata):
                          packdata)[0]
 
 
-import re
 from offset import *
 
 
@@ -126,7 +125,7 @@ class Packet(object):
         raise NotImplementedError()
 
 
-class IP4_Packet(Packet):
+class packetIPv4(Packet):
     """
     IP V4 Header
 
@@ -143,8 +142,8 @@ class IP4_Packet(Packet):
         ('time_to_live', 8),
         ('protocol', 8),
         ('checksum', 16),
-        ('src_address', 32),
-        ('dst_address', 32),
+        ('src_addr', 32),
+        ('dst_addr', 32),
     ]
 
     def _check_version(self):
@@ -203,27 +202,52 @@ class IP4_Packet(Packet):
             self.status['protocol'] = 'Unassigned'
 
     def _parse_src_address(self):
-        val = self.__getitem__('src_address')
-        self.status['src_address'] = '.' .join(str((val >> 24) & 15), 
-                                               str((val >> 16) & 15), 
-                                               str((val >> 8) & 15), 
-                                               str(val & 15))
+        val = self.__getitem__('src_addr')
+        self.status['src_addr'] = '.' .join(str((val >> 24) & 15),
+                                            str((val >> 16) & 15),
+                                            str((val >> 8) & 15),
+                                            str(val & 15))
 
     def _parse_dst_address(self):
-        val = self.__getitem__('dst_address')
-        self.status['dst_address'] = '.' .join(str((val >> 24) & 15), 
-                                               str((val >> 16) & 15), 
-                                               str((val >> 8) & 15), 
-                                               str(val & 15))
+        val = self.__getitem__('dst_addr')
+        self.status['dst_addr'] = '.' .join(str((val >> 24) & 15),
+                                            str((val >> 16) & 15),
+                                            str((val >> 8) & 15),
+                                            str(val & 15))
 
 
-i = IP4_Packet()
+class packetIPv4Tunnel(Packet):
+    FORMAT = [
+        ('tunnel_id1', 32),
+        ('tunnel_id2', 32),
+        ('src_addr', 32),
+        ('dst_addr', 32),
+        ('tunnel_flags', 16),
+        ('tos', 8),
+        ('ttl', 8),
+        ('tp_src', 16),
+        ('tp_dst', 16),
+    ]
+
+
+class packetGRE(Packet):
+    FORMAT = [
+        ('present', 1),
+        ('reserved1', 12),
+        ('version', 3),
+        ('protocol', 16),
+        ('checksum', 16),
+        ('reserved2', 16),
+    ]
+
+
+i = packetIPv4()
 i['version'] = 4
 i['header_length'] = 8
 offset_chat(i.struct)
 
 
-class IP6_Packet(Packet):
+class packetIPv6(Packet):
     FORMAT = [
         ('version', 4),
         ('traffic_class', 8),
@@ -231,18 +255,18 @@ class IP6_Packet(Packet):
         ('payload_len', 16),
         ('next_header', 8),
         ('hop_limit', 8),
-        ('src_address0', 32),
-        ('src_address1', 32),
-        ('src_address2', 32),
-        ('src_address3', 32),
-        ('dst_address0', 32),
-        ('dst_address1', 32),
-        ('dst_address2', 32),
-        ('dst_address3', 32),
+        ('src_addr0', 32),
+        ('src_addr1', 32),
+        ('src_addr2', 32),
+        ('src_addr3', 32),
+        ('dst_addr0', 32),
+        ('dst_addr1', 32),
+        ('dst_addr2', 32),
+        ('dst_addr3', 32),
     ]
 
 
-class TCP_Packet(Packet):
+class packetTCP(Packet):
     FORMAT = [
         ('src_port', 16),
         ('dst_port', 16),
@@ -257,7 +281,7 @@ class TCP_Packet(Packet):
     ]
 
 
-class UDP_Packet(Packet):
+class packetUDP(Packet):
     FORMAT = [
         ('src_port', 16),
         ('dst_port', 16),
@@ -266,7 +290,7 @@ class UDP_Packet(Packet):
     ]
 
 
-class ICMP_Packet(Packet):
+class packetICMP(Packet):
     FORMAT = [
         ('type', 8),
         ('code', 8),

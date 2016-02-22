@@ -3,8 +3,7 @@
 import cffi
 
 
-ffi = cffi.FFI()
-ffi.cdef("""
+HEAD = """
     struct offset_t {
         unsigned long value;
         unsigned int offset_len;
@@ -14,8 +13,9 @@ ffi.cdef("""
     unsigned char* offset_chat(struct offset_t*, int);
     //struct offset_t* offset_split(unsigned char*, int);
 
-""")
-FFI_OFFSET = ffi.verify("""
+"""
+
+SRC = """
     #include <malloc.h>
     #include <string.h>
 
@@ -61,17 +61,18 @@ FFI_OFFSET = ffi.verify("""
     // Support offset block size is 32.
     unsigned char* (*offset_func[5])(unsigned long*, unsigned int*, int) = {
         NULL,
-        (unsigned char*)&byte_chat,
-        (unsigned char*)&word_chat,
+        byte_chat,
+        word_chat,
         NULL,
-        (unsigned char*)&dword_chat,
+        dword_chat,
     };
 
     static int offset_is_enough(unsigned long v) {
-        int len;
         if (v == 0 || (v % 8) != 0) {
             return 0;
         }
+
+        int len;
         len = v / 8;
         if (len == 1 || len == 2 || len == 4) {
             return len;
@@ -122,7 +123,11 @@ FFI_OFFSET = ffi.verify("""
     //    struct offset_t* ret;
     //    return ret;
     //}
-""")
+"""
+
+ffi = cffi.FFI()
+ffi.cdef(HEAD)
+FFI_OFFSET = ffi.verify(SRC)
 
 
 NAME = 0
