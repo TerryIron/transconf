@@ -57,7 +57,10 @@ class Response(object):
             dict: 处理后结果
 
         """
-        r = cls(cls.FAIL, err_msg=str(err.value))
+        if hasattr(err, 'value'):
+            r = cls(cls.FAIL, err_msg=str(err.value))
+        else:
+            r = cls(cls.FAIL, err_msg=str(err))
         return r.as_dict()
 
     @classmethod

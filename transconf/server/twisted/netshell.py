@@ -14,6 +14,10 @@ from transconf.server.twisted.log import getLogger
 LOG = getLogger(__name__)
 
 
+class UnrecogizeRequest(_Exception):
+    """Raised when request comming with unrecognize data """
+
+
 class BadRequest(_Exception):
     """Raised when request comming with invalid data """
 
@@ -71,6 +75,8 @@ class ShellMiddleware(Middleware):
         try:
             if not hasattr(self.handler, 'run'):
                 raise NoHandlerFound()
+            if not hasattr(context, 'get'):
+                raise UnrecogizeRequest([hex(ord(i)) for i in list(context)])
             shell_req = context.get('execute', None)
             if shell_req:
                 target_name = shell_req.get('target', None)

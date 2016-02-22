@@ -48,6 +48,7 @@ CONFIG.add_members('heartbeats', sect='controller:heartbeat:listen', avoid_optio
 CONFIG.add_members('heartbeartcenters', sect='controller:heartbeat:fanout', avoid_options='heartrate')
 master_group = CONFIG.add_group('master', sect='controller:heartbeat:listen')
 master_group.add_property('heartrate', option='heartrate', default_val='60')
+master_group.add_property('interval_times', option='interval_times', default_val='3')
 slaver_group = CONFIG.add_group('slaver', sect='controller:heartbeat:fanout')
 slaver_group.add_property('heartrate', option='heartrate', default_val='60')
 manage_group = CONFIG.add_group('manage')
@@ -56,13 +57,8 @@ manage_group.add_property('group_type', option='local_group_type')
 manage_group.add_property('group_uuid', option='local_group_uuid')
 
 
-# @register_model
 class HeartBeat(Model):
-    # Ver: (0, 1, 0) by chijun
-    # 1 add outbound method 'alive', 'dead'
-    # Ver: (0, 1, 1) by chijun
-    # 1 add get_fanout_members
-    UNEXPECTED_OPTIONS = ['heartrate']
+    UNEXPECTED_OPTIONS = ['heartrate', 'interval_times']
     FORM = [{'node': 'heart',
              'public': ['alive', ('mod', 'self', 'heartbeat')],
             }
@@ -77,7 +73,11 @@ class HeartBeat(Model):
                 yield (g[0], g[1], is_enabled)  
 
     def start(self, config=None):
-        self.heartbeat(int(CONFIG.slaver.heartrate))
+        self.local_name = CONFIG.manage.group_name
+        self.local_type = CONFIG.manage.group_type
+        self.local_uuid = CONFIG.manage.group_uuid
+        if self.local_name and self.local_type and self.local_uuid:
+            self.heartbeat(int(CONFIG.slaver.heartrate))
 
     def _build_heartbeat_event(self, client, local_name, local_uuid, local_type):
         req = ActionRequest('heartcond.checkin',
@@ -86,24 +86,17 @@ class HeartBeat(Model):
                                    group_type=local_type))
         return EventDispatcher(client, req, need_close=False)
 
-    def _heartbeat(self, timeout):
-        local_name = CONFIG.manage.group_name
-        local_type = CONFIG.manage.group_type
-        local_uuid = CONFIG.manage.group_uuid
-        if local_name and local_type and local_uuid:
-            for g_name, typ, is_enabled in self._get_fanout_members():
-                client = new_public_client(g_name, typ, local_uuid, type='fanout')
-                # TODO by chijun
-                # Action Request version can not be supported by server.
-                event = self._build_heartbeat_event(client, local_name, local_uuid, local_type)
-                t = Task(lambda: event.startWithoutResult())
-                t.LoopingCall(timeout)
-
     def heartbeat(self, timeout):
         # Check if has call heartbeat event-loop, don't call it again.
         if getattr(self, 'is_start', None):
             return True
-        self._heartbeat(timeout)
+        for g_name, typ, is_enabled in self._get_fanout_members():
+            client = new_public_client(g_name, typ, self.local_uuid, type='fanout')
+            # TODO by chijun
+            # Action Request version can not be supported by server.
+            event = self._build_heartbeat_event(client, self.local_name, self.local_uuid, self.local_type)
+            t = Task(lambda: event.startWithoutResult())
+            t.LoopingCall(timeout)
         setattr(self, 'is_start', True)
 
 
@@ -114,12 +107,7 @@ class RSAHeartBeat(HeartBeat):
 
 
 class HeartCondition(Model):
-    # Ver: (0, 1, 0) by chijun
-    # 1 add outbound method 'has', 'register'
-    # Ver: (0, 1, 1) by chijun
-    # 1 add '_update_target', '_check_target', '_check_target_is_init'
-    # 2 add '_check_heart_still_alive', '_check_has_available_targets'
-    UNEXPECTED_OPTIONS = ['heartrate']
+    UNEXPECTED_OPTIONS = ['heartrate', 'interval_times']
     FORM = [{'node': 'heartcond',
              'public': [
                         ['has', ('mod', 'self', 'has_heartbeat')],
@@ -134,6 +122,11 @@ class HeartCondition(Model):
 
     def start(self, config=None):
         # Re-initialize sql table
+        self.heartrate = CONFIG.master.heartrate
+        self.interval = CONFIG.master.interval_times
+        self.timeout = int(self.heartrate * self. interval)
+        self.health_range = (int(self.heartrate), 
+                             int(self.interval + (self.interval + 1) * self.heartrate))
         self._target_init()
         self._timestamp_init()
         configure_heartcondition()
@@ -148,16 +141,14 @@ class HeartCondition(Model):
         setattr(self, '_buf_available_uuid', CONF_BACKEND.uuids())
 
     def _check_heart_still_alive(self, group_name, group_type, uuid):
-        heartrate = CONFIG.master.heartrate
         cur_time = time.time()
         # Check this heartbeat was timeout?
-        if int(cur_time - self._timestamp[uuid]) > int(heartrate):
+        if int(cur_time - self._timestamp[uuid]) > int(self.timeout):
             # Maybe heartbeat is lost?
             self._update_target(group_name, group_type, uuid, False, False)
             self._check_has_available_targets(group_name, group_type)
 
     def _check_heart_health(self, group_name, group_type, uuid):
-        heartrate = CONFIG.master.heartrate
         # TODO by chijun
         # Use MQ timestamp as better
         cur_time = time.time()
@@ -165,7 +156,8 @@ class HeartCondition(Model):
             self._timestamp[uuid] = cur_time
             return cur_time
         else:
-            if int(cur_time - self._timestamp[uuid] + 1) >= (int(heartrate)):
+            used_time = int(cur_time - self._timestamp[uuid] + 1)
+            if used_time >= self.health_range[0] and used_time < self.health_range:
                 return cur_time
         raise HeartRateErr(group_name, group_type)
 
@@ -206,7 +198,7 @@ class HeartCondition(Model):
             try:
                 cur_time = self._check_heart_health(group_name, group_type, uuid)
                 if uuid not in self.buf_available_uuid:
-                    # Heartbeat is not in enabled range.
+                    # Heartbeat is not in available range.
                     return 
                 self._timestamp[uuid] = cur_time
             except HeartRateErr:
