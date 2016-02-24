@@ -7,6 +7,7 @@ try:
 except:
     import pickle
 
+from urlparse import urlparse, urlunparse
 from sqlalchemy import *
 from sqlalchemy.exc import *
 from sqlalchemy.orm import scoped_session
@@ -140,29 +141,54 @@ class BaseModelDriver(object):
 
     """
 
-    def __init__(self, db_engine=None):
+    def __init__(self, db_engine_uri=None):
         """
         初始化
 
         Args:
-            db_engine: 数据库地址
+            db_engine_uri: 数据库地址
 
         Returns:
             object: 数据库对象
 
         """
-        if db_engine:
-            self.db_engine = create_engine(db_engine)
+        if db_engine_uri:
+            o_items = urlparse(db_engine_uri)
+            if o_items.path:
+                database = o_items.path.split('/')[-1]
+                n_items, n_items[2] = list(o_items), ''
+                db_engine = create_engine(urlunparse(n_items))
+                self.setup_module(db_engine, database)
+            self.db_engine = create_engine(db_engine_uri)
             self.metadata = MetaData(self.db_engine)
             self._session = scoped_session(
-                                sessionmaker(
-                                    autocommit=False,
-                                    autoflush=False,
-                                    bind=self.db_engine)
-                                )
+                                sessionmaker(autocommit=False,
+                                             autoflush=False,
+                                             bind=self.db_engine)
+                            )
             self._is_available = True
         else:
             self._is_available = False
+
+    def setup_module(self, db_engine, database):
+        conn = db_engine.connect()
+        conn.execute("COMMIT")
+        # Do not substitute user-supplied database names here.
+        try:
+            conn.execute("CREATE DATABASE %s" % database)
+        except:
+            pass
+        conn.close()
+
+    def erase_module(self, db_engine, database):
+        conn = db_engine.connect()
+        conn.execute("COMMIT")
+        # Do not substitute user-supplied database names here.
+        try:
+            conn.execute("DROP DATABASE %s" % database)
+        except:
+            pass
+        conn.close()
 
     @property
     def session(self):

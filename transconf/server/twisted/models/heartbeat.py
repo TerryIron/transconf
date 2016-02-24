@@ -12,7 +12,6 @@ from transconf.server.twisted.client import RSAClient
 from transconf.server.twisted.internet import new_public_client
 from transconf.server.twisted.event import Task, EventDispatcher
 from transconf.server.twisted import CONF as global_conf
-from transconf.server.twisted import get_sql_engine 
 from transconf.server.twisted.netshell import ActionRequest
 from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
 from transconf.utils import Exception as _Exception
@@ -22,11 +21,25 @@ LOG = getLogger(__name__)
 
 SERVER_CONF = global_conf
 
-sql_engine = get_sql_engine()
 
-BACKEND = HeartBeatCollectionBackend(sql_engine)
+CONFIG = Configuration(SERVER_CONF)
+CONFIG.add_members('heartbeats', sect='controller:heartbeat:listen', avoid_options='heartrate')
+CONFIG.add_members('heartbeartcenters', sect='controller:heartbeat:fanout', avoid_options='heartrate')
+master_group = CONFIG.add_group('master', sect='controller:heartbeat:listen')
+master_group.add_property('heartrate', option='heartrate', default_val='60')
+master_group.add_property('interval_times', option='interval_times', default_val='3')
+master_group.add_property('sql_engine', option='connection', default_val=None)
+slaver_group = CONFIG.add_group('slaver', sect='controller:heartbeat:fanout')
+slaver_group.add_property('heartrate', option='heartrate', default_val='60')
+manage_group = CONFIG.add_group('manage')
+manage_group.add_property('group_name', option='local_group_name')
+manage_group.add_property('group_type', option='local_group_type')
+manage_group.add_property('group_uuid', option='local_group_uuid')
 
-CONF_BACKEND = HeartBeatIsEnabledBackend(sql_engine)
+
+BACKEND = HeartBeatCollectionBackend(master_group.sql_engine)
+
+CONF_BACKEND = HeartBeatIsEnabledBackend(master_group.sql_engine)
 
 
 class HeartBeatNotFound(_Exception):
@@ -41,20 +54,6 @@ class HeartBeatNotFound(_Exception):
 class HeartRateErr(HeartBeatNotFound):
     def __str__(self):
         return 'Group name:{0}, Group type:{1} got a invalid heartrate.'.format(self.group_name, self.group_type)
-
-
-CONFIG = Configuration(SERVER_CONF)
-CONFIG.add_members('heartbeats', sect='controller:heartbeat:listen', avoid_options='heartrate')
-CONFIG.add_members('heartbeartcenters', sect='controller:heartbeat:fanout', avoid_options='heartrate')
-master_group = CONFIG.add_group('master', sect='controller:heartbeat:listen')
-master_group.add_property('heartrate', option='heartrate', default_val='60')
-master_group.add_property('interval_times', option='interval_times', default_val='3')
-slaver_group = CONFIG.add_group('slaver', sect='controller:heartbeat:fanout')
-slaver_group.add_property('heartrate', option='heartrate', default_val='60')
-manage_group = CONFIG.add_group('manage')
-manage_group.add_property('group_name', option='local_group_name')
-manage_group.add_property('group_type', option='local_group_type')
-manage_group.add_property('group_uuid', option='local_group_uuid')
 
 
 class HeartBeat(Model):
@@ -107,7 +106,7 @@ class RSAHeartBeat(HeartBeat):
 
 
 class HeartCondition(Model):
-    UNEXPECTED_OPTIONS = ['heartrate', 'interval_times']
+    UNEXPECTED_OPTIONS = ['heartrate', 'interval_times', 'connection']
     FORM = [{'node': 'heartcond',
              'public': [
                         ['has', ('mod', 'self', 'has_heartbeat')],
