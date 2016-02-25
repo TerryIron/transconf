@@ -12,7 +12,7 @@ __all__ = ['as_config', 'from_config', 'from_config_option',
           ]
 
 
-class Exception(Exception):
+class myException(Exception):
     def __init__(self, string=''):
         self.string = string
 

@@ -4,45 +4,21 @@ __author__ = 'chijun'
 
 import time
 
-from transconf.server.twisted.log import getLogger
-from transconf.common.reg import get_model
 from transconf.model import Model
-from transconf.configration import Configuration
+from transconf.utils import myException
+from transconf.common.reg import get_model
 from transconf.server.twisted.client import RSAClient
 from transconf.server.twisted.internet import new_public_client
 from transconf.server.twisted.event import Task, EventDispatcher
-from transconf.server.twisted import CONF as global_conf
 from transconf.server.twisted.netshell import ActionRequest
-from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
-from transconf.utils import Exception as _Exception
+from transconf.server.twisted.models.heartbeat_conf import CONFIG, configure_heartcondition
+from transconf.server.twisted.log import getLogger
 
 
 LOG = getLogger(__name__)
 
-SERVER_CONF = global_conf
 
-
-CONFIG = Configuration(SERVER_CONF)
-CONFIG.add_members('heartbeats', sect='controller:heartbeat:listen', avoid_options='heartrate')
-CONFIG.add_members('heartbeartcenters', sect='controller:heartbeat:fanout', avoid_options='heartrate')
-master_group = CONFIG.add_group('master', sect='controller:heartbeat:listen')
-master_group.add_property('heartrate', option='heartrate', default_val='60')
-master_group.add_property('interval_times', option='interval_times', default_val='3')
-master_group.add_property('sql_engine', option='connection', default_val=None)
-slaver_group = CONFIG.add_group('slaver', sect='controller:heartbeat:fanout')
-slaver_group.add_property('heartrate', option='heartrate', default_val='60')
-manage_group = CONFIG.add_group('manage')
-manage_group.add_property('group_name', option='local_group_name')
-manage_group.add_property('group_type', option='local_group_type')
-manage_group.add_property('group_uuid', option='local_group_uuid')
-
-
-BACKEND = HeartBeatCollectionBackend(master_group.sql_engine)
-
-CONF_BACKEND = HeartBeatIsEnabledBackend(master_group.sql_engine)
-
-
-class HeartBeatNotFound(_Exception):
+class HeartBeatNotFound(myException):
     def __init__(self, group_name, group_type):
         self.group_name = group_name
         self.group_type = group_type
@@ -121,8 +97,7 @@ class HeartCondition(Model):
 
     def start(self, config=None):
         # Re-initialize sql table
-        self.heartrate = CONFIG.master.heartrate
-        self.interval = CONFIG.master.interval_times
+        self.heartrate, self.interval = CONFIG.master.heartrate, CONFIG.master.interval_times
         self.timeout = int(self.heartrate * self. interval)
         self.health_range = (int(self.heartrate), 
                              int(self.interval + (self.interval + 1) * self.heartrate))
@@ -244,12 +219,3 @@ def if_available(group_name, group_type):
         return __if_available
     return _if_available
 
-
-def configure_heartcondition():
-    CONF_BACKEND.create()
-    CONF_BACKEND.clear()
-    BACKEND.create()
-    BACKEND.clear()
-    for uuid, is_enabled in CONFIG.heartbeats:
-        if str(is_enabled).lower() == 'true':
-            CONF_BACKEND.update(dict(uuid=uuid))
