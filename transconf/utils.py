@@ -28,7 +28,7 @@ from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 from transconf.common.reg import get_model
 
 __all__ = ['as_config', 'from_config', 'from_config_option',
-           'as_model_action', 'from_model_option', 'Exception'
+           'as_model_action', 'from_model_option', 'myException'
           ]
 
 

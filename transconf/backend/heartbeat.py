@@ -23,10 +23,10 @@
 __author__ = 'chijun'
 
 from transconf.common.model_driver import *
-from transconf.utils import Exception
+from transconf.utils import myException
 
 
-class InvalidData(Exception):
+class InvalidData(myException):
     """Raised when any data can not be found """
 
 
@@ -68,15 +68,15 @@ class HeartBeatCollectionBackend(BaseModelDriver):
         self.clear_table(HeartBeatCollection)
 
     def _ready_data(self, dic_data):
+        dic_data['count'] = 0
+        record = HeartBeatCollection(**dic_data)
         try:
-            dic_data['count'] = 0
-            record = HeartBeatCollection(**dic_data)
             target = self.session.query(HeartBeatCollection).filter_by(uuid=dic_data['uuid']).first()
-            return (target, record)
+            return target, record
         except TypeError:
             raise InvalidData(record)
         except:
-            return (None, None)
+            return None, None
 
     def has(self, group_name, group_type):
         target = self.session.query(HeartBeatCollection).filter_by(group_name=group_name,
@@ -105,7 +105,7 @@ class HeartBeatCollectionBackend(BaseModelDriver):
             target.delete()
 
 
-class HeartBeatIsEnabledBackend(HeartBeatCollectionBackend):
+class HeartBeatIsEnabledBackend(BaseModelDriver):
     def create(self):
         self.define_table(HeartBeatIsEnabled)
 
@@ -123,11 +123,24 @@ class HeartBeatIsEnabledBackend(HeartBeatCollectionBackend):
         return [record.uuid for record in self.session.query(HeartBeatIsEnabled) if record]
 
     def _ready_data(self, dic_data):
+        record = HeartBeatIsEnabled(**dic_data)
         try:
-            record = HeartBeatIsEnabled(**dic_data)
             target = self.session.query(HeartBeatIsEnabled).filter_by(uuid=dic_data['uuid']).first()
-            return (target, record)
+            return target, record
         except TypeError:
             raise InvalidData(record)
         except:
-            return (None, record)
+            return None, None
+
+    def update(self, dic_data):
+        target, record = self._ready_data(dic_data)
+        if target:
+            target.update(record)
+        else:
+            self.session.add(record)
+        self.session.commit()
+
+    def delete(self, dic_data):
+        target, record = self._ready_data(dic_data)
+        if target:
+            target.delete()

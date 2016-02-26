@@ -28,21 +28,21 @@ from twisted.internet import defer
 from transconf.shell import ModelShell
 from transconf.server.twisted.service import Middleware
 from transconf.server.request import Request
-from transconf.utils import SimpleModel, Exception as _Exception
+from transconf.utils import SimpleModel, myException
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)
 
 
-class UnrecogizeRequest(_Exception):
+class UnrecogizeRequest(myException):
     """Raised when request comming with unrecognize data """
 
 
-class BadRequest(_Exception):
+class BadRequest(myException):
     """Raised when request comming with invalid data """
 
 
-class NoHandlerFound(_Exception):
+class NoHandlerFound(myException):
     """Raised when no handler to process request"""
 
 

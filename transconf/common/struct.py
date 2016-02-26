@@ -25,18 +25,18 @@ __author__ = 'chijun'
 __all__ = ['NodeItemNotFound', 'NodeItemTypeNotSupport', 'NodeItemStructError', 'NodeStruct']
 
 
-from transconf.utils import Exception
+from transconf.utils import myException
 
 
-class NodeItemNotFound(Exception):
+class NodeItemNotFound(myException):
     """ Raised when value name not found"""
 
 
-class NodeItemTypeNotSupport(Exception):
+class NodeItemTypeNotSupport(myException):
     """ Raised when value's type not support"""
 
 
-class NodeItemStructError(Exception):
+class NodeItemStructError(myException):
     """ Raised when struct is bad"""
 
 

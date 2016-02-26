@@ -25,20 +25,21 @@ __author__ = 'chijun'
 import time
 
 from transconf.model import Model
-from transconf.utils import myException
 from transconf.common.reg import get_model
 from transconf.server.twisted.client import RSAClient
 from transconf.server.twisted.internet import new_public_client
 from transconf.server.twisted.event import Task, EventDispatcher
 from transconf.server.twisted.netshell import ActionRequest
-from transconf.server.twisted.models.heartbeat_conf import CONFIG, configure_heartcondition
+from transconf.server.twisted.models.heartbeat_conf import get_available_heartbeats
+from transconf.server.twisted.models.heartbeat_conf import CONFIG, master_group
+from transconf.backend.heartbeat import HeartBeatCollectionBackend, HeartBeatIsEnabledBackend
 from transconf.server.twisted.log import getLogger
 
 
 LOG = getLogger(__name__)
 
 
-class HeartBeatNotFound(myException):
+class HeartBeatNotFound(Exception):
     def __init__(self, group_name, group_type):
         self.group_name = group_name
         self.group_type = group_type
@@ -61,18 +62,20 @@ class HeartBeat(Model):
 
     __version__ = (0, 1, 1)
 
+    def init(self, config=None):
+        self.local_name = CONFIG.manage.group_name
+        self.local_type = CONFIG.manage.group_type
+        self.local_uuid = CONFIG.manage.group_uuid
+
+    def start(self, config=None):
+        if self.local_name and self.local_type and self.local_uuid:
+            self.heartbeat(int(CONFIG.slaver.heartrate))
+
     def _get_fanout_members(self):
         for g_option, is_enabled in CONFIG.heartbeartcenters:
             g = g_option.split('.')
             if (len(g) > 1) and ((is_enabled and g_option) not in self.UNEXPECTED_OPTIONS):
                 yield (g[0], g[1], is_enabled)  
-
-    def start(self, config=None):
-        self.local_name = CONFIG.manage.group_name
-        self.local_type = CONFIG.manage.group_type
-        self.local_uuid = CONFIG.manage.group_uuid
-        if self.local_name and self.local_type and self.local_uuid:
-            self.heartbeat(int(CONFIG.slaver.heartrate))
 
     def _build_heartbeat_event(self, client, local_name, local_uuid, local_type):
         req = ActionRequest('heartcond.checkin',
@@ -106,8 +109,6 @@ class HeartCondition(Model):
     FORM = [{'node': 'heartcond',
              'public': [
                         ['has', ('mod', 'self', 'has_heartbeat')],
-                        ['add', ('mod', 'self', 'add_heartbeat')],
-                        ['remove', ('mod', 'self', 'remove_heartbeat')],
                         ['checkin', ('mod', 'self', 'checkin')],
                        ]
             }
@@ -115,31 +116,33 @@ class HeartCondition(Model):
 
     __version__ = (0, 1, 1)
 
-    def start(self, config=None):
-        # Re-initialize sql table
+    def init(self, config=None):
         self.heartrate, self.interval = CONFIG.master.heartrate, CONFIG.master.interval_times
         self.timeout = int(self.heartrate * self. interval)
-        self.health_range = (int(self.heartrate), 
+        self.health_range = (int(self.heartrate),
                              int(self.interval + (self.interval + 1) * self.heartrate))
-        self._target_init()
-        self._timestamp_init()
-        configure_heartcondition()
+        self._ready()
+
+    def _ready(self):
+        # Re-initialize sql table
+        self.BACKEND = HeartBeatCollectionBackend(master_group.sql_engine)
+        self.BACKEND.clear()
+        self.CONF_BACKEND = HeartBeatIsEnabledBackend(master_group.sql_engine)
+        self.CONF_BACKEND.clear()
+        for a in get_available_heartbeats():
+            self.add_heartbeat(a)
+        self._buf_available_uuid, self._timestamp, self.buf_group_target = self.CONF_BACKEND.uuids(), {}, {}
 
     @property
     def buf_available_uuid(self):
-        if not hasattr(self, '_buf_available_uuid'):
-            self._set_buf_available_uuid()
         return self._buf_available_uuid
-
-    def _set_buf_available_uuid(self):
-        setattr(self, '_buf_available_uuid', CONF_BACKEND.uuids())
 
     def _check_heart_still_alive(self, group_name, group_type, uuid):
         cur_time = time.time()
         # Check this heartbeat was timeout?
         if int(cur_time - self._timestamp[uuid]) > int(self.timeout):
             # Maybe heartbeat is lost?
-            self._update_target(group_name, group_type, uuid, False, False)
+            self._update_target(group_name, group_type, uuid, False)
             self._check_has_available_targets(group_name, group_type)
 
     def _check_heart_health(self, group_name, group_type, uuid):
@@ -151,17 +154,9 @@ class HeartCondition(Model):
             return cur_time
         else:
             used_time = int(cur_time - self._timestamp[uuid] + 1)
-            if used_time >= self.health_range[0] and used_time < self.health_range:
+            if int(self.health_range[0]) <= used_time < int(self.health_range[1]):
                 return cur_time
         raise HeartRateErr(group_name, group_type)
-
-    def _target_init(self):
-        if not hasattr(self, 'buf_group_target'):
-            setattr(self, 'buf_group_target', {})
-
-    def _timestamp_init(self):
-        if not hasattr(self, '_timestamp'):
-            setattr(self, '_timestamp', {})
 
     def _check_target(self, group_name, group_type):
         if not self.buf_group_target.get(group_name + '_' + group_type, None):
@@ -172,14 +167,14 @@ class HeartCondition(Model):
         LOG.debug('Update a heartbeat for group:{0}, type:{1}, uuid:{2}'.format(group_name,
                                                                                 group_type,
                                                                                 uuid))
-        BACKEND.update(dict(group_name=group_name,
-                            group_type=group_type,
-                            uuid=uuid),
-                       need_count)
+        self.BACKEND.update(dict(group_name=group_name,
+                                 group_type=group_type,
+                                 uuid=uuid),
+                            need_count)
 
     def _check_has_available_targets(self, group_name, group_type):
         # Check if it has available uuid of group target?
-        if BACKEND.has(group_name, group_type):
+        if self.BACKEND.has(group_name, group_type):
             self.buf_group_target[group_name + '_' + group_type] = True
         else:
             self.buf_group_target[group_name + '_' + group_type] = False
@@ -203,28 +198,20 @@ class HeartCondition(Model):
             self._check_has_available_targets(group_name, group_type)
             t = Task(lambda:  self._check_heart_still_alive(group_name, group_type, uuid))
             t.CallLater(heartrate + heartrate / 2)
-        else:
-            LOG.warn('Got a bad heartbeat, context:{0}'.format(context))
 
-    def has_heartbeat(self, context):
-        group_name = context.get('group_name', None)
-        group_type = context.get('group_type', None)
+    def has_heartbeat(self, group_name, group_type):
         if not (group_name or group_type) or \
                 not self._check_target(group_name, group_type):
             return False
         return True
 
-    def add_heartbeat(self, context):
-        uuid = context.get('uuid', None)
-        if uuid not in CONF_BACKEND.uuids():
-            CONF_BACKEND.update(dict(uuid=uuid))
-            self._set_buf_available_uuid()
+    def add_heartbeat(self, uuid):
+        if uuid not in self.CONF_BACKEND.uuids():
+            self.CONF_BACKEND.update(dict(uuid=uuid))
 
-    def remove_heartbeat(self, context):
-        uuid = context.get('uuid', None)
-        if uuid in CONF_BACKEND.uuids():
-            CONF_BACKEND.delete(dict(uuid=uuid))
-            self._set_buf_available_uuid()
+    def remove_heartbeat(self, uuid):
+        if uuid in self.CONF_BACKEND.uuids():
+            self.CONF_BACKEND.delete(dict(uuid=uuid))
 
 
 def if_available(group_name, group_type):
@@ -238,4 +225,3 @@ def if_available(group_name, group_type):
                 raise HeartBeatNotFound(group_name, group_type)
         return __if_available
     return _if_available
-

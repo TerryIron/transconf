@@ -30,7 +30,7 @@ from transconf.server.twisted.internet import new_public_client
 from transconf.server.twisted.netshell import ShellMiddleware
 from transconf.server.request import Request, RequestTimeout, InvalidRequest
 from transconf.server.twisted.log import getLogger
-from transconf.utils import Exception
+from transconf.utils import myException
 
 LOG = getLogger(__name__)
 
@@ -54,7 +54,7 @@ class Task(object):
         d.start(seconds)
 
 
-class EventRequestTimeout(Exception):
+class EventRequestTimeout(myException):
     """ Raised when request comming out of time"""
 
 

@@ -25,10 +25,10 @@ __author__ = 'chijun'
 from transconf.common.model import BaseModel, BaseResource
 from transconf.mystruct import NodeStructV1
 from transconf.mystructtypes import *
-from transconf.utils import Exception
+from transconf.utils import myException
 
 
-class ModelInternalStuctErr(Exception):
+class ModelInternalStuctErr(myException):
     """Raised when pointed node object's struct or its env struct being bad"""
 
 

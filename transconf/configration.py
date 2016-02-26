@@ -20,7 +20,7 @@
 #########################################################################
 
 
-__author__  = 'chijun'
+__author__ = 'chijun'
 
 import re
 import json
@@ -136,10 +136,10 @@ class Configuration(BaseConf):
 
     @staticmethod
     def _process_options(output, option_regex=None, avoid_options=None, avoid_option_regex=None):
-        option_re, avoid_re, avoid_options, new  = re.compile('.*') if not option_regex else re.compile(option_regex), \
-                                                   re.compile('^$') if not avoid_option_regex else re.compile(avoid_option_regex), \
-                                                   tuple() if not avoid_options else avoid_options, \
-                                                   set()
+        option_re, avoid_re, avoid_options, new = re.compile('.*') if not option_regex else re.compile(option_regex), \
+                                                  re.compile('^$') if not avoid_option_regex else re.compile(avoid_option_regex), \
+                                                  tuple() if not avoid_options else avoid_options, \
+                                                  set()
         if not output:
             return new
         for out in output:

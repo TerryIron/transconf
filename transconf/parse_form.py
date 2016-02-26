@@ -22,10 +22,10 @@
 
 __author__ = 'chijun'
 
-from transconf.utils import Exception
+from transconf.utils import myException
 
 
-class FormUnitTypeError(Exception):
+class FormUnitTypeError(myException):
     """Raised when unit type error"""
 
 
@@ -142,6 +142,8 @@ class FormParser(object):
         """
         self._reset()
         self.register_struct(model.struct)
+        print model
+        print model.struct
         for node_name, items in self._gen_parser(model.form):
             node_name = [n for n in node_name if n != 'ROOT']
             model.init_nodeobj(node_name)

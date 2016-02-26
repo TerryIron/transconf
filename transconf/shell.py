@@ -26,10 +26,10 @@ __author__ = 'chijun'
 from transconf.common.namebus import NameBus
 from transconf.parse_form import FormParser
 from transconf.model import Model
-from transconf.utils import Exception
+from transconf.utils import myException
 
 
-class ShellTargetNotFound(Exception):
+class ShellTargetNotFound(myException):
     """Raised when target can not found"""
     def __init__(self, target_name):
         self.target_name = target_name

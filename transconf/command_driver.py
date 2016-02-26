@@ -27,7 +27,7 @@ import functools
 
 from transconf.utils import from_config, from_config_option, as_config, import_class
 from transconf.common.reg import get_cmd, register_cmd_target
-from transconf.utils import Exception
+from transconf.utils import myException
 
 
 class Command(object):
@@ -144,11 +144,11 @@ def command_configure(conf):
                 mod(sect).setup()
 
 
-class CommandNotRegister(Exception):
+class CommandNotRegister(myException):
     """Raised when command name cat not be found in registry"""
 
 
-class CommandNotFound(Exception):
+class CommandNotFound(myException):
     """Raised when method cat not be found in command target"""
 
 

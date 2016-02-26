@@ -22,10 +22,10 @@ __author__ = 'chijun'
 
 from transconf.server.twisted.wsgi import TranMiddleware
 from transconf.server.crypto import Crypto
-from transconf.utils import Exception
+from transconf.utils import myException
 
 
-class RSAAuthorizeFailed(Exception):
+class RSAAuthorizeFailed(myException):
     pass
 
 

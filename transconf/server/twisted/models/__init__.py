@@ -1,18 +1,18 @@
 __version__ = (0, 1, 0)
 
 from transconf.server.twisted.netshell import NetShell
-from transconf.utils import from_config_option, import_class, Exception
+from transconf.utils import from_config_option, import_class, myException
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)
 
 
-class LostModel(Exception):
+class LostModel(myException):
     def __str__(self, name, by_name):
         return "Model:{0} is depend on model:{1}.".format(by_name, name)
 
 
-class LostModelConfig(Exception):
+class LostModelConfig(myException):
     def __str__(self, name, by_name):
         return "Model:{0} is depend on model:{1}'s defined name.".format(by_name, name)
 

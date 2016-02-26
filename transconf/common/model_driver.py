@@ -161,7 +161,7 @@ class BaseModelDriver(object):
 
     """
 
-    def __init__(self, db_engine_uri=None):
+    def __init__(self, db_engine_uri):
         """
         初始化
 
@@ -172,23 +172,19 @@ class BaseModelDriver(object):
             object: 数据库对象
 
         """
-        if db_engine_uri:
-            o_items = urlparse(db_engine_uri)
-            if o_items.path:
-                database = o_items.path.split('/')[-1]
-                n_items, n_items[2] = list(o_items), ''
-                db_engine = create_engine(urlunparse(n_items))
-                self.setup_module(db_engine, database)
-            self.db_engine = create_engine(db_engine_uri)
-            self.metadata = MetaData(self.db_engine)
-            self._session = scoped_session(
-                                sessionmaker(autocommit=False,
-                                             autoflush=False,
-                                             bind=self.db_engine)
-                            )
-            self._is_available = True
-        else:
-            self._is_available = False
+        o_items = urlparse(db_engine_uri)
+        if o_items.path:
+            database = o_items.path.split('/')[-1]
+            n_items, n_items[2] = list(o_items), ''
+            db_engine = create_engine(urlunparse(n_items))
+            self.setup_module(db_engine, database)
+        self.db_engine = create_engine(db_engine_uri)
+        self.metadata = MetaData(self.db_engine)
+        self._session = scoped_session(
+                            sessionmaker(autocommit=False,
+                                         autoflush=False,
+                                         bind=self.db_engine)
+                        )
 
     def setup_module(self, db_engine, database):
         conn = db_engine.connect()
@@ -218,7 +214,7 @@ class BaseModelDriver(object):
     def available(self):
         return self._is_available
 
-    def table(self, table_name):
+    def get_table(self, table_name):
         """
         获取表
 
@@ -237,6 +233,12 @@ class BaseModelDriver(object):
         except NoSuchTableError:
             pass
 
+    def has_table(self, table_class):
+        table = self.get_table(table_class.__tablename__)
+        if not isinstance(table, Table):
+            return False
+        return True
+
     def define_table(self, table_class):
         """
         创建表
@@ -248,10 +250,8 @@ class BaseModelDriver(object):
             None
 
         """
-        if self.available:
-            table = self.table(table_class.__tablename__)
-            if not isinstance(table, Table):
-                table_class.metadata.create_all(self.db_engine)
+        if not self.has_table(table_class):
+            table_class.metadata.create_all(self.db_engine)
 
     def undefine_table(self, table_class):
         """
@@ -264,10 +264,8 @@ class BaseModelDriver(object):
             None
 
         """
-        if self.available:
-            table = self.table(table_class.__tablename__)
-            if isinstance(table, Table):
-                table_class.__table__.drop(self.db_engine)
+        if self.has_table(table_class):
+            table_class.__table__.drop(self.db_engine)
 
     def clear_table(self, table_class):
         """
@@ -280,9 +278,7 @@ class BaseModelDriver(object):
             None
 
         """
-        if self.available:
-            table = self.table(table_class.__tablename__)
-            if isinstance(table, Table):
-                table_class.__table__.drop(self.db_engine)
-                table_class.metadata.create_all(self.db_engine)
+        if self.has_table(table_class):
+            table_class.__table__.drop(self.db_engine)
+        table_class.metadata.create_all(self.db_engine)
 

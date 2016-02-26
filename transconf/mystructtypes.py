@@ -24,7 +24,7 @@ __author__ = 'chijun'
 
 from transconf.common.basetype import BaseType
 from transconf.common.reg import get_reg_target
-from transconf.utils import Exception
+from transconf.utils import myException
 
 
 __all__ = [
@@ -33,7 +33,7 @@ __all__ = [
 ]
 
 
-class BaseTypeError(Exception):
+class BaseTypeError(myException):
     def __init__(self, string):
         self.string = string
 

@@ -23,14 +23,14 @@
 __author__ = 'chijun'
 
 
-from transconf.utils import Exception
+from transconf.utils import myException
 
 
-class RequestTimeout(Exception):
+class RequestTimeout(myException):
     """Raised when comming request is over-time."""
 
 
-class InvalidRequest(Exception):
+class InvalidRequest(myException):
     """Raised when comming request is invalid."""
 
 
