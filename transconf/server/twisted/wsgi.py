@@ -72,6 +72,7 @@ class TranWSGIServer(object):
         try:
             d = self.middleware(request)
             if hasattr(d, 'process_request'):
+                LOG.debug('Middleware <{0}> ready to processing.'.format(d))
                 return d.process_request(request)
             else:
                 return d

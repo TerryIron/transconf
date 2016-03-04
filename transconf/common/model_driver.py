@@ -95,7 +95,8 @@ class BaseMixin(object):
             None
 
         """
-        return None if [setattr(cls, k, v) for k, v in dic_data.items() if hasattr(cls, k) and getattr(cls, k, None) != v] else None
+        return None if [setattr(cls, k, v) for k, v in dic_data.items() if
+                        hasattr(cls, k) and getattr(cls, k, None) != v] else None
 
     def update(cls, table_obj):
         """
@@ -126,7 +127,10 @@ class BaseMixin(object):
 def declarative_base(cls=BaseMixin):
     return local_declarative_base(cls=cls)
 
-"""
+
+class BaseModelDriver(object):
+    """
+    模型后端数据库
     后端数据库概况图：
 
         VirtHomeInstance
@@ -152,32 +156,15 @@ def declarative_base(cls=BaseMixin):
          | Table A -> nodeA API control            | NodeA
          | Table B -> nodeB API control            | NodeB
          | Table C -> nodeC API control            | NodeC
-"""
-
-
-class BaseModelDriver(object):
-    """
-    模型后端数据库
-
     """
 
     def __init__(self, db_engine_uri):
-        """
-        初始化
-
-        Args:
-            db_engine_uri: 数据库地址
-
-        Returns:
-            object: 数据库对象
-
-        """
         o_items = urlparse(db_engine_uri)
         if o_items.path:
             database = o_items.path.split('/')[-1]
             n_items, n_items[2] = list(o_items), ''
             db_engine = create_engine(urlunparse(n_items))
-            self.setup_module(db_engine, database)
+            self.installModule(db_engine, database)
         self.db_engine = create_engine(db_engine_uri)
         self.metadata = MetaData(self.db_engine)
         self._session = scoped_session(
@@ -186,7 +173,8 @@ class BaseModelDriver(object):
                                          bind=self.db_engine)
                         )
 
-    def setup_module(self, db_engine, database):
+    @staticmethod
+    def installModule(db_engine, database):
         conn = db_engine.connect()
         conn.execute("COMMIT")
         # Do not substitute user-supplied database names here.
@@ -196,7 +184,8 @@ class BaseModelDriver(object):
             pass
         conn.close()
 
-    def erase_module(self, db_engine, database):
+    @staticmethod
+    def uninstallModule(db_engine, database):
         conn = db_engine.connect()
         conn.execute("COMMIT")
         # Do not substitute user-supplied database names here.
@@ -210,36 +199,32 @@ class BaseModelDriver(object):
     def session(self):
         return self._session()
 
-    @property
-    def available(self):
-        return self._is_available
-
-    def get_table(self, table_name):
+    def getTable(self, name):
         """
         获取表
 
         Args:
-            table_name(str): 表对象
+            name(str): 表对象
 
         Returns:
             object: 表对象
 
         """
         try:
-            table = Table(table_name,
+            table = Table(name,
                           self.metadata,
                           autoload=True)
             return table
         except NoSuchTableError:
             pass
 
-    def has_table(self, table_class):
-        table = self.get_table(table_class.__tablename__)
+    def hasTable(self, table_class):
+        table = self.getTable(table_class.__tablename__)
         if not isinstance(table, Table):
             return False
         return True
 
-    def define_table(self, table_class):
+    def defineTable(self, table_class):
         """
         创建表
 
@@ -250,10 +235,10 @@ class BaseModelDriver(object):
             None
 
         """
-        if not self.has_table(table_class):
+        if not self.hasTable(table_class):
             table_class.metadata.create_all(self.db_engine)
 
-    def undefine_table(self, table_class):
+    def undefineTable(self, table_class):
         """
         删除表
 
@@ -264,10 +249,10 @@ class BaseModelDriver(object):
             None
 
         """
-        if self.has_table(table_class):
+        if self.hasTable(table_class):
             table_class.__table__.drop(self.db_engine)
 
-    def clear_table(self, table_class):
+    def clearTable(self, table_class):
         """
         清空表
 
@@ -278,7 +263,6 @@ class BaseModelDriver(object):
             None
 
         """
-        if self.has_table(table_class):
+        if self.hasTable(table_class):
             table_class.__table__.drop(self.db_engine)
         table_class.metadata.create_all(self.db_engine)
-

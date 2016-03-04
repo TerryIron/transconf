@@ -22,7 +22,7 @@ __author__ = 'chijun'
 
 import werkzeug.http
 import urlparse
-import paste.urlmap
+from paste.urlmap import URLMap as _URLMap, parse_path_expression
 from zope.mimetype import typegetter
 
 from transconf.server.paste import rpcmap
@@ -41,7 +41,7 @@ def urlmap_factory(loader, global_conf, **local_conf):
         not_found_app = loader.get_app(not_found_app, global_conf=global_conf)
     _map = URLMap(not_found_app=not_found_app)
     for path, app_name in local_conf.items():
-        path = paste.urlmap.parse_path_expression(path)
+        path = parse_path_expression(path)
         app = loader.get_app(app_name, global_conf=global_conf)
         _map[path] = app
     return _map
@@ -53,7 +53,7 @@ SUPPORTED_CONTENT_TYPES = (
 )
 
 
-class URLMap(paste.urlmap.URLMap):
+class URLMap(_URLMap):
     def _match(self, host, port, path_info):
         """Find longest match for a given URL path."""
         for (domain, app_url), app in self.applications:

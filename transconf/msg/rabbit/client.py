@@ -28,6 +28,12 @@ from transconf.msg.rabbit.core import RabbitAMQP
 from transconf.utils import from_config_option
 
 
+class ExchangeType:
+    TYPE_RPC = 'rpc'
+    TYPE_TOPIC = 'topic'
+    TYPE_FANOUT = 'fanout'
+
+
 # It is a static method for sync-call, don's use it outside.
 def hold_on(func):
     def __do_hold_on(self, *args, **kwargs):
@@ -200,7 +206,7 @@ class TopicTranClient(BaseClient):
         """
         super(TopicTranClient, self).init()
         self.channel.exchange_declare(exchange=self.bind_exchange,
-                                      type='topic')
+                                      type=ExchangeType.TYPE_TOPIC)
 
     @property
     @from_config_option('topic_binding_exchange', 'default_topic_exchange')
@@ -285,7 +291,7 @@ class FanoutTranClient(BaseClient):
         """
         super(FanoutTranClient, self).init()
         self.channel.exchange_declare(exchange=self.bind_exchange,
-                                      type='fanout')
+                                      type=ExchangeType.TYPE_FANOUT)
 
     @property
     @from_config_option('fanout_binding_exchange', 'default_fanout_exchange')
@@ -321,7 +327,7 @@ class FanoutTranClient(BaseClient):
             None
 
         """
-        fanout_exchange= self.bind_exchange if not routing_key else routing_key
+        fanout_exchange = self.bind_exchange if not routing_key else routing_key
         self._ready(context, 
                     fanout_exchange, 
                     '',
@@ -346,9 +352,9 @@ class FanoutTranClient(BaseClient):
 
 
 client_list = [
-    ('topic', TopicTranClient),
-    ('fanout', FanoutTranClient),
-    ('rpc', RPCTranClient),
+    (ExchangeType.TYPE_TOPIC, TopicTranClient),
+    (ExchangeType.TYPE_FANOUT, FanoutTranClient),
+    (ExchangeType.TYPE_RPC, RPCTranClient),
 ]
 
 
@@ -359,7 +365,7 @@ def _get_client(client_list, type, amqp_url=None, exchange=None, queue=None):
             return c
 
 
-def get_client(amqp_url=None, exchange=None, queue=None, type='topic'):
+def get_client(amqp_url=None, exchange=None, queue=None, type=ExchangeType.TYPE_TOPIC):
     """
     获取客户端
 

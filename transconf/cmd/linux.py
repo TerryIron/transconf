@@ -25,7 +25,7 @@ from transconf.command_driver import Command
 
 class File(Command):
     def init(self):
-        self.enabled_method = [
+        self.enabled_methods = [
             'new',
             'forced_remove',
             'read_all',
@@ -34,8 +34,18 @@ class File(Command):
 
 class Directory(Command):
     def init(self):
-        self.enabled_method = [
+        self.enabled_methods = [
             'new',
             'forced_remove',
             'list_all',
+        ]
+
+
+class RabbitmqCtl(Command):
+    def init(self):
+        self.enabled_methods = [
+            'start',
+            'stop',
+            'join_ram_cluster',
+            'join_rom_cluster',
         ]

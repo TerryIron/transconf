@@ -27,13 +27,17 @@ import pika
 from pika.adapters import twisted_connection
 from twisted.internet import defer, reactor, protocol
 
-from transconf.msg.rabbit.client import BaseClient as BaseSyncClient
-from transconf.utils import from_config_option
+from transconf.msg.rabbit.client import BaseClient as BaseSyncClient, ExchangeType
+from transconf.utils import from_config_option, myException
 from transconf.server.response import Response
 from transconf.server.crypto import Crypto
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)
+
+
+class SendFailed(myException):
+    pass
 
 
 class BaseClient(BaseSyncClient):
@@ -69,7 +73,7 @@ class BaseClient(BaseSyncClient):
 
     @staticmethod
     def _ready(context, exchange, routing_key):
-        return (context, exchange, routing_key)
+        return context, exchange, routing_key
 
     @defer.inlineCallbacks
     def on_response(self):
@@ -98,17 +102,34 @@ class BaseClient(BaseSyncClient):
 
     @defer.inlineCallbacks
     def publish(self, context):
-        if not self.reply_to: 
+        # TODO by xichijun
+        # Use Rabiitmq build-in timestamp
+        if not self.reply_to:
             result = yield self.channel.queue_declare(exclusive=True, auto_delete=True)
             setattr(self, 'reply_to', result.method.queue)
         properties = yield pika.BasicProperties(reply_to=self.reply_to,
                                                 correlation_id=self.corr_id,
                                                 delivery_mode=self.delivery_mode,
                                                 timestamp=time.time())
-        yield self.publish_context(self.channel, context[1], context[2], context[0], properties=properties)
+        try:
+            exchange, routing_key, body = context[1], context[2], context[0]
+            yield self.publish_context(self.channel,
+                                       exchange,
+                                       routing_key,
+                                       body,
+                                       properties=properties)
+        except TypeError as e:
+            raise SendFailed("Failed to send request:{0}, {1}".format(context[0], e))
 
     @staticmethod
     def publish_context(channel, exchange, routing_key, body, properties=None):
+        LOG.debug('Ready to publish channel:{0}, exchange:{1}, '
+                  'routing_key:{2}, body:{3}|type:{4}, properties:{5}'.format(channel,
+                                                                              exchange,
+                                                                              routing_key,
+                                                                              body,
+                                                                              type(body),
+                                                                              properties))
         return channel.basic_publish(exchange=exchange,
                                      routing_key=routing_key,
                                      properties=properties,
@@ -126,7 +147,7 @@ class BaseClient(BaseSyncClient):
         @routing_key: routing key
     """
     def castBase(self, context, routing_key=None, delivery_mode=2):
-        LOG.debug('Ready to send context:{0}'.format(context))
+        LOG.debug('Ready to send context:{0} without result'.format(context))
         self._on_connect(self._ready(context, routing_key), None, delivery_mode)
 
     def cast(self, request, routing_key=None, delivery_mode=2):
@@ -138,7 +159,7 @@ class BaseClient(BaseSyncClient):
         @routing_key: routing key
     """
     def callBase(self, context, routing_key=None, delivery_mode=2):
-        LOG.debug('Ready to send context:{0}'.format(context))
+        LOG.debug('Ready to send context:{0} with result'.format(context))
         d = self._on_connect(self._ready(context, routing_key), self.on_response, delivery_mode)
         return d
 
@@ -165,7 +186,7 @@ class RPCTranClient(BaseClient):
 class TopicTranClient(BaseClient):
     def init(self):
         super(TopicTranClient, self).init()
-        self.exchange_type = 'topic'
+        self.exchange_type = ExchangeType.TYPE_TOPIC
 
     def config(self, exchange=None, queue=None):
         self.bind_exchange = self.conf_topic_exchange if not exchange else exchange
@@ -191,7 +212,7 @@ class TopicTranClient(BaseClient):
 class FanoutTranClient(BaseClient):
     def init(self):
         super(FanoutTranClient, self).init()
-        self.exchange_type = 'fanout'
+        self.exchange_type = ExchangeType.TYPE_FANOUT
 
     def config(self, exchange=None, queue=None):
         self.bind_exchange = self.conf_fanout_exchange if not exchange else exchange

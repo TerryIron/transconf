@@ -94,6 +94,9 @@ class Middleware(object):
         return d
 
 
+REQUEST_ID = 0
+
+
 class RPCTranServer(RabbitAMQP):
     CONNECTION_CLASS = twisted_connection.TwistedProtocolConnection
     TIMEOUT = 30
@@ -107,6 +110,7 @@ class RPCTranServer(RabbitAMQP):
         self.middleware = middleware
 
     def process_request(self, request):
+        LOG.debug('Middleware <{0}> ready to processing.'.format(self.middleware))
         return self.middleware.process_request(request)
 
     def _connect(self):
@@ -123,8 +127,8 @@ class RPCTranServer(RabbitAMQP):
         d.addCallback(callback)
 
     @defer.inlineCallbacks
-    def _result_back(self, ch, properties, result):
-        LOG.debug('Result back to queue:{0}, result:{1}'.format(properties.reply_to, result))
+    def _result_back(self, ch, properties, result, rid=0):
+        LOG.debug('Request[{0}] get back to queue:{1}, result:{2}'.format(rid, properties.reply_to, result))
         # If not result, some unexpected errors happened
         result = self.packer.pack(result)
         yield ch.basic_publish(exchange='',
@@ -143,14 +147,16 @@ class RPCTranServer(RabbitAMQP):
         yield defer.returnValue(Response.fail(err))
 
     def _process_request(self, ch, properties, body):
-        LOG.debug('Ready to process request, body length:{0}'.format(len(body)))
+        global REQUEST_ID
+        REQUEST_ID += 1
+        LOG.debug('Ready to process request[{0}], body length:{1}'.format(REQUEST_ID, len(body)))
         body = self.process_request(body)
         if isinstance(body, defer.Deferred):
             body.addCallbacks(lambda result: self.success(result),
                               errback=lambda err: self.failed(err))
         else:
             body = self.failed(body)
-        body.addBoth(lambda ret: self._result_back(ch, properties, ret))
+        body.addBoth(lambda ret: self._result_back(ch, properties, ret, REQUEST_ID))
 
     @defer.inlineCallbacks
     def on_request(self, queue_object):

@@ -191,41 +191,23 @@ class BaseModel(BaseResource):
         """
         return self._struct
 
-    def init(self, config=None):
+    def init(self):
         """
-        模型初始化过程
-
-        Args:
-            config(object): 配置
-
-        Returns:
-            未实现
+        模型初始化脚本
 
         """
         pass
 
-    def start(self, config=None):
+    def start(self):
         """
-        模型启动过程
-
-        Args:
-            config(object): 配置
-
-        Returns:
-            未实现
+        模型启动脚本
 
         """
         pass
 
-    def stop(self, config=None):
+    def stop(self):
         """
-        模型停止过程
-
-        Args:
-            config(object): 配置
-
-        Returns:
-            未实现
+        模型停止脚本
 
         """
         pass

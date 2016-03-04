@@ -71,17 +71,15 @@ class ShellRequest(Request):
 class ActionRequest(ShellRequest):
     __version__ = (0, 1, 0)
 
-    def __init__(self, target, *args, **kwargs):
+    def __init__(self, target, **kwargs):
         if not isinstance(target, SimpleModel):
             target = SimpleModel(target)
-        LOG.debug('Action req, target:{0}, action:{1}, args:{2}, kwargs:{3}'.format(target.target,
-                                                                                    target.action,
-                                                                                    args,
-                                                                                    kwargs))
+        LOG.debug('Action req, target:{0}, action:{1}, kwargs:{2}'.format(target.target,
+                                                                          target.action,
+                                                                          kwargs))
         super(ActionRequest, self).__init__(target.target,
                                             target.action,
                                             target.version,
-                                            *args,
                                             **kwargs)
 
     def to_dict(self, context=None, timeout=60):

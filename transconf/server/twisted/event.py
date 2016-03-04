@@ -26,7 +26,7 @@ import time
 import functools
 from twisted.internet import task, reactor, defer
 
-from transconf.server.twisted.internet import new_public_client
+from transconf.server.twisted.internet import get_client_from_pool, IGroup
 from transconf.server.twisted.netshell import ShellMiddleware
 from transconf.server.request import Request, RequestTimeout, InvalidRequest
 from transconf.server.twisted.log import getLogger
@@ -177,11 +177,15 @@ class EventDeferDispatcher(object):
         @need_result: if True return result defer
         @need_close: if True close client after sending message(Only for Method Cast)
     """
-    def addNextReq(self, client, shell_request, callback_request=None, callback_client=None,
-                   errback_client=None, errback_request=None, timeout=60, need_result=True, need_close=True):
-        self.queue.append(EventDispatcher(client, shell_request, callback_request, callback_client or self.client,
-                                          errback_request, errback_client or self.client, 
-                                          timeout, self.delivery_mode, need_result))
+    def addNextReq(self, client, shell_request,
+                   callback_request=None, callback_client=None,
+                   errback_client=None, errback_request=None,
+                   timeout=60, need_result=True, need_close=True):
+        self.queue.append(EventDispatcher(client, shell_request,
+                                          callback_request, callback_client,
+                                          errback_request, errback_client,
+                                          timeout, self.delivery_mode,
+                                          need_result, need_close))
 
     """
         Add a new event dispatcher
@@ -233,9 +237,8 @@ class EventMiddleware(ShellMiddleware):
                     raise RequestTimeout('Call {0} timeout.'.format(eventloop))
 
                 def call(cli, text, ret):
-                    client = new_public_client(cli['group'], cli['type'],
-                                               group_uuid=cli['uuid'],
-                                               type=cli['cls'])
+                    g = IGroup(cli['group'], cli['type'], cli['uuid'])
+                    client = get_client_from_pool(g, _type=cli['cls'])
                     text['result'] = ret
                     client.callBase(text)
                     client.close()

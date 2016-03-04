@@ -31,8 +31,11 @@ class RSAAuthorizeFailed(myException):
 
 class RSACheckout(TranMiddleware, Crypto):
     def process_request(self, context):
-        context = self.decode(context)
-        if context:
-            return context
-        else:
-            raise RSAAuthorizeFailed()
+        try:
+            _context = self.decode(context)
+            if _context:
+                return _context
+            else:
+                raise RSAAuthorizeFailed('Failed to parsing context:{0}.'.format(context))
+        except:
+            raise RSAAuthorizeFailed('Failed to parsing context:{0}.'.format(context))

@@ -30,7 +30,7 @@ from transconf.server.twisted.client import RPCTranClient as RPCClient
 from transconf.server.twisted.client import TopicTranClient as TopicClient
 from transconf.server.twisted.client import FanoutTranClient as FanoutClient
 from transconf.utils import from_config_option
-from transconf.msg.rabbit.client import _get_client
+from transconf.msg.rabbit.client import _get_client, ExchangeType
 from transconf.server.twisted.log import getLogger
 
 LOG = getLogger(__name__)
@@ -90,7 +90,7 @@ class TopicTranServer(TranServer):
     @defer.inlineCallbacks
     def on_connect(self, connection):
         channel = yield connection.channel()
-        yield channel.exchange_declare(exchange=self.bind_exchange, type='topic')
+        yield channel.exchange_declare(exchange=self.bind_exchange, type=ExchangeType.TYPE_TOPIC)
         yield channel.queue_declare(queue=self.bind_queue, auto_delete=False, exclusive=False)
         yield channel.queue_bind(exchange=self.bind_exchange,
                                  queue=self.bind_queue,
@@ -106,12 +106,12 @@ class FanoutTranServer(TranServer):
         LOG.info('''' Message Service is starting, Mode:FANOUT;
                       Listen FANOUT exchange:{0};
                       Listen FANOUT queue:{1};'''.format(self.bind_exchange,
-                                                        self.bind_queue))
+                                                         self.bind_queue))
 
     @defer.inlineCallbacks
     def on_connect(self, connection):
         channel = yield connection.channel()
-        yield channel.exchange_declare(exchange=self.bind_exchange, type='fanout')
+        yield channel.exchange_declare(exchange=self.bind_exchange, type=ExchangeType.TYPE_FANOUT)
         yield channel.queue_declare(queue=self.bind_queue, auto_delete=True)
         yield channel.queue_bind(exchange=self.bind_exchange, queue=self.bind_queue)
         yield self.on_channel(channel)
@@ -125,7 +125,7 @@ class RPCTranClient(RPCClient):
             self.bind_queue = group + uuid + 'rpc'
         else:
             self.bind_queue = group + 'rpc'
-        self.__simple__ = dict(cls='rpc',
+        self.__simple__ = dict(cls=ExchangeType.TYPE_RPC,
                                group=group,
                                type=type,
                                uuid=uuid)
@@ -142,7 +142,7 @@ class TopicTranClient(TopicClient):
         self.bind_exchange = group + 'topic'
         self.bind_queue = group
         self.bind_routing_key = type
-        self.__simple__ = dict(cls='topic',
+        self.__simple__ = dict(cls=ExchangeType.TYPE_TOPIC,
                                group=group,
                                type=type,
                                uuid=uuid)
@@ -158,7 +158,7 @@ class FanoutTranClient(FanoutClient):
 
     def config(self, group='', type='', uuid=None):
         self.bind_exchange = group + 'fanout'
-        self.__simple__ = dict(cls='fanout',
+        self.__simple__ = dict(cls=ExchangeType.TYPE_FANOUT,
                                group=group,
                                type=type,
                                uuid=uuid)
@@ -169,32 +169,46 @@ CLIENT_POOL = {}
 
 def get_client_list():
     client_list = [
-        ('topic', TopicTranClient),
-        ('fanout', FanoutTranClient),
-        ('rpc', RPCTranClient), #Point-to-point remote procedure call
+        (ExchangeType.TYPE_TOPIC, TopicTranClient),
+        (ExchangeType.TYPE_FANOUT, FanoutTranClient),
+        (ExchangeType.TYPE_RPC, RPCTranClient),  # Point-to-point remote procedure call
     ]
     return client_list
 
 
-def _client_name(group_name, group_type, group_uuid, type):
-    return str(group_name) + str(group_type) + str(group_uuid) + str(type)
+def _client_name(group, _type):
+    return '%s%s%s%s' % (group.group_name,
+                         group.group_type,
+                         group.uuid,
+                         _type)
 
 
-def _new_client(group_name, group_type, group_uuid, type, amqp_url):
-    c = _get_client(get_client_list(), type, amqp_url)
+def _new_client(group, _type, amqp_url):
+    c = _get_client(get_client_list(), _type, amqp_url)
     if not c:
         return
-    c.config(group_name, group_type, group_uuid)
+    c.config(group.group_name,
+             group.group_type,
+             group.uuid)
     return c
 
 
-def new_public_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
-    return _new_client(group_name, group_type, group_uuid, type, amqp_url)
+class IGroup(object):
+    def __init__(self, group_name, group_type, uuid=None):
+        self.group_name = group_name
+        self.group_type = group_type
+        self.uuid = uuid
 
 
-def get_public_client(group_name, group_type, group_uuid=None, type='topic', amqp_url=None):
-    # Do not use it.
-    name = _client_name(group_name, group_type, group_uuid, type)
+def new_singleton_client(group, type=ExchangeType.TYPE_TOPIC, amqp_url=None):
+    return _new_client(group,
+                       type,
+                       amqp_url)
+
+
+def get_client_from_pool(group, _type=ExchangeType.TYPE_TOPIC, amqp_url=None):
+    # Do not apply it.
+    name = _client_name(group, _type)
     if name not in CLIENT_POOL:
         return CLIENT_POOL[name]
-    return _new_client(group_name, group_type, group_uuid, type, amqp_url)
+    return _new_client(group, _type, amqp_url)

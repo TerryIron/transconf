@@ -59,13 +59,13 @@ class HeartBeatCollection(declarative_base()):
 
 class HeartBeatCollectionBackend(BaseModelDriver):
     def create(self):
-        self.define_table(HeartBeatCollection)
+        self.defineTable(HeartBeatCollection)
 
     def drop(self):
-        self.undefine_table(HeartBeatCollection)
+        self.undefineTable(HeartBeatCollection)
 
     def clear(self):
-        self.clear_table(HeartBeatCollection)
+        self.clearTable(HeartBeatCollection)
 
     def _ready_data(self, dic_data):
         dic_data['count'] = 0
@@ -107,13 +107,13 @@ class HeartBeatCollectionBackend(BaseModelDriver):
 
 class HeartBeatIsEnabledBackend(BaseModelDriver):
     def create(self):
-        self.define_table(HeartBeatIsEnabled)
+        self.defineTable(HeartBeatIsEnabled)
 
     def drop(self):
-        self.undefine_table(HeartBeatIsEnabled)
+        self.undefineTable(HeartBeatIsEnabled)
 
     def clear(self):
-        self.clear_table(HeartBeatIsEnabled)
+        self.clearTable(HeartBeatIsEnabled)
 
     def has(self, uuid):
         target = self.session.query(HeartBeatIsEnabled).filter_by(uuid=uuid).first()

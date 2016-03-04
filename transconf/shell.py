@@ -117,10 +117,11 @@ class ModelShell(NameBus):
         """
         # Check node name is exist ?
         def translate():
-            model = model_class() if callable(model_class) else model_class
-            model.init(config)
-            self.parser.translate(model)
-            return model
+            mod = model_class() if callable(model_class) else model_class
+            if callable(getattr(mod, 'init')):
+                mod.init()
+            self.parser.translate(mod)
+            return mod
         model = translate()
         if model:
             for single in model.form:
@@ -140,8 +141,8 @@ class ModelShell(NameBus):
 
         """
         model = self.preload_model(model_class, config)
-        if model:
-            model.start(config)
+        if model and callable(getattr(model, 'start')):
+            model.start()
 
     def remove_model(self, name):
         """
@@ -155,7 +156,7 @@ class ModelShell(NameBus):
 
         """
         model = self.get(name)
-        if model:
+        if model and callable(getattr(model, 'stop')):
             model.stop()
         self.remove(name)
 

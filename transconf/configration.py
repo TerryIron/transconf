@@ -118,8 +118,9 @@ class Configuration(BaseConf):
             None
 
         """
-        setattr(self, name, ConfGroup(self.config, sect))
-        return getattr(self, name)
+        obj = ConfGroup(self.config, sect)
+        setattr(self, name, obj)
+        return obj
 
     def del_group(self, name):
         """

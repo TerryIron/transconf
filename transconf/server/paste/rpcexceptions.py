@@ -133,7 +133,7 @@ class RPCClientError(RPCError):
 
 
 class RPCNotFound(RPCError):
-    code = '404'
+    code = 404
     title = 'Not Found'                                                                                                                                        
     explanation = ('The resource could not be found.')
 

@@ -44,8 +44,8 @@ class Command(object):
 
     def __init__(self, name):
         self.conf = self.DEFAULT_CONF if not self.CONF else self.CONF
-        self.name = name #Section Name
-        self.enabled_method = []
+        self.name = name  # Section Name
+        self.enabled_methods = []
         self.exp = {}
         self.init()
         self.register()
@@ -83,7 +83,7 @@ class Command(object):
             None
 
         """
-        if self.enabled_method:
+        if self.enabled_methods:
             self._default_setup()
         else:
             self._conf_setup()
@@ -92,7 +92,7 @@ class Command(object):
         register_cmd_target(self)
 
     def _default_setup(self):
-        for em in self.enabled_method:
+        for em in self.enabled_methods:
             if isinstance(em, list):
                 self._setup(*em)
             else:
