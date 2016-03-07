@@ -209,6 +209,6 @@ def new_singleton_client(group, type=ExchangeType.TYPE_TOPIC, amqp_url=None):
 def get_client_from_pool(group, _type=ExchangeType.TYPE_TOPIC, amqp_url=None):
     # Do not apply it.
     name = _client_name(group, _type)
-    if name not in CLIENT_POOL:
+    if name in CLIENT_POOL:
         return CLIENT_POOL[name]
     return _new_client(group, _type, amqp_url)

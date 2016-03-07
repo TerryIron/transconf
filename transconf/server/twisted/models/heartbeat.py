@@ -141,9 +141,9 @@ class HeartBeat(Model):
         # TODO by chijun
         # Action Request version can not be supported by server.
         req = ActionRequest('heartcond.checkin',
-                            **dict(group_name=group.local_name,
-                                   uuid=group.local_uuid,
-                                   group_type=group.local_type))
+                            **dict(group_name=group.group_name,
+                                   uuid=group.uuid,
+                                   group_type=group.group_type))
         return Task(lambda: EventDispatcher(client, req, need_close=False).startWithoutResult())
 
     def _build_cluster_event(self, client, hostname, mode):
