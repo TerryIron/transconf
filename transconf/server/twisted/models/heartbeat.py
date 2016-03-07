@@ -22,8 +22,10 @@
 
 __author__ = 'chijun'
 
-import time
+import os
 import os.path
+import time
+import base64
 import commands
 from uuid import uuid3, UUID
 
@@ -46,18 +48,40 @@ LOG = getLogger(__name__)
 class UnsupportedItem(myException):
     pass
 
+def run_command(cmd):
+    code, output = commands.getstatusoutput(cmd)
+    if code != 0:
+        return False
+    else:
+        return True
+
+
+def start_rabbitmq():
+    return run_command("service rabbitmq-server start")
+
+
+def stop_rabbitmq():
+    return run_command("service rabbitmq-server stop")
+
 
 def channel_id2token(channel_id, token, uuid='6ba7b810-9dad-11d1-80b4-00c04fd430c8'):
-    print uuid, token, channel_id
     _token = uuid3(UUID(uuid), "%s%s" % (token, channel_id))
     return _token
 
 
-def setup_cluster_channel(token, install_path="/var/lib/rabbitmq"):
+def setup_cluster_channel(token, install_path="/var/lib/rabbitmq",
+                          default_user='rabbitmq', default_group='rabbitmq'):
+    stop_rabbitmq()
     target = os.path.join(install_path, '.erlang.cookie')
+    commands.getoutput('chmod 600 {0}'.format(target))
+    os.chown(target, os.getuid(), os.getgid())
     with open(target, 'w') as f:
-        f.write(str(token))
-
+        f.write(base64.b64encode(str(token)))
+    commands.getoutput('chown {0}:{1} {2}'.format(default_user, default_group, target))
+    if start_rabbitmq():
+        LOG.debug('Rabbitmq cookie changes successfully.')
+    else:
+        LOG.debug('Rabbitmq cookie failed to change.')
 
 CLUSTER_MODE_METH = {
    'memory': 'rabbitmqctl stop_app && rabbitmqctl join_cluster {hostname} --ram',
@@ -307,9 +331,11 @@ class HeartCondition(Model):
                 return 
             except Exception:
                 return
-            self._update_target(group_name, group_type, uuid)
-            self._check_has_available_targets(group_name, group_type)
-            t = Task(lambda:  self._check_heart_still_alive(group_name, group_type, uuid))
+            self._update_target(group.group_name, group.group_type, group.uuid)
+            self._check_has_available_targets(group.group_name, group.group_type)
+            t = Task(lambda:  self._check_heart_still_alive(group.group_name,
+                                                            group.group_type,
+                                                            group.uuid))
             t.CallLater(heartrate + heartrate / 2)
 
     def hasHeartbeat(self, group_name, group_type):
