@@ -1,4 +1,4 @@
-__author__ = 'chijun'
+__author__ = 'terry'
 
 import sys
 import os
@@ -61,4 +61,14 @@ class AppUnitTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    #unittest.main()
+    from transconf.server.paste.deploy import loadapp
+    app = loadapp('config:test.ini',
+                  'main',
+                  relative_to=here)
+    server = TranServer()
+    server.setup_mq(app['mainrpc'])
+    server.setup_app(app['mainurl'])
+    server.start()
+
+

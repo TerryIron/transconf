@@ -37,7 +37,8 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative import declarative_base as local_declarative_base
 
 
-__all__ = ['declarative_base', 'BaseModelDriver', 'StrColumn', 'IntColumn', 'MapColumn']
+__all__ = ['declarative_base', 'BaseModelDriver', 'BaseBackend',
+           'make_connection', 'StrColumn', 'IntColumn', 'MapColumn']
 
 
 class IntColumn(Column):
@@ -128,6 +129,18 @@ def declarative_base(cls=BaseMixin):
     return local_declarative_base(cls=cls)
 
 
+def make_connection(db_url, need_split=False):
+    o_items = urlparse(db_url)
+    if o_items.path:
+        if need_split:
+            database = o_items.path.split('/')[-1]
+            n_items, n_items[2] = list(o_items), ''
+            db_engine = create_engine(urlunparse(n_items))
+            return db_engine, database
+        else:
+            return create_engine(db_url)
+
+
 class BaseModelDriver(object):
     """
     模型后端数据库
@@ -158,20 +171,25 @@ class BaseModelDriver(object):
          | Table C -> nodeC API control            | NodeC
     """
 
-    def __init__(self, db_engine_uri):
-        o_items = urlparse(db_engine_uri)
-        if o_items.path:
-            database = o_items.path.split('/')[-1]
-            n_items, n_items[2] = list(o_items), ''
-            db_engine = create_engine(urlunparse(n_items))
+    def __init__(self, db_engine_obj):
+        self.metadata = None
+        self._session = None
+        if isinstance(db_engine_obj, str):
+            db_engine, database = make_connection(db_engine_obj, need_split=True)
             self.installModule(db_engine, database)
-        self.db_engine = create_engine(db_engine_uri)
-        self.metadata = MetaData(self.db_engine)
+            self.make_session(db_engine)
+            self.db_engine = db_engine
+        else:
+            self.make_session(db_engine_obj)
+            self.db_engine = db_engine_obj
+
+    def make_session(self, db_engine):
+        self.metadata = MetaData(db_engine)
         self._session = scoped_session(
-                            sessionmaker(autocommit=False,
-                                         autoflush=False,
-                                         bind=self.db_engine)
-                        )
+            sessionmaker(autocommit=False,
+                         autoflush=False,
+                         bind=db_engine)
+        )
 
     @staticmethod
     def installModule(db_engine, database):
@@ -180,17 +198,6 @@ class BaseModelDriver(object):
         # Do not substitute user-supplied database names here.
         try:
             conn.execute("CREATE DATABASE %s" % database)
-        except:
-            pass
-        conn.close()
-
-    @staticmethod
-    def uninstallModule(db_engine, database):
-        conn = db_engine.connect()
-        conn.execute("COMMIT")
-        # Do not substitute user-supplied database names here.
-        try:
-            conn.execute("DROP DATABASE %s" % database)
         except:
             pass
         conn.close()
@@ -266,3 +273,42 @@ class BaseModelDriver(object):
         if self.hasTable(table_class):
             table_class.__table__.drop(self.db_engine)
         table_class.metadata.create_all(self.db_engine)
+
+
+class BaseBackend(BaseModelDriver):
+    __tableclass__ = None
+
+    def create(self):
+        self.defineTable(self.__tableclass__)
+
+    def drop(self):
+        self.undefineTable(self.__tableclass__)
+
+    def clear(self):
+        self.clearTable(self.__tableclass__)
+
+    def get(self, dict_data):
+        return self.session.query(self.__tableclass__).filter_by(**dict_data).all()
+
+    def update(self, data_set, new_data, limit=1000):
+        data_set = data_set if isinstance(data_set, list) else [data_set]
+        for i, data in enumerate(data_set[::limit]):
+            data = data_set[i*limit:i*limit + limit]
+            for d in data:
+                self.session.query(self.__tableclass__).filter_by(**d).update(new_data)
+
+    def add(self, data_set, limit=1000):
+        data_set = data_set if isinstance(data_set, list) else [data_set]
+        for i, data in enumerate(data_set[::limit]):
+            data = data_set[i*limit:i*limit + limit]
+            for d in data:
+                record = self.__tableclass__(**d)
+                self.session.add(record)
+            self.session.commit()
+
+    def delete(self, data_set, limit=1000):
+        data_set = data_set if isinstance(data_set, list) else [data_set]
+        for i, data in enumerate(data_set[::limit]):
+            data = data_set[i*limit:i*limit + limit]
+            for d in data:
+                self.session.query(self.__tableclass__).filter_by(**d).delete()

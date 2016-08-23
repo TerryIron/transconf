@@ -243,7 +243,9 @@ class HeartCondition(Model):
         self.CONF_BACKEND.clear()
         for a in get_available_heartbeats():
             self.addHeartbeat(a)
-        self._buf_available_uuid, self._timestamp, self.buf_group_target = self.CONF_BACKEND.uuids(), {}, {}
+        self._buf_available_uuid, \
+        self._timestamp, \
+        self.buf_group_target = self.CONF_BACKEND.uuids(), {}, {}
 
     def init(self):
         self.heartrate, self.interval = master_group.heartrate, master_group.interval_times
